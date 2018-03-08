@@ -1,0 +1,123 @@
+﻿@model WorkflowDefinitionModel
+@Html.HiddenFor(model => model.Id)
+@Html.HiddenFor(model => model.IsNew)
+
+<script>
+    $(document).ready(function () {
+        bindBootstrapTabSelectEvent('workflowDefinition-edit');
+        if ($('#IsNew').val() == 'True') {
+            toggleTabs(false);
+        } else {
+            toggleTabs(true);
+        }
+    });
+
+    function toggleTabs(show) {
+        if (show) {
+            $('#tab-workflowDefinitionVersions-header').show();
+        } else {
+            $('#tab-workflowDefinitionVersions-header').hide();
+        }
+    }
+</script>
+
+<div class="content">
+    <div class="form-horizontal">
+        <div id="workflowDefinition-edit" class="nav-tabs-custom">
+            <ul class="nav nav-tabs">
+                @Html.RenderBootstrapTabHeader("tab-info", @T("WorkflowDefinition.Info"), true)
+                @Html.RenderBootstrapTabHeader("tab-workflowDefinitionVersions", @T("WorkflowDefinition.WorkflowDefinitionVersions"))
+            </ul>
+            <div class="tab-content">
+                @Html.RenderBootstrapTabContent("tab-info", @TabInfo(), true)
+                @Html.RenderBootstrapTabContent("tab-workflowDefinitionVersions", @TabWorkflowDefinitionVersions())
+            </div>
+        </div>
+    </div>
+</div>
+
+@{
+    //custom tabs
+    var eventMessage = new AdminTabStripCreated(this.Html, "workflowDefinition-edit");
+    EngineContext.Current.Resolve<IEventPublisher>().Publish(eventMessage);
+    foreach (var eventBlock in eventMessage.BlocksToRender)
+    {
+        @eventBlock
+    }
+}
+
+@helper TabInfo()
+{
+    <div class="panel-group">
+        <div class="panel panel-default">
+            <div class="panel-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.Name, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamEditorFor(model => model.Name)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.EntityType, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamComboBoxFor(model => model.EntityType, "WorkflowEntities", "Common")
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.Description)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamEditorFor(model => model.Description)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.IsDefault)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamCheckBoxFor(model => model.IsDefault)
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <hr />
+                @if (Model.Id > 0 && Model.IsNew == false)
+                {
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <div class="col-md-3">
+                                    @Html.BaseEamLabelFor(model => model.FirstCreatedBy)
+                                </div>
+                                <div class="col-md-9">
+                                    @Html.BaseEamDisplayFor(model => model.FirstCreatedBy)
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <div class="col-md-3">
+                                    @Html.BaseEamLabelFor(model => model.LastUpdatedBy)
+                                </div>
+                                <div class="col-md-9">
+                                    @Html.BaseEamDisplayFor(model => model.LastUpdatedBy)
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}
+@helper TabWorkflowDefinitionVersions()
+{
+    @Html.Partial("_WorkflowDefinitionVersions", new WorkflowDefinitionVersionModel())
+}

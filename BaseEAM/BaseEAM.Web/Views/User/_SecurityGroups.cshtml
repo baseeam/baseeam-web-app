@@ -1,0 +1,175 @@
+﻿@using BaseEAM.Services.Security
+@model SecurityGroupModel
+@{
+    var defaultGridPageSize = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().DefaultGridPageSize;
+    var gridPageSizes = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().GridPageSizes;
+
+    var permissionService = EngineContext.Current.Resolve<BaseEAM.Services.IPermissionService>();
+    var allowCreate = permissionService.Authorize(StandardPermissionName.People_User_Create);
+    var allowRead = permissionService.Authorize(StandardPermissionName.People_User_Read);
+    var allowUpdate = permissionService.Authorize(StandardPermissionName.People_User_Update);
+    var allowDelete = permissionService.Authorize(StandardPermissionName.People_User_Delete);
+}
+<div id="group-securityGroups" class="panel-group">
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <button type="button" id="selectSecurityGroups" class="btn btn-primary@(allowCreate ? "" : " none-display")" title="@T("SelectSecurityGroups")">
+                <i class="fa fa-plus-square"></i>
+            </button>
+            <button type="button" id="deleteSelectedSecurityGroups" class="btn btn-primary@(allowCreate || allowUpdate ? "" : " none-display")" title="@T("Common.Delete.Selected")">
+                <i class="fa fa-trash-o"></i>
+            </button>
+        </div>
+        <div class="panel-body">
+            <div id="securityGroups-grid"></div>
+            <script>
+                var gridCheckboxHandler1 = new BaseEam.CheckBoxHandler('securityGroups-grid');
+                gridCheckboxHandler1.init();
+
+                $(document).ready(function () {
+                    $("#securityGroups-grid").kendoGrid({
+                        dataSource: {
+                            type: "json",
+                            transport: {
+                                read: {
+                                    url: "@Html.Raw(Url.Action("SecurityGroupList", "User"))",
+                                    type: "POST",
+                                    dataType: "json",
+                                    data: additionalData1
+                                }
+                            },
+                            schema: {
+                                data: "Data",
+                                total: "Total",
+                                errors: "Errors",
+                                model: {
+                                    id: "Id"
+                                }
+                            },
+                            error: function(e) {
+                                display_kendoui_grid_error(e);
+                                // Cancel the changes
+                                this.cancelChanges();
+                            },
+                            pageSize: @(defaultGridPageSize),
+                            serverPaging: true,
+                            serverFiltering: true,
+                            serverSorting: true
+                        },
+                        pageable: {
+                            refresh: true,
+                            pageSizes: [@(gridPageSizes)],
+                            @Html.Partial("_GridPagerMessages")
+                        },
+                        sortable: true,
+                        editable: false,
+                        scrollable: false,
+                        dataBound: gridCheckboxHandler1.onDataBound,
+                        columns: [{
+                            field: "Id",
+                            headerTemplate: "<input id='securityGroups-grid-mastercheckbox' type='checkbox'/>",
+                            headerAttributes: { style: "text-align:center" },
+                            attributes: { style: "text-align:center" },
+                            template: "<input type='checkbox' value='#=Id#' class='checkboxGroups'/>",
+                            width: 50,
+                            sortable: false
+                        },{
+                            field: "Name",
+                            title: "@T("SecurityGroup.Name")"
+                        }, {
+                            field: "Description",
+                            title: "@T("SecurityGroup.Description")"
+                        }, {
+                            field: "Id",
+                            headerTemplate: "",
+                            width: 50,
+                            template: '<button type="button" class="btn btn-primary@(allowDelete ? "" : " none-display")" href="" onclick="deleteSecurityGroup(event, #=Id#);"></span><i class="fa fa-trash aria-hidden="true""></i></a>',
+                            sortable: false
+                        }]
+                    });
+                });
+            </script>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+
+    function deleteSecurityGroup(e, id){
+        e.preventDefault();
+        //check if panel-securityGroup is open => close it before delete
+        if($('#panel-securityGroup').is(":visible")){
+            togglePanelSecurityGroup(false);
+        }
+
+        BaseEam.Grid.deleteRow($("#Id").val(), id, "@Url.Action("DeleteSecurityGroup", "User")", "securityGroups-grid", "", true);
+    };
+
+    function additionalData1() {
+        var data = {
+            userId: $("#Id").val()
+        };
+        addAntiForgeryToken(data);
+        return data;
+    }
+
+    function selectSecurityGroups(e) {
+        e.preventDefault();
+        var postData = {
+            userId: $("#Id").val(),
+            selectedIds: securityGroupsCheckboxHandler.selectedIds
+        };
+        addAntiForgeryToken(postData);
+        $.ajax({
+            cache: false,
+            type: "POST",
+            url: '@Url.Action("AddSecurityGroups", "User")',
+            data: postData,
+            success: function (data) {
+                if (data && data.Errors) {
+                    showErrors(data.Errors, '#ml-securityGroups-error');
+                } else {
+                    //hide modal popup
+                    $(e.target).parents('.modal').modal('hide');
+
+                    //refresh grid
+                    var grid = $('#securityGroups-grid').data('kendoGrid');
+                    grid.dataSource.page(1);
+                }
+            },
+            error: function (xhr, ajaxOptions, thrownError) {
+                showBSModal({ title: "Error", body: thrownError });
+            },
+            traditional: true
+        });
+    }
+
+    $(document).ready(function () {
+        $("#selectSecurityGroups").click(function(e){
+            e.preventDefault();
+            $.get('@Url.Action("MLSecurityGroupView", "Lookup")', function(data) {
+                showBSModal({
+                    title: "@T("User.SelectSecurityGroups")",
+                    size: "large",
+                    body: data,
+                    actions: [{
+                        label: '@T("Common.Save")',
+                        cssClass: 'btn-success',
+                        onClick: selectSecurityGroups
+                    },{
+                        label: '@T("Common.Cancel")',
+                        cssClass: 'btn-danger',
+                        onClick: function(e){
+                            $(e.target).parents('.modal').modal('hide');
+                        }
+                    }]
+                });
+            });
+        });
+
+        $("#deleteSelectedSecurityGroups").click(function(e){
+            e.preventDefault();
+            BaseEam.Grid.deleteSelectedRows($("#Id").val(), gridCheckboxHandler1.selectedIds, "@Url.Action("DeleteSelectedSecurityGroups", "User")", "securityGroups-grid", "", true);
+        });
+    });
+</script>

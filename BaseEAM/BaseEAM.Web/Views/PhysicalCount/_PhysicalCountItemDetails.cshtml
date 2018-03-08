@@ -1,0 +1,142 @@
+﻿@using BaseEAM.Services.Security
+@model PhysicalCountItemModel
+@{
+    var permissionService = EngineContext.Current.Resolve<BaseEAM.Services.IPermissionService>();
+    var allowCreate = permissionService.Authorize(StandardPermissionName.Inventory_PhysicalCount_Create);
+    var allowRead = permissionService.Authorize(StandardPermissionName.Inventory_PhysicalCount_Read);
+    var allowUpdate = permissionService.Authorize(StandardPermissionName.Inventory_PhysicalCount_Update);
+    var allowDelete = permissionService.Authorize(StandardPermissionName.Inventory_PhysicalCount_Delete);
+
+    var primarySystemCurrencySymbol = EngineContext.Current.Resolve<BaseEAM.Core.IWorkContext>().WorkingCurrency.CurrencySymbol;
+}
+
+<div id="panel-physicalCountItem" class="panel panel-default eam-panel">
+    <div class="panel-heading">
+        <button type="button" id="savePhysicalCountItemDetail" data-bind="visible: !isApproved()" class="btn btn-primary@(allowCreate || allowUpdate ? "" : " none-display")" title="@T("Common.Save")">
+            <i class="fa fa-floppy-o"></i>
+        </button>
+        <button type="button" id="cancelPhysicalCountItemDetail" class="btn btn-primary" title="@T("Common.Cancel")">
+            <i class="fa fa-ban"></i>
+        </button>
+    </div>
+    <div class="panel-body">
+        @Html.Hidden("PhysicalCountId", Model.PhysicalCountId)
+        @Html.Hidden("PhysicalCountItemId", Model.Id)
+        <div id="physicalCountItem-error" class="validation-summary-errors none-display">
+        </div>
+        <div class="col-md-6">
+            <div class="form-group">
+                <div class="col-md-3">
+                    @Html.BaseEamLabelFor(model => model.ItemId, required: true)
+                </div>
+                <div class="col-md-9">
+                    @Html.BaseEamDisplayFor(model => model.ItemName)
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-md-3">
+                    @Html.BaseEamLabelFor(model => model.ItemUnitOfMeasureId)
+                </div>
+                <div class="col-md-9">
+                    <div class="form-text-row" id="itemUOM">
+                        @Html.BaseEamDisplayFor(model => model.ItemUnitOfMeasureName)
+                    </div>                    
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-md-3">
+                    @Html.BaseEamLabelFor(model => model.StoreLocatorId, required: true)
+                </div>
+                <div class="col-md-9">
+                    @Html.BaseEamDisplayFor(model => model.StoreLocatorName)
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="form-group">
+                <div class="col-md-3">
+                    @Html.BaseEamLabelFor(model => model.CurrentQuantity)
+                </div>
+                <div class="col-md-9">
+                    @Html.BaseEamDisplayFor(model => model.CurrentQuantity)
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-md-3">
+                    @Html.BaseEamLabelFor(model => model.Count, required: true)
+                </div>
+                <div class="col-md-9">
+                    @Html.BaseEamEditorFor(model => model.Count)
+                </div>
+            </div>
+        </div>
+    </div>
+    <script type="text/javascript">
+        function calculateCost() {
+            var quantity = parseFloat($("#Quantity").val());
+            if (!isNaN(quantity)) {
+                var unitPrice = parseFloat($("#UnitPrice").val());
+                if (!isNaN(unitPrice)) {
+                    $("#Cost").val(unitPrice * quantity);
+                    $("#itemCost").html(unitPrice * quantity);
+                }
+            }
+        }
+
+        $("#savePhysicalCountItemDetail").click(function (e) {
+            e.preventDefault();
+            var $group = $("#panel-physicalCountItem :input");
+            var postData = $group.serializeJSON({ checkboxUncheckedValue: "false" });
+            //change Id property name so it can map to MVC model
+            postData.Id = postData.PhysicalCountItemId;
+            addAntiForgeryToken(postData);
+
+            $.ajax({
+                cache: false,
+                type: "POST",
+                url: "@(Url.Action("SavePhysicalCountItem", "PhysicalCount"))",
+                data: postData,
+                success: function (data) {
+                    if (data && data.Errors) {
+                        showErrors(data.Errors, '#physicalCountItem-error');
+                    } else {
+                        //then toggle the panel
+                        togglePanelPhysicalCountItem(false);
+
+                        //refresh grid
+                        var grid = $('#physicalCountItems-grid').data('kendoGrid');
+                        grid.dataSource.page(1);
+                    }
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    showBSModal({ title: 'ERROR', body: thrownError });
+                },
+                traditional: true
+            });
+        });
+
+        $("#cancelPhysicalCountItemDetail").click(function (e) {
+            e.preventDefault();
+            var postData = {
+                id: $("#PhysicalCountItemId").val()
+            };
+            addAntiForgeryToken(postData);
+
+            $.ajax({
+                cache: false,
+                type: "POST",
+                url: "@(Url.Action("CancelPhysicalCountItem", "PhysicalCount"))",
+                data: postData,
+                success: function (data) {
+                    //toggle the panel
+                    togglePanelPhysicalCountItem(false);
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    showBSModal({ title: 'ERROR', body: thrownError });
+                },
+                traditional: true
+            });
+        });
+
+    </script>
+</div>

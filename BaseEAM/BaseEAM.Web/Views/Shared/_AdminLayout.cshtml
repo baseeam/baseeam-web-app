@@ -1,0 +1,250 @@
+﻿@using StackExchange.Profiling;
+@using System.Globalization;
+@using BaseEAM.Core.Domain;
+@using BaseEAM.Web.Framework.UI;
+@using BaseEAM.Core;
+@using BaseEAM.Services;
+@using BaseEAM.Web.Framework.Session;
+
+@{
+    var kendoVersion = "2014.1.318";
+
+    //CSS resources
+    //Html.AppendCssFileParts("~/Content/querybuilder/query-builder.default.css");
+    Html.AppendCssFileParts("~/Content/KeenIO/keen-dataviz.css");
+    Html.AppendCssFileParts("~/Content/KeenIO/keen-dashboards.css");
+    Html.AppendCssFileParts("~/Content/styles.css");
+    Html.AppendCssFileParts("~/Content/pnotify.custom.min.css");
+    Html.AppendCssFileParts("~/Content/adminLTE/AdminLTE-2.3.0.min.css");
+    Html.AppendCssFileParts("~/Content/bootstrap/css/bootstrap.min.css");
+    Html.AppendCssFileParts(string.Format("~/Content/kendo/{0}/kendo.rtl.min.css", kendoVersion));
+    Html.AppendCssFileParts(string.Format("~/Content/kendo/{0}/kendo.default.min.css", kendoVersion));
+    Html.AppendCssFileParts(string.Format("~/Content/kendo/{0}/kendo.common.min.css", kendoVersion));
+    Html.AppendCssFileParts("~/Content/jquery-ui-themes/smoothness/jquery-ui-1.10.3.custom.min.css");
+    Html.AppendCssFileParts("~/Content/ionicons/css/ionicons-2.0.1.min.css");
+    Html.AppendCssFileParts("~/Content/fontAwesome/css/font-awesome-4.6.3.min.css");
+    Html.AppendCssFileParts("~/Content/typeahead/typeahead.css");
+    Html.AppendCssFileParts("~/Content/bootstrap-touchspin/jquery.bootstrap-touchspin.min.css");
+    <!-- AdminLTE Skins (choose a skin from the css/skins) -->
+    Html.AppendCssFileParts("~/Content/adminLTE/skins/_all-skins.min.css");
+
+    //scripts
+    //we are not using querybuilder, just use FLEEExpression for simpler implementation
+    //querybuilder
+    //Html.AppendScriptParts("~/Scripts/querybuilder/i18n/en.js");
+    //Html.AppendScriptParts("~/Scripts/querybuilder/jquery.js");
+    //Html.AppendScriptParts("~/Scripts/querybuilder/model.js");
+    //Html.AppendScriptParts("~/Scripts/querybuilder/utils.js");
+    //Html.AppendScriptParts("~/Scripts/querybuilder/template.js");
+    //Html.AppendScriptParts("~/Scripts/querybuilder/data.js");
+    //Html.AppendScriptParts("~/Scripts/querybuilder/public.js");
+    //Html.AppendScriptParts("~/Scripts/querybuilder/core.js");
+    //Html.AppendScriptParts("~/Scripts/querybuilder/plugins.js");
+    //Html.AppendScriptParts("~/Scripts/querybuilder/defaults.js");
+    //Html.AppendScriptParts("~/Scripts/querybuilder/main.js");
+    //Html.AppendScriptParts("~/Scripts/querybuilder/moment.min.js");
+    //Html.AppendScriptParts("~/Scripts/querybuilder/jQuery.extendext.js");
+    //Html.AppendScriptParts("~/Scripts/querybuilder/doT.js");
+    //
+    Html.AppendScriptParts("~/Scripts/baseeam.reassign.js");
+    Html.AppendScriptParts("~/Scripts/baseeam.visual.js");
+    Html.AppendScriptParts("~/Scripts/KeenIO/faker.js");
+    Html.AppendScriptParts("~/Scripts/KeenIO/keen-dataviz.js");
+    Html.AppendScriptParts("~/Scripts/sly.js");
+    Html.AppendScriptParts("~/Scripts/knockout.ext.js");
+    Html.AppendScriptParts("~/Scripts/knockout-min.js");
+    Html.AppendScriptParts("~/Scripts/kendo.web.ext.js");
+    Html.AppendScriptParts(string.Format("~/Scripts/kendo/{0}/kendo.web.min.js", kendoVersion));
+    Html.AppendScriptParts("~/Scripts/baseeam.events.js");
+    Html.AppendScriptParts("~/Scripts/baseeam.eventbroker.js");
+    Html.AppendScriptParts("~/Scripts/baseeam.grid.js");
+    Html.AppendScriptParts("~/Scripts/baseeam.checkboxhandler.js");
+    Html.AppendScriptParts("~/Scripts/admin.search.js");
+    Html.AppendScriptParts("~/scripts/admin.navigation.js");
+    Html.AppendScriptParts("~/Scripts/baseeam.common.js");
+    Html.AppendScriptParts("~/Scripts/pnotify.custom.min.js");
+    Html.AppendScriptParts("~/Scripts/typeahead/typeahead.bundle.min.js");
+    Html.AppendScriptParts("~/Scripts/messages/baseeam.messages.en-US.js");
+    Html.AppendScriptParts("~/Scripts/jquery.are-you-sure.js");
+    Html.AppendScriptParts("~/Scripts/jquery.serializejson.js");
+    Html.AppendScriptParts("~/Scripts/jquery-migrate-1.2.1.min.js");
+    Html.AppendScriptParts("~/Scripts/bootstrap/bootstrap.min.js");
+    Html.AppendScriptParts("~/Scripts/jquery-ui-1.10.3.custom.min.js");
+    Html.AppendScriptParts("~/Scripts/jquery.validate.unobtrusive.min.js");
+    Html.AppendScriptParts("~/Scripts/jquery.validate.min.js");
+    Html.AppendScriptParts("~/Scripts/adminLTE/app.min.js");
+    Html.AppendScriptParts("~/Scripts/bootstrap-touchspin/jquery.bootstrap-touchspin.min.js");
+    Html.AppendScriptParts("~/Scripts/jquery-1.10.2.min.js");
+
+    //register CSS and JS
+    Html.AddCssFileParts("~/Scripts/fineuploader/fineuploader-4.2.2.min.css");
+    Html.AddScriptParts("~/Scripts/fineuploader/jquery.fineuploader-4.2.2.min.js");
+
+    //page title
+    string adminPageTitle = !String.IsNullOrWhiteSpace(ViewBag.Title) ? ViewBag.Title + " / " : "";
+    adminPageTitle += T("PageTitle").Text;
+
+    //avatar
+    var currentUser = EngineContext.Current.Resolve<IWorkContext>().CurrentUser;
+    var enableMiniProfiler = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().EnableMiniProfiler;
+
+    //sidebar
+    var httpContext = EngineContext.Current.Resolve<HttpContextBase>();
+    var userPreferences = httpContext.Session[SessionKey.UserPreferences] as UserPreferences;
+    if (userPreferences == null)
+    {
+        userPreferences = new UserPreferences();
+        httpContext.Session[SessionKey.UserPreferences] = userPreferences;
+    }
+
+    var hideSidebar = userPreferences.SidebarCollapsed;
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- Google Analytics -->
+    <script>
+        (function (i, s, o, g, r, a, m) {
+            i['GoogleAnalyticsObject'] = r; i[r] = i[r] || function () {
+                (i[r].q = i[r].q || []).push(arguments)
+            }, i[r].l = 1 * new Date(); a = s.createElement(o),
+            m = s.getElementsByTagName(o)[0]; a.async = 1; a.src = g; m.parentNode.insertBefore(a, m)
+        })(window, document, 'script', 'https://www.google-analytics.com/analytics.js', 'ga');
+
+        ga('create', 'UA-108175233-1', 'auto');
+        ga('send', 'pageview');
+    </script>
+    <!-- End Google Analytics -->
+
+    <title>@adminPageTitle</title>
+    <meta http-equiv="Content-type" content="text/html;charset=UTF-8" />
+    <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
+    @Html.BaseEamHeadCustom()
+    @Html.BaseEamCssFiles(this.Url, ResourceLocation.Head, false)
+    @Html.BaseEamScripts(this.Url, ResourceLocation.Head, false)
+</head>
+<body class="hold-transition skin-blue sidebar-mini @if (hideSidebar)
+                                                    {<text>sidebar-collapse</text>}">
+    <div class="throbber">
+        <div class="curtain">
+        </div>
+        <div class="curtain-content">
+            <div>
+                <h1 class="throbber-header">@T("Common.Wait...")</h1>
+                <p>
+                    <img src="@Url.Content("~/content/images/throbber-synchronizing.gif")" alt="" />
+                </p>
+            </div>
+        </div>
+    </div>
+    <div id="ajaxBusy">
+        <span>&nbsp;</span>
+    </div>
+    <div class="wrapper">
+        @if (IsSectionDefined("header"))
+            {
+            @RenderSection("header")
+        }
+        else
+        {
+            <div class="main-header">
+                <a href="@Url.Content("~/")" class="logo">
+                    <!-- mini logo for sidebar mini 50x50 pixels -->
+                    <span class="logo-mini"></span>
+                    <!-- logo for regular state and mobile devices -->
+                    <span class="logo-lg"></span>
+                </a>
+                <div class="navbar navbar-static-top" role="navigation">
+                    <a href="#" class="sidebar-toggle" data-toggle="offcanvas" role="button">
+                        <span class="sr-only">&nbsp;</span>
+                    </a>
+                    <div class="navbar-custom-menu">
+                        <ul class="nav navbar-nav">
+                            <li class="account-info">
+                                @{
+                                    var dateTimeHelper = EngineContext.Current.Resolve<BaseEAM.Services.IDateTimeHelper>();
+                                    var workContext = EngineContext.Current.Resolve<IWorkContext>();
+                                    var currentCulture = new CultureInfo(workContext.WorkingLanguage.LanguageCulture);
+                                }
+                                @dateTimeHelper.ConvertToUserTime(DateTime.Now).ToString("f", currentCulture)
+                            </li>
+                            <li class="account-info">
+                                @(currentUser != null ? currentUser.LoginName : "")
+                            </li>
+                            <li>
+                                <a href="@Url.Action("Logout", "User", new {area = ""}, null)">
+                                    @T("Header.Logout")
+                                </a>
+                            </li>
+                            <li>
+                                <a href="http://helpcenter.baseeam.com" target="_blank">Help Center</a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+                                    }
+        @if (IsSectionDefined("headermenu"))
+            {
+            @RenderSection("headermenu")
+        }
+        else
+        {
+            <div class="main-sidebar">
+                <div class="sidebar">
+                    <div class="sidebar-form">
+                        <div id="search-box">
+                            <input type="text" class="form-control admin-search-box typeahead" placeholder="@T("Menu.Search")">
+                        </div>
+                    </div>
+                    <script>
+                        $(document).ready(function () {
+                            Admin.Search.init();
+                        });
+                    </script>
+                    @Html.Partial("Menu")
+                </div>
+            </div>
+        }
+        <div class="content-wrapper">
+            @Html.Partial("Notifications")
+            <div>
+                @RenderBody()
+            </div>
+        </div>
+        <div class="main-footer clearfix">
+            @Html.Partial("UrlAccessedFrame")
+        </div>
+    </div>
+    <script>
+        var AdminLTEOptions = {
+            boxWidgetOptions: {
+                boxWidgetIcons: {
+                    collapse: 'fa-minus',
+                    open: 'fa-plus'
+                }
+            }
+        };
+    </script>
+    @Html.BaseEamCssFiles(this.Url, ResourceLocation.Foot)
+    @Html.BaseEamScripts(this.Url, ResourceLocation.Foot)
+    <a id="backTop" class="btn btn-back-top bg-teal"></a>
+    <script>
+
+        $(document).ready(function () {
+            $('#backTop').backTop();
+
+            $('a.sidebar-toggle').on('click', function () {
+                var collapsed = $('body').hasClass('sidebar-collapse');
+                saveUserPreferences('@(Url.Action("SavePreference", "Common"))', 'SidebarCollapsed', collapsed);
+            });
+        });
+    </script>
+
+    @if (enableMiniProfiler == true)
+    {
+        @MiniProfiler.RenderIncludes()
+    }
+</body>
+</html>

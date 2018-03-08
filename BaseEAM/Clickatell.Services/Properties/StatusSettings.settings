@@ -1,0 +1,84 @@
+﻿<?xml version='1.0' encoding='utf-8'?>
+<SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="Clickatell.Services.Properties" GeneratedClassName="StatusSettings">
+  <Profiles />
+  <Settings>
+    <Setting Name="MessageUnknown_Code" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">001</Value>
+    </Setting>
+    <Setting Name="MessageUnknown_Description" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">Message unknown</Value>
+    </Setting>
+    <Setting Name="MessageQueued_Code" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">002</Value>
+    </Setting>
+    <Setting Name="MessageQueued_Description" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">Message queued</Value>
+    </Setting>
+    <Setting Name="DeliveredToGateway_Code" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">003</Value>
+    </Setting>
+    <Setting Name="DeliveredToGateway_Description" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">Delivered to gateway</Value>
+    </Setting>
+    <Setting Name="ReceivedByRecipient_Code" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">004</Value>
+    </Setting>
+    <Setting Name="ReceivedByRecipient_Description" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">Received by recipient</Value>
+    </Setting>
+    <Setting Name="ErrorWithMessage_Code" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">005</Value>
+    </Setting>
+    <Setting Name="ErrorWithMessage_Description" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">Error with message</Value>
+    </Setting>
+    <Setting Name="MessageCancelled_Code" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">006</Value>
+    </Setting>
+    <Setting Name="MessageCancelled_Description" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">User cancelled message delivery</Value>
+    </Setting>
+    <Setting Name="ErrorDeliveringMessage_Code" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">007</Value>
+    </Setting>
+    <Setting Name="ErrorDeliveringMessage_Description" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">Error delivering message</Value>
+    </Setting>
+    <Setting Name="MessageReceivedByGateway_Code" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">008</Value>
+    </Setting>
+    <Setting Name="MessageReceivedByGateway_Description" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">OK</Value>
+    </Setting>
+    <Setting Name="RoutingError_Code" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">009</Value>
+    </Setting>
+    <Setting Name="RoutingError_Description" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">Routing error</Value>
+    </Setting>
+    <Setting Name="MessageExpired_Code" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">010</Value>
+    </Setting>
+    <Setting Name="MessageExpired_Description" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">Message expired</Value>
+    </Setting>
+    <Setting Name="MessageQueuedForLaterDelivery_Code" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">011</Value>
+    </Setting>
+    <Setting Name="MessageQueuedForLaterDelivery_Description" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">Message queued for later delivery</Value>
+    </Setting>
+    <Setting Name="OutOfCredit_Code" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">012</Value>
+    </Setting>
+    <Setting Name="OutOfCredit_Desciption" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">Out of credit</Value>
+    </Setting>
+    <Setting Name="MaximumMTLimit_Code" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">014</Value>
+    </Setting>
+    <Setting Name="MaximumMTLimit_Desciption" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">Maximum MT limit exceeded</Value>
+    </Setting>
+  </Settings>
+</SettingsFile>

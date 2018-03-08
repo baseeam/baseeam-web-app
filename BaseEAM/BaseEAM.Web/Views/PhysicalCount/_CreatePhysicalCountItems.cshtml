@@ -1,0 +1,125 @@
+﻿@model SearchModel
+@{
+    var defaultGridPageSize = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().DefaultGridPageSize;
+    var gridPageSizes = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().GridPageSizes;
+    var primarySystemCurrencySymbol = EngineContext.Current.Resolve<BaseEAM.Core.IWorkContext>().WorkingCurrency.CurrencySymbol;
+}
+<div class="content" id="createPhysicalCountItems-popup">
+    <div class="validation-summary-errors none-display" id="createPhysicalCountItems-error">
+    </div>
+    <div class="form-horizontal">
+        <div class="panel-group">
+            @Html.Partial("Filter", Model)
+            <div class="panel panel-default">
+                <div class="panel-body">
+                    <div id="createPhysicalCountItems-grid"></div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        function additionalData() {
+            var data = {
+                searchValues: $("div.panel-search").find(':input').serialize(),
+                physicalCountId: $('#Id').val(),
+                storeId: $("#StoreId").val()
+            };
+            addAntiForgeryToken(data);
+            return data;
+        }
+
+        $("#createPhysicalCountItems-grid").kendoGrid({
+            dataSource: {
+                type: "json",
+                transport: {
+                    read: {
+                        url: "@Html.Raw(Url.Action("CreatePhysicalCountItemList", "PhysicalCount"))",
+                        type: "POST",
+                        dataType: "json",
+                        data: additionalData
+                    }
+                },
+                schema: {
+                    data: "Data",
+                    total: "Total",
+                    errors: "Errors",
+                    model: {
+                        id: "Id",
+                        fields: {
+                            'StoreLocatorItemBalance.ItemId': { editable: false },
+                            'StoreLocatorItemBalance.ItemName': { editable: false },
+                            'StoreLocatorItemBalance.ItemUnitOfMeasureName': { editable: false },
+                            'StoreLocatorItemBalance.StoreLocatorName': { editable: false },
+                            'StoreLocatorItemBalance.TotalQuantity': { editable: false },
+                            Count: { editable: true, type: 'number', validation: { required: { message: '@T("PhysicalCountItem.Count.Required")'}} }
+                        }
+                    }
+                },
+                batch: true,
+                error: function (e) {
+                    display_kendoui_grid_error(e);
+                    // Cancel the changes
+                    this.cancelChanges();
+                },
+                change: function (e) {
+                    if (e.action == "itemchange") {
+                        e.items[0].dirtyFields = e.items[0].dirtyFields || {};
+                        e.items[0].dirtyFields[e.field] = true;
+                    }
+                },
+                pageSize: @(defaultGridPageSize),
+                serverPaging: true,
+                serverFiltering: true,
+                serverSorting: true
+            },
+            pageable: {
+                refresh: true,
+                pageSizes: [@(gridPageSizes)],
+                @Html.Partial("_GridPagerMessages")
+            },
+            navigatable: true,
+            sortable: false,
+            editable: true,
+            scrollable: false,
+            columns: [{
+                field: "StoreLocatorItemBalance.ItemName",
+                title: "@T("Item")"
+            }, {
+                field: "StoreLocatorItemBalance.ItemUnitOfMeasureName",
+                title: "@T("UnitOfMeasure")",
+                sortable: false
+            },{
+                field: "StoreLocatorItemBalance.StoreLocatorName",
+                title: "@T("StoreLocatorItemBalance.StoreLocator")",
+                sortable: false
+            },{
+                field: "StoreLocatorItemBalance.TotalQuantity",
+                title: "@T("StoreLocatorItemBalance.TotalQuantity") [@(primarySystemCurrencySymbol)]",
+                template: '#= StoreLocatorItemBalance.TotalQuantity != null ? kendo.toString(StoreLocatorItemBalance.TotalQuantity, "n") : "" #',
+                sortable: false
+            },{
+                field: "Count",
+                title: "@T("PhysicalCountItem.Count")",
+                template: '#= Count != null ? kendo.toString(Count, "n") : "" #',
+                sortable: false
+            }]
+        });
+
+        //search button
+        $('#createPhysicalCountItems-popup').find('#search').click(function () {
+            //search
+            var grid = $('#createPhysicalCountItems-grid').data('kendoGrid');
+            grid.dataSource.page(1); //new search. Set page size to 1
+            //grid.dataSource.read(); we already loaded the grid above using "page" function
+            return false;
+        });
+
+        $("#createPhysicalCountItems-popup div.panel-search").find(':input').keydown(function (event) {
+            if (event.keyCode == 13) {
+                $('#createPhysicalCountItems-popup').find('#search').click();
+                return false;
+            }
+        });
+    </script>
+</div>

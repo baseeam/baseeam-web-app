@@ -1,0 +1,20 @@
+﻿
+----------------------------------------
+BaseEam:		v.1.0.0
+Import profile:		Profile12
+Entity:			Location
+File:			Location_3.xlsx
+Executed by:		bt@baseeam.com
+Started:		9/19/2017 10:43:00 AM
+Finished:		9/19/2017 10:43:01 AM
+Duration:		0:00:01.3165924
+
+Total rows:		45
+SkippedRecords:		1
+
+Warnings:		0
+
+Errors:			1
+The 'Parent Location Name' value is not valid. Skipping row. [Pos: 6]
+
+

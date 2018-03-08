@@ -1,0 +1,128 @@
+﻿@model AdjustModel
+@Html.HiddenFor(model => model.Id)
+@Html.HiddenFor(model => model.IsNew)
+
+<script>
+    $(document).ready(function() {
+        bindBootstrapTabSelectEvent('adjust-edit');
+    });
+
+    function savedCallback(data) {
+        viewModel.isNew(false);
+        viewModel.number(data.number);
+    }
+</script>
+
+<div class="content">
+    <div class="form-horizontal">
+        <div id="adjust-edit" class="nav-tabs-custom">
+            <ul class="nav nav-tabs">
+                @Html.RenderBootstrapTabHeader("tab-info", @T("Adjust.Info"), true)
+            </ul>
+            <div class="tab-content">
+                @Html.RenderBootstrapTabContent("tab-info", @TabInfo(), true)
+            </div>
+        </div>
+    </div>
+</div>
+
+@{
+    //custom tabs
+    var eventMessage = new AdminTabStripCreated(this.Html, "adjust-edit");
+    EngineContext.Current.Resolve<IEventPublisher>().Publish(eventMessage);
+    foreach (var eventBlock in eventMessage.BlocksToRender)
+    {
+        @eventBlock
+    }
+}
+
+@helper TabInfo()
+{
+    <div class="panel-group">
+        <div class="panel panel-default">
+            <div class="panel-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.Number, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                <div class="form-text-row" data-bind="html: number"></div>
+                            </div>
+                        </div>                        
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.Description)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamEditorFor(model => model.Description, dataBind: "enable: !isApproved()")
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.AdjustDate, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamEditorFor(model => model.AdjustDate, dataBind: "dateTimeEnabled: !isApproved()")
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.SiteId, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamComboBoxFor(model => model.SiteId, "SiteList", "Site", null, true, dataBind: "comboboxEnabled: !isApproved()")
+                            </div>
+                        </div>                                                
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.StoreId, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamComboBoxFor(model => model.StoreId, "StoreList", "Site",
+                                            new RouteValueDictionary { { "parentFieldName", "SiteId" } }, true, dataBind: "comboboxEnabled: !isApproved()")
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.IsApproved)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.CheckBoxFor(model => model.IsApproved, new { data_bind = "disable: true" })
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <hr />
+                <h4>@T("Adjust.AdjustItems")</h4>
+                @Html.Partial("_AdjustItems", new AdjustItemModel { AdjustId = Model.Id })
+                @if (Model.Id > 0 && Model.IsNew == false)
+                {
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <div class="col-md-3">
+                                    @Html.BaseEamLabelFor(model => model.FirstCreatedBy)
+                                </div>
+                                <div class="col-md-9">
+                                    @Html.BaseEamDisplayFor(model => model.FirstCreatedBy)
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <div class="col-md-3">
+                                    @Html.BaseEamLabelFor(model => model.LastUpdatedBy)
+                                </div>
+                                <div class="col-md-9">
+                                    @Html.BaseEamDisplayFor(model => model.LastUpdatedBy)
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}

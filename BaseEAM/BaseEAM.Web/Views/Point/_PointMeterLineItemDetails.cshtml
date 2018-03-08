@@ -1,0 +1,222 @@
+﻿@using BaseEAM.Services.Security
+@model PointMeterLineItemModel
+@{
+    var defaultGridPageSize = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().DefaultGridPageSize;
+    var gridPageSizes = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().GridPageSizes;
+
+    var permissionService = EngineContext.Current.Resolve<BaseEAM.Services.IPermissionService>();
+    var allowCreate = permissionService.Authorize(StandardPermissionName.Asset_Asset_Create)
+       || permissionService.Authorize(StandardPermissionName.Asset_Location_Create);
+    var allowRead = permissionService.Authorize(StandardPermissionName.Asset_Asset_Read)
+        || permissionService.Authorize(StandardPermissionName.Asset_Location_Read);
+    var allowUpdate = permissionService.Authorize(StandardPermissionName.Asset_Asset_Update)
+        || permissionService.Authorize(StandardPermissionName.Asset_Location_Update);
+    var allowDelete = permissionService.Authorize(StandardPermissionName.Asset_Asset_Delete)
+        || permissionService.Authorize(StandardPermissionName.Asset_Location_Delete);
+
+    var primarySystemCurrencySymbol = EngineContext.Current.Resolve<BaseEAM.Core.IWorkContext>().WorkingCurrency.CurrencySymbol;
+}
+
+<div id="panel-pointMeterLineItem" class="panel panel-default eam-panel">
+    <div class="panel-heading">
+        <button type="button" id="savePointMeterLineItemDetail" class="btn btn-primary@(allowCreate || allowUpdate ? "" : " none-display")" title="@T("Common.Save")">
+            <i class="fa fa-floppy-o"></i>
+        </button>
+        <button type="button" id="cancelPointMeterLineItemDetail" class="btn btn-primary" title="@T("Common.Cancel")">
+            <i class="fa fa-ban"></i>
+        </button>
+    </div>
+    <div class="panel-body">
+        @Html.Hidden("PointId", Model.PointId)
+        @Html.Hidden("PointMeterLineItemId", Model.Id)
+        <div id="pointMeterLineItem-error" class="validation-summary-errors none-display">
+        </div>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.BaseEamLabelFor(model => model.DisplayOrder, required: true)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.BaseEamDisplayFor(model => model.DisplayOrder)
+                    </div>
+                </div>
+                @if (Model.IsNew)
+            {
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.BaseEamLabelFor(model => model.MeterId)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.BaseEamComboBoxFor(model => model.MeterId, "GetChoices", "Common",
+                                        new RouteValueDictionary { { "dbTable", "Meter" }, { "dbTextColumn", "Name" }, { "dbValueColumn", "Id" } }, true)
+                    </div>
+                </div>
+                }
+                else
+                {
+                    <div class="form-group">
+                        <div class="col-md-3">
+                            @Html.BaseEamLabelFor(model => model.MeterId)
+                            @Html.HiddenFor(model => model.MeterId)
+                        </div>
+                        <div class="col-md-9">
+                            @Html.BaseEamDisplayFor(model => model.MeterName)
+                        </div>
+                    </div>
+                }
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.BaseEamLabelFor(model => model.MeterMeterTypeName)
+                    </div>
+                    <div class="col-md-9" id="meterType">
+                        @Html.BaseEamDisplayFor(model => model.MeterMeterTypeName)
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.BaseEamLabelFor(model => model.MeterUnitOfMeasureName)
+                    </div>
+                    <div class="col-md-9">
+                        <div class="form-text-row" id="UOM">
+                            @(Model.Meter != null ? Model.MeterUnitOfMeasureName : "")
+                        </div>                        
+                    </div>
+                </div>
+
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.BaseEamLabelFor(model => model.LastReadingValue)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.BaseEamDisplayFor(model => model.LastReadingValue)
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.BaseEamLabelFor(model => model.LastDateOfReading)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.BaseEamDisplayFor(model => model.LastDateOfReading)
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.BaseEamLabelFor(model => model.LastReadingUser)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.BaseEamDisplayFor(model => model.LastReadingUser)
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.BaseEamLabelFor(model => model.ReadingValue)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.BaseEamEditorFor(model => model.ReadingValue)
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.BaseEamLabelFor(model => model.DateOfReading)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.BaseEamEditorFor(model => model.DateOfReading)
+                    </div>
+                </div>
+            </div>
+        </div>
+        <hr />
+        <div>
+            <h4>@T("MeterEvents")</h4>
+            <div class="row" style="padding: 5px">
+                @Html.Partial("_MeterEvent", Model)
+            </div>
+        </div>
+        <script type="text/javascript">
+
+        $("#savePointMeterLineItemDetail").click(function (e) {
+            e.preventDefault();
+            var $group = $("#panel-pointMeterLineItem :input");
+            var postData = $group.serializeJSON({ checkboxUncheckedValue: "false" });
+            //change Id property name so it can map to MVC model
+            postData.Id = postData.PointMeterLineItemId;
+            addAntiForgeryToken(postData);
+
+            $.ajax({
+                cache: false,
+                type: "POST",
+                url: "@(Url.Action("SavePointMeterLineItem", "Point"))",
+                data: postData,
+                success: function (data) {
+                    if (data && data.Errors) {
+                        showErrors(data.Errors, '#pointMeterLineItem-error');
+                    } else {
+                        //then toggle the panel
+                        togglePanelPointMeterLineItem(false);
+
+                        //refresh grid
+                        var grid = $('#pointMeterLineItems-grid').data('kendoGrid');
+                        grid.dataSource.page(1);
+                    }
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    showBSModal({ title: 'ERROR', body: thrownError });
+                },
+                traditional: true
+            });
+        });
+
+
+        $("#cancelPointMeterLineItemDetail").click(function (e) {
+            e.preventDefault();
+            var postData = {
+                id: $("#PointMeterLineItemId").val()
+            };
+            addAntiForgeryToken(postData);
+
+            $.ajax({
+                cache: false,
+                type: "POST",
+                url: "@(Url.Action("CancelPointMeterLineItem", "Point"))",
+                data: postData,
+                success: function (data) {
+                    //toggle the panel
+                    togglePanelPointMeterLineItem(false);
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    showBSModal({ title: 'ERROR', body: thrownError });
+                },
+                traditional: true
+            });
+        });
+
+        $("#@Html.FieldIdFor(model => model.MeterId)").change(function (e) {
+            e.preventDefault();
+            var postData = {
+                meterId: $("#@Html.FieldIdFor(model => model.MeterId)").val()
+            };
+            addAntiForgeryToken(postData);
+
+            $.ajax({
+                cache: false,
+                type: "POST",
+                url: "@(Url.Action("MeterInfo", "Meter"))",
+                data: postData,
+                success: function (data) {
+                    if (data != null && data.meterInfo != null) {
+                        $("#panel-pointMeterLineItem").find("#UOM").html(data.meterInfo.UnitOfMeasure.Name)
+                        $("#panel-pointMeterLineItem").find("#meterType").html(data.meterInfo.MeterType.Name)
+                    }
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    showBSModal({ title: 'ERROR', body: thrownError });
+                },
+                traditional: true
+            });
+        });
+
+        </script>
+    </div>

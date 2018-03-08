@@ -1,0 +1,249 @@
+﻿@using BaseEAM.Services.Security
+@model SearchModel
+@{
+    //page title
+    ViewBag.Title = T("System.AuditTrail").Text;
+
+    var defaultGridPageSize = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().DefaultGridPageSize;
+    var gridPageSizes = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().GridPageSizes;
+
+    var permissionService = EngineContext.Current.Resolve<BaseEAM.Services.IPermissionService>();
+    var allowCreate = permissionService.Authorize(StandardPermissionName.System_AuditTrail_Create);
+    var allowRead = permissionService.Authorize(StandardPermissionName.System_AuditTrail_Read);
+    var allowUpdate = permissionService.Authorize(StandardPermissionName.System_AuditTrail_Update);
+    var allowDelete = permissionService.Authorize(StandardPermissionName.System_AuditTrail_Delete);
+}
+
+@Html.AntiForgeryToken()
+<div class="content-header clearfix">
+    <h1 class="pull-left">
+        @T("System.AuditTrail")
+    </h1>
+    <div class="pull-right">
+        <button type="button" id="create" class="btn btn-primary btn-master@(allowCreate ? "" : " none-display")" title="@T("Common.AddNew")">
+            <i class="fa fa-plus-square"></i>
+        </button>
+        <button type="button" id="delete-selected" class="btn btn-primary btn-master@(allowDelete ? "" : " none-display")" title="@T("Common.Delete.Selected")">
+            <i class="fa fa-trash-o"></i>
+        </button>
+    </div>
+</div>
+<div class="validation-summary-errors none-display">
+</div>
+<div class="content">
+    <div class="form-horizontal">
+        <div class="panel-group">
+            @Html.Partial("Filter", Model)
+            <div class="panel panel-default">
+                <div class="panel-body">
+                    <div id="auditTrails-grid"></div>
+
+                    <script>
+                        $(document).ready(function () {
+                            $("#auditTrails-grid").kendoGrid({
+                                dataSource: {
+                                    type: "json",
+                                    transport: {
+                                        read: {
+                                            url: "@Html.Raw(Url.Action("List", "AuditTrail"))",
+                                            type: "POST",
+                                            dataType: "json",
+                                            data: additionalData1
+                                        }
+                                    },
+                                    schema: {
+                                        data: "Data",
+                                        total: "Total",
+                                        errors: "Errors",
+                                        model: {
+                                            id: "Id"
+                                        }
+                                    },
+                                    error: function (e) {
+                                        display_kendoui_grid_error(e);
+                                        // Cancel the changes
+                                        this.cancelChanges();
+                                    },
+                                    pageSize: @(defaultGridPageSize),
+                                    serverPaging: true,
+                                    serverFiltering: true,
+                                    serverSorting: true
+                                },
+                                pageable: {
+                                    refresh: true,
+                                    pageSizes: [@(gridPageSizes)],
+                                    @Html.Partial("_GridPagerMessages")
+                                },
+                                sortable: false,
+                                editable: false,
+                                scrollable: false,
+                                detailInit: auditEntitiyDetails,
+                                columns: [{
+                                    field: "UserName",
+                                    title: "@T("AuditLog.UserName")",
+                                    sortable: true
+                                }, {
+                                    field: "Date",
+                                    title: "@T("AuditTrail.Date")",
+                                    template: '#= Date != null ? kendo.toString(kendo.parseDate(Date, "MM/dd/yyyy HH:mm:ss"), "MM/dd/yyyy HH:mm:ss") : "" #',
+                                    sortable: true
+                                }]
+                            });
+                        });
+                    </script>
+                    <script type="text/javascript">
+
+                        $(document).ready(function () {
+                            //search button
+                            $('#search').click(function () {
+                                //search
+                                var grid = $('#auditTrails-grid').data('kendoGrid');
+                                grid.dataSource.page(1); //new search. Set page size to 1
+                                //grid.dataSource.read(); we already loaded the grid above using "page" function
+                                return false;
+                            });
+
+                            $("div.panel-search").find(':input').keydown(function (event) {
+                                if (event.keyCode == 13) {
+                                    $("#search").click();
+                                    return false;
+                                }
+                            });
+                        });
+
+                        function additionalData1() {
+                            var data = {
+                                searchValues: $("div.panel-search").find(':input').serialize()
+                            };
+                            addAntiForgeryToken(data);
+                            return data;
+                        }
+
+                        function additionalData2(e) {
+                            var data = {
+                                auditTrailId: e.data.Id,
+                            }
+                            addAntiForgeryToken(data);
+                            return data;
+                        }
+
+                        function additionalData3(e) {
+                            var data = {
+                                auditTrailId: e.data.AuditTrailId,
+                            }
+                            addAntiForgeryToken(data);
+                            return data;
+                        }
+
+                        function auditEntitiyDetails(e) {
+
+                            $("<div/>").appendTo(e.detailCell).kendoGrid({
+                                dataSource: {
+                                    type: "json",
+                                    transport: {
+                                        read: {
+                                            url: "@Html.Raw(Url.Action("AuditEntities", "AuditTrail"))",
+                                            type: "POST",
+                                            dataType: "json",
+                                            data: additionalData2(e)
+                                        }
+                                    },
+                                    schema: {
+                                        data: "Data",
+                                        total: "Total",
+                                        errors: "Errors",
+                                        model: {
+                                            id: "Id"
+                                        }
+                                    },
+                                    serverPaging: true,
+                                    serverSorting: true,
+                                    serverFiltering: true,
+                                    pageSize: 10,
+                                },
+                                scrollable: false,
+                                sortable: false,
+                                detailInit: auditPropertyDetails,
+                                pageable: {
+                                    refresh: true,
+                                    pageSizes: [@(gridPageSizes)]
+                                },
+                                columns: [{
+                                    field: "Action",
+                                    title: "@T("AuditEntity.Action")",
+                                    sortable: true
+                                }, {
+                                    field: "EntityType",
+                                    title: "@T("EntityType")",
+                                    sortable: true
+                                }, {
+                                    field: "Key",
+                                    title: "@T("AuditEntity.Key")",
+                                    sortable: true
+                                }, {
+                                    field: "Value",
+                                    title: "@T("AuditEntity.Value")",
+                                    sortable: true
+                                }]
+                            });
+                        }
+
+                        function auditPropertyDetails(e) {
+
+                            $("<div/>").appendTo(e.detailCell).kendoGrid({
+                                dataSource: {
+                                    type: "json",
+                                    transport: {
+                                        read: {
+                                            url: "@Html.Raw(Url.Action("AuditProperties", "AuditTrail"))",
+                                            type: "POST",
+                                            dataType: "json",
+                                            data: additionalData3(e)
+                                        }
+                                    },
+                                    schema: {
+                                        data: "Data",
+                                        total: "Total",
+                                        errors: "Errors",
+                                        model: {
+                                            id: "Id"
+                                        }
+                                    },
+                                    serverPaging: true,
+                                    serverSorting: true,
+                                    serverFiltering: true,
+                                    pageSize: 10,
+                                },
+                                scrollable: false,
+                                sortable: false,
+                                pageable: {
+                                    refresh: true,
+                                    pageSizes: [@(gridPageSizes)]
+                                },
+                                columns: [{
+                                    field: "Name",
+                                    title: "@T("Property.Name")",
+                                    sortable: true
+                                }, {
+                                    field: "Type",
+                                    title: "@T("Property.Type")",
+                                    sortable: true
+                                }, {
+                                    field: "Original",
+                                    title: "@T("Property.Original")",
+                                    template: '#= Original != "" ? Type === "System.DateTime" ?  kendo.toString(kendo.parseDate(Original, "MM/dd/yyyy"), "MM/dd/yyyy"): Original  :"" #',
+                                    sortable: true
+                                }, {
+                                    field: "Current",
+                                    title: "@T("Property.Current")",
+                                    template: '#= Current != "" ? Type === "System.DateTime" ?  kendo.toString(kendo.parseDate(Current, "MM/dd/yyyy"), "MM/dd/yyyy"): Current  :"" #',
+                                    sortable: true
+                                }]
+                            });
+                        }
+                    </script>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

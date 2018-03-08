@@ -1,0 +1,37 @@
+﻿@using BaseEAM.Services.Security
+@model ScheduledJobModel
+
+@{
+    //page title
+    ViewBag.Title = T("ScheduledJob.EditScheduledJobDetails").Text;
+    var permissionService = EngineContext.Current.Resolve<BaseEAM.Services.IPermissionService>();
+    var allowCreate = permissionService.Authorize(StandardPermissionName.System_ScheduledJob_Create);
+    var allowRead = permissionService.Authorize(StandardPermissionName.System_ScheduledJob_Read);
+    var allowUpdate = permissionService.Authorize(StandardPermissionName.System_ScheduledJob_Update);
+    var allowDelete = permissionService.Authorize(StandardPermissionName.System_ScheduledJob_Delete);
+}
+@using (Html.BeginForm("Edit", "ScheduledJob", FormMethod.Post, new { id = "scheduledJob-form" }))
+{
+    @Html.AntiForgeryToken()
+    <div class="content-header clearfix">
+        <h1 class="pull-left">
+            <small><i class="fa fa-arrow-circle-left fa-padding"></i>@Html.ActionLink(T("Common.BackToList").Text, "List")</small>
+        </h1>
+        <div class="pull-right">
+            <button type="button" id="save" name="save" class="btn btn-primary@(allowCreate || allowUpdate ? "" : " none-display")" title="@T("Common.Save")">
+                <i class="fa fa-floppy-o"></i>
+            </button>
+        </div>
+    </div>
+    <div id="validation-summary" class="validation-summary-errors" style="display:none">
+    </div>
+    @Html.Partial("_CreateOrUpdate", Model)
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $("#save").click(function (e) {
+                e.preventDefault();
+                saveForm('scheduledJob-form', '@(Url.Action("Edit", "ScheduledJob"))');
+            });
+        });
+    </script>
+}

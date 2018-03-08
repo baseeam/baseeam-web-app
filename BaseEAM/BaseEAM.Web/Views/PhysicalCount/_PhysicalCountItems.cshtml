@@ -1,0 +1,228 @@
+﻿@using BaseEAM.Services.Security
+@model PhysicalCountItemModel
+@{
+    var defaultGridPageSize = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().DefaultGridPageSize;
+    var gridPageSizes = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().GridPageSizes;
+    var primarySystemCurrencySymbol = EngineContext.Current.Resolve<BaseEAM.Core.IWorkContext>().WorkingCurrency.CurrencySymbol;
+
+    var permissionService = EngineContext.Current.Resolve<BaseEAM.Services.IPermissionService>();
+    var allowCreate = permissionService.Authorize(StandardPermissionName.Inventory_PhysicalCount_Create);
+    var allowRead = permissionService.Authorize(StandardPermissionName.Inventory_PhysicalCount_Read);
+    var allowUpdate = permissionService.Authorize(StandardPermissionName.Inventory_PhysicalCount_Update);
+    var allowDelete = permissionService.Authorize(StandardPermissionName.Inventory_PhysicalCount_Delete);
+}
+<div id="group-physicalCountItems" class="panel-group" data-bind="visible: !isNew()">
+    <div class="panel panel-default">
+        <div class="panel-heading" data-bind="visible: !isApproved()">
+            <button type="button" id="createPhysicalCountItems" class="btn btn-primary@(allowCreate || allowUpdate ? "" : " none-display")" title="@T("Common.AddMultiple")">
+                <i class="fa fa-angle-double-down"></i>
+            </button>
+            <button type="button" id="deleteSelectedPhysicalCountItems" class="btn btn-primary@(allowCreate || allowUpdate ? "" : " none-display")" title="@T("Common.Delete.Selected")">
+                <i class="fa fa-trash-o"></i>
+            </button>
+        </div>
+        <div class="panel-body">
+            <div id="physicalCountItems-grid" data-bind="gridDeleteRowEnabled: !isApproved()"></div>
+            <script>
+                var gridCheckboxHandler = new BaseEam.CheckBoxHandler('physicalCountItems-grid');
+                gridCheckboxHandler.init();
+
+                $(document).ready(function () {
+                    $("#physicalCountItems-grid").kendoGrid({
+                        dataSource: {
+                            type: "json",
+                            transport: {
+                                read: {
+                                    url: "@Html.Raw(Url.Action("PhysicalCountItemList", "PhysicalCount"))",
+                                    type: "POST",
+                                    dataType: "json",
+                                    data: additionalData
+                                },
+                                parameterMap: function (data, operation) {
+                                    sortMapping = [{ from: "ItemName", to: "Item.Name" },
+                                                    { from: "ItemUnitOfMeasureName", to: "Item.UnitOfMeasure.Name" },
+                                                    { from: "StoreLocatorName", to: "StoreLocator.Name" }];
+                                    BaseEam.Grid.mapSortColumns(data.sort, sortMapping);
+                                    return data;
+                                }
+                            },
+                            schema: {
+                                data: "Data",
+                                total: "Total",
+                                errors: "Errors",
+                                model: {
+                                    id: "Id"
+                                }
+                            },
+                            aggregate: [
+                                { field: "Count", aggregate: "sum" }
+                            ],
+                            error: function(e) {
+                                display_kendoui_grid_error(e);
+                                // Cancel the changes
+                                this.cancelChanges();
+                            },
+                            pageSize: @(defaultGridPageSize),
+                            serverPaging: true,
+                            serverFiltering: true,
+                            serverSorting: true
+                        },
+                        pageable: {
+                            refresh: true,
+                            pageSizes: [@(gridPageSizes)],
+                            @Html.Partial("_GridPagerMessages")
+                        },
+                        sortable: true,
+                        editable: false,
+                        scrollable: false,
+                        dataBound: gridCheckboxHandler.onDataBound,
+                        columns: [{
+                            field: "Id",
+                            headerTemplate: "<input id='physicalCountItems-grid-mastercheckbox' type='checkbox'/>",
+                            headerAttributes: { style: "text-align:center" },
+                            attributes: { style: "text-align:center" },
+                            template: "<input type='checkbox' value='#=Id#' class='checkboxGroups'/>",
+                            width: 50,
+                            sortable: false
+                        },{
+                            field: "ItemName",
+                            title: "@T("Item")"
+                        },{
+                            field: "ItemUnitOfMeasureName",
+                            title: "@T("UnitOfMeasure")"
+                        },{
+                            field: "StoreLocatorName",
+                            title: "@T("StoreLocator")"
+                        },{
+                            field: "CurrentQuantity",
+                            title: "@T("PhysicalCountItem.CurrentQuantity")",
+                            template: '#= CurrentQuantity != null ? kendo.toString(CurrentQuantity, "n") : "" #'
+                        }, {
+                            field: "Count",
+                            title: "@T("PhysicalCountItem.Count")",
+                            template: '#= Count != null ? kendo.toString(Count, "n") : "" #',
+                            footerTemplate: '#= sum != null ? kendo.toString(sum, "n") : "" #'
+                        }, {
+                            field: "Id",
+                            headerTemplate: "",
+                            width: 100,
+                            template: '<button type="button" class="btn btn-primary@(allowRead || allowUpdate ? "" : " none-display")" onclick="editPhysicalCountItem(event, #=Id#);"></span><i class="fa fa-pencil aria-hidden="true""></i></a>' +
+                                    '<button type="button" class="btn btn-primary@(allowDelete ? "" : " none-display")" href="" onclick="deletePhysicalCountItem(event, #=Id#);"></span><i class="fa fa-trash aria-hidden="true""></i></a>',
+                            sortable: false
+                        }]
+                    });
+                });
+            </script>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    function createPhysicalCountItems(e) {
+        e.preventDefault();
+        BaseEam.Grid.saveChanges('@Url.Action("CreatePhysicalCountItems", "PhysicalCount")', '#createPhysicalCountItems-grid', '#createPhysicalCountItems-error', false);
+    };
+
+    function editPhysicalCountItem(e, id){
+        e.preventDefault();
+        //check if panel-receiptItem is open => close it before edit
+        if($('#panel-physicalCountItem').is(":visible")){
+            togglePanelPhysicalCountItem(false);
+        }
+        var postData = {
+            id : id
+        };
+        addAntiForgeryToken(postData);
+
+        $.ajax({
+            cache: false,
+            type: "POST",
+            url: "@(Url.Action("PhysicalCountItem", "PhysicalCount"))",
+            data: postData,
+            success: function(data) {
+                //append html
+                $("#group-physicalCountItems").append(data.Html);
+
+                //apply binding for the newly generated element
+                ko.applyBindings(viewModel, $("#panel-physicalCountItem")[0]);
+
+                //then toggle the panel
+                togglePanelPhysicalCountItem(true);
+            },
+            error: function(xhr, ajaxOptions, thrownError) {
+                showBSModal({title: 'ERROR', body: thrownError});
+            },
+            traditional: true
+        });
+    };
+
+    function deletePhysicalCountItem(e, id){
+        e.preventDefault();
+        //check if panel-physicalCountItem is open => close it before delete
+        if($('#panel-physicalCountItem').is(":visible")){
+            togglePanelPhysicalCountItem(false);
+        }
+
+        BaseEam.Grid.deleteRow($("#Id").val(), id, "@Url.Action("DeletePhysicalCountItem", "PhysicalCount")", "physicalCountItems-grid", "", true);
+    };
+
+    function additionalData() {
+        var data = {
+            physicalCountId: $("#Id").val()
+        };
+        addAntiForgeryToken(data);
+        return data;
+    }
+
+    function togglePanelPhysicalCountItem(editmode) {
+        if (editmode) {
+            $('#panel-physicalCountItem').show();
+            $('#deleteSelectedPhysicalCountItems').hide();
+        }
+        else {
+            ////remove the panel html so we won't care
+            //about dirty change tracking for newly added input tag
+            $('#panel-physicalCountItem').remove();
+            $('#deleteSelectedPhysicalCountItems').show();
+        }
+    }
+
+    $(document).ready(function () {
+
+        $("#createPhysicalCountItems").click(function(e){
+            e.preventDefault();
+            $.get('@Url.Action("CreatePhysicalCountItemsView", "PhysicalCount")', function(data) {
+                showBSModal({
+                    title: "@T("Common.AddMultiple")",
+                    size: "large",
+                    body: data,
+                    actions: [{
+                        label: '@T("Common.Save")',
+                        cssClass: 'btn-success',
+                        onClick: createPhysicalCountItems
+                    },{
+                        label: '@T("Common.Cancel")',
+                        cssClass: 'btn-danger',
+                        onClick: function(e){
+                            $(e.target).parents('.modal').modal('hide');
+                        }
+                    }]
+                });
+            });
+        });
+
+        $("#deleteSelectedPhysicalCountItems").click(function(e){
+            e.preventDefault();
+            BaseEam.Grid.deleteSelectedRows($("#Id").val(), gridCheckboxHandler.selectedIds, "@Url.Action("DeleteSelectedPhysicalCountItems", "PhysicalCount")", "physicalCountItems-grid", "", true);
+        });
+
+        window.EventBroker.subscribe("grid_batch_saved", function (message, data) {
+            //hide modal popup
+            $('.modal').modal('hide');
+
+            //refresh grid
+            var grid = $('#physicalCountItems-grid').data('kendoGrid');
+            grid.dataSource.page(1);
+        });
+    });
+</script>

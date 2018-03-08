@@ -1,0 +1,267 @@
+﻿@using BaseEAM.Services.Security
+@model ReceiptItemModel
+@{
+    var defaultGridPageSize = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().DefaultGridPageSize;
+    var gridPageSizes = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().GridPageSizes;
+    var primarySystemCurrencySymbol = EngineContext.Current.Resolve<BaseEAM.Core.IWorkContext>().WorkingCurrency.CurrencySymbol;
+
+    var permissionService = EngineContext.Current.Resolve<BaseEAM.Services.IPermissionService>();
+    var allowCreate = permissionService.Authorize(StandardPermissionName.Inventory_Receipt_Create);
+    var allowRead = permissionService.Authorize(StandardPermissionName.Inventory_Receipt_Read);
+    var allowUpdate = permissionService.Authorize(StandardPermissionName.Inventory_Receipt_Update);
+    var allowDelete = permissionService.Authorize(StandardPermissionName.Inventory_Receipt_Delete);
+}
+<div id="group-receiptItems" class="panel-group" data-bind="visible: !isNew()">
+    <div class="panel panel-default">
+        <div class="panel-heading" data-bind="visible: !isApproved()">
+            <button type="button" id="createReceiptItem" class="btn btn-primary@(allowCreate || allowUpdate ? "" : " none-display")" title="@T("Common.AddNew")">
+                <i class="fa fa-plus-square"></i>
+            </button>
+            <button type="button" id="createReceiptItems" class="btn btn-primary@(allowCreate || allowUpdate ? "" : " none-display")" title="@T("Common.AddMultiple")">
+                <i class="fa fa-angle-double-down"></i>
+            </button>
+            <button type="button" id="deleteSelectedReceiptItems" class="btn btn-primary@(allowCreate || allowUpdate ? "" : " none-display")" title="@T("Common.Delete.Selected")">
+                <i class="fa fa-trash-o"></i>
+            </button>
+        </div>
+        <div class="panel-body">
+            <div id="receiptItems-grid" data-bind="gridDeleteRowEnabled: !isApproved()"></div>
+            <script>
+                var gridCheckboxHandler = new BaseEam.CheckBoxHandler('receiptItems-grid');
+                gridCheckboxHandler.init();
+
+                $(document).ready(function () {
+                    $("#receiptItems-grid").kendoGrid({
+                        dataSource: {
+                            type: "json",
+                            transport: {
+                                read: {
+                                    url: "@Html.Raw(Url.Action("ReceiptItemList", "Receipt"))",
+                                    type: "POST",
+                                    dataType: "json",
+                                    data: additionalData
+                                },
+                                parameterMap: function (data, operation) {
+                                    sortMapping = [{ from: "ItemName", to: "Item.Name" },
+                                                    { from: "StoreLocatorName", to: "StoreLocator.Name" },
+                                                    { from: "ReceiptUnitOfMeasureName", to: "ReceiptUnitOfMeasure.Name" }];
+                                    BaseEam.Grid.mapSortColumns(data.sort, sortMapping);
+                                    return data;
+                                }
+                            },
+                            schema: {
+                                data: "Data",
+                                total: "Total",
+                                errors: "Errors",
+                                model: {
+                                    id: "Id"
+                                }
+                            },
+                            aggregate: [
+                                        { field: "Cost", aggregate: "sum" }
+                            ],
+                            error: function(e) {
+                                display_kendoui_grid_error(e);
+                                // Cancel the changes
+                                this.cancelChanges();
+                            },
+                            pageSize: @(defaultGridPageSize),
+                            serverPaging: true,
+                            serverFiltering: true,
+                            serverSorting: true
+                        },
+                        pageable: {
+                            refresh: true,
+                            pageSizes: [@(gridPageSizes)],
+                            @Html.Partial("_GridPagerMessages")
+                        },
+                        sortable: true,
+                        editable: false,
+                        scrollable: false,
+                        dataBound: function(e) { 
+                            gridCheckboxHandler.onDataBound(e);
+                        },
+                        columns: [{
+                            field: "Id",
+                            headerTemplate: "<input id='receiptItems-grid-mastercheckbox' type='checkbox'/>",
+                            headerAttributes: { style: "text-align:center" },
+                            attributes: { style: "text-align:center" },
+                            template: "<input type='checkbox' value='#=Id#' class='checkboxGroups'/>",
+                            width: 50,
+                            sortable: false
+                        },{
+                            field: "ItemName",
+                            title: "@T("ReceiptItem.Item")"
+                        },{
+                            field: "StoreLocatorName",
+                            title: "@T("ReceiptItem.StoreLocator")"
+                        },{
+                            field: "ReceiptUnitOfMeasureName",
+                            title: "@T("UnitOfMeasure")"
+                        },{
+                            field: "ReceiptQuantity",
+                            title: "@T("ReceiptItem.Quantity")",
+                            template: '#= ReceiptQuantity != null ? kendo.toString(ReceiptQuantity, "n") : "" #'
+                        }, {
+                            field: "ReceiptUnitPrice",
+                            title: "@T("ReceiptItem.UnitPrice") [@(primarySystemCurrencySymbol)]",
+                            template: '#= ReceiptUnitPrice != null ? kendo.toString(ReceiptUnitPrice, "n") : "" #'
+                        }, {
+                            field: "Cost",
+                            title: "@T("ReceiptItem.Cost") [@(primarySystemCurrencySymbol)]",
+                            template: '#= Cost != null ? kendo.toString(Cost, "n") : "" #',
+                            footerTemplate: '#= sum != null ? kendo.toString(sum, "n") : "" #'
+                        }, {
+                            field: "Id",
+                            headerTemplate: "",
+                            width: 100,
+                            template: '<button type="button" class="btn btn-primary@(allowRead || allowUpdate ? "" : " none-display")" onclick="editReceiptItem(event, #=Id#);"></span><i class="fa fa-pencil aria-hidden="true""></i></a>' +
+                                    '<button type="button" class="deleteRow btn btn-primary@(allowDelete ? "" : " none-display")" onclick="deleteReceiptItem(event, #=Id#);"></span><i class="fa fa-trash aria-hidden="true""></i></a>',
+                            sortable: false
+                        }]
+                    });
+                });
+            </script>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    function createReceiptItems(e) {
+        e.preventDefault();
+        BaseEam.Grid.saveChanges('@Url.Action("CreateReceiptItems", "Receipt")', '#createReceiptItems-grid', '#createReceiptItems-error', false);
+    };
+
+    function editReceiptItem(e, id){
+        e.preventDefault();
+        //check if panel-receiptItem is open => close it before edit
+        if($('#panel-receiptItem').is(":visible")){
+            togglePanelReceiptItem(false);
+        }
+
+        var postData = {
+            id : id
+        };
+        addAntiForgeryToken(postData);
+
+        $.ajax({
+            cache: false,
+            type: "POST",
+            url: "@(Url.Action("ReceiptItem", "Receipt"))",
+            data: postData,
+            success: function(data) {
+                //append html
+                $("#group-receiptItems").append(data.Html);
+
+                //apply binding for the newly generated element
+                ko.applyBindings(viewModel, $("#panel-receiptItem")[0]);
+
+                //then toggle the panel
+                togglePanelReceiptItem(true);
+            },
+            error: function(xhr, ajaxOptions, thrownError) {
+                showBSModal({title: 'ERROR', body: thrownError});
+            },
+            traditional: true
+        });
+    };
+
+    function deleteReceiptItem(e, id){
+        e.preventDefault();
+        //check if panel-receiptItem is open => close it before delete
+        if($('#panel-receiptItem').is(":visible")){
+            togglePanelReceiptItem(false);
+        }
+
+        BaseEam.Grid.deleteRow($("#Id").val(), id, "@Url.Action("DeleteReceiptItem", "Receipt")", "receiptItems-grid", "", true);
+    };
+
+    function additionalData() {
+        var data = {
+            receiptId: $("#Id").val()
+        };
+        addAntiForgeryToken(data);
+        return data;
+    }
+
+    function togglePanelReceiptItem(editmode) {
+        if (editmode) {
+            $('#panel-receiptItem').show();
+            $('#createReceiptItem').hide();
+            $('#createReceiptItems').hide();
+            $('#deleteSelectedReceiptItems').hide();
+        }
+        else {
+            ////remove the panel html so we won't care
+            //about dirty change tracking for newly added input tag
+            $('#panel-receiptItem').remove();
+            $('#createReceiptItem').show();
+            $('#createReceiptItems').show();
+            $('#deleteSelectedReceiptItems').show();
+        }
+    }
+
+    $(document).ready(function () {
+        $("#createReceiptItem").click(function(e){
+            e.preventDefault();
+            var postData = {
+                receiptId : $("#Id").val()
+            };
+            addAntiForgeryToken(postData);
+
+            $.ajax({
+                cache: false,
+                type: "POST",
+                url: "@(Url.Action("CreateReceiptItem", "Receipt"))",
+                data: postData,
+                success: function(data) {
+                    //append html
+                    $("#group-receiptItems").append(data.Html);
+                    
+                    //then toggle the panel
+                    togglePanelReceiptItem(true);
+                },
+                error: function(xhr, ajaxOptions, thrownError) {
+                    showBSModal({title: 'ERROR', body: thrownError});
+                },
+                traditional: true
+            });
+        });
+
+        $("#createReceiptItems").click(function(e){
+            e.preventDefault();
+            $.get('@Url.Action("CreateReceiptItemsView", "Receipt")', function(data) {
+                showBSModal({
+                    title: "@T("Common.AddMultiple")",
+                    size: "large",
+                    body: data,
+                    actions: [{
+                        label: '@T("Common.Save")',
+                        cssClass: 'btn-success',
+                        onClick: createReceiptItems
+                    },{
+                        label: '@T("Common.Cancel")',
+                        cssClass: 'btn-danger',
+                        onClick: function(e){
+                            $(e.target).parents('.modal').modal('hide');
+                        }
+                    }]
+                });
+            });
+        });
+
+        $("#deleteSelectedReceiptItems").click(function(e){
+            e.preventDefault();
+            BaseEam.Grid.deleteSelectedRows($("#Id").val(), gridCheckboxHandler.selectedIds, "@Url.Action("DeleteSelectedReceiptItems", "Receipt")", "receiptItems-grid", "", true);
+        });
+
+        window.EventBroker.subscribe("grid_batch_saved", function (message, data) {
+            //hide modal popup
+            $('.modal').modal('hide');
+
+            //refresh grid
+            var grid = $('#receiptItems-grid').data('kendoGrid');
+            grid.dataSource.page(1);
+        });
+    });
+</script>

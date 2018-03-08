@@ -1,0 +1,16 @@
+﻿@using BaseEAM.Web.Framework.CustomField
+@model FieldModel
+
+@{ 
+    DateTime? datetime = null;
+    if(Model.Value != null)
+    {
+        datetime = Convert.ToDateTime(Model.Value);
+    }
+}
+<input id="@Model.Name" name="@Model.Name" value="@(datetime > DateTime.MinValue || datetime.HasValue ? datetime.Value.ToShortDateString() : null)" />
+<script>
+    $(document).ready(function () {
+        $("#@Model.Name").kendoDatePicker();
+    });
+</script>

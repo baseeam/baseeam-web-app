@@ -1,0 +1,82 @@
+﻿@model LogModel
+
+@{
+    //page title
+    ViewBag.Title = T("Log.ViewLogDetails").Text;
+}
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+    <div class="content-header clearfix">
+        <h1 class="pull-left">
+            @T("Log.ViewLogDetails")
+            <small><i class="fa fa-arrow-circle-left"></i>@Html.ActionLink(T("Common.BackToList").Text, "List")</small>
+        </h1>
+        <div class="pull-right">
+            <span id="log-delete" class="btn bg-red">
+                <i class="fa fa-trash-o"></i>
+                @T("Common.Delete")
+            </span>
+        </div>
+    </div>
+
+    <div class="content">
+        <div class="form-horizontal">
+            <div class="panel-group">
+                <div class="panel panel-default">
+                    <div class="panel-body">
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.LogLevel)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamDisplayFor(model => model.LogLevel)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.ShortMessage)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamDisplayFor(model => model.ShortMessage)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.FullMessage)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamDisplayFor(model => model.FullMessage)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.UserId)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamDisplayFor(model => model.UserEmail)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.CreatedOn)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamDisplayFor(model => model.CreatedOn)
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+<script type="text/javascript">
+        $(document).ready(function () {
+            $("#log-delete").click(function (e) {
+                e.preventDefault();
+                BaseEam.Grid.deleteRow(null, @Model.Id, "@Url.Action("Delete", "Log")", "", "@Url.Action("List", "Log")", true);
+            });
+        });
+</script>

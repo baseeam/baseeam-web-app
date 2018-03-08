@@ -1,0 +1,76 @@
+﻿@using BaseEAM.Web.Framework.Mvc
+@model TreeViewLookup
+
+<script>
+    $(document).ready(function () {
+        //kendoAutoComplete doesn't support dataValueField, only dataTextField
+        $('#@Model.TextFieldId').kendoAutoComplete({
+            dataTextField: 'Text',
+            dataValueField: 'Value',
+            filter: 'contains',
+            template: "<span data-id='${data.Value}'>${data.Text}</span>",
+            minLength: 2,
+            select: function (e) {
+                var id = e.item.find("span").attr("data-id");
+                $('#@Model.ValueFieldId').val(id);
+            },
+            change: function (e) {
+                //if not a valid value, clear and reset the filter
+                if (this.value() && this.selectedIndex == -1) {
+                    this.text('');
+                    this.dataSource.filter(null);
+                    this.dataSource.read();
+                }
+            },
+            dataSource: {
+                type: 'json',
+                serverFiltering: true,
+                transport: {
+                    read: {
+                        url: '@Url.Action(Model.Action, Model.Controller)',
+                        type: 'POST',
+                        dataType: 'json',
+                        data: addAntiForgeryToken
+                    },
+                    parameterMap: function (data, action) {
+                        var param = '';
+                        var parentValue = '';
+                        if(data.filter != null) {
+                            $.each(data.filter.filters, function(index, filter) {
+                                if (filter.operator == 'contains') {
+                                    param = filter.value;
+                                }
+                            });
+                        }
+                        return addAntiForgeryToken({
+                            param: param,
+                            dbTable: '@Model.DbTable',
+                            dbTextColumn: '@Model.DbTextColumn',
+                            dbValueColumn: '@Model.DbValueColumn',
+                            @(string.IsNullOrEmpty(Model.AdditionalField) ? "field" : Model.AdditionalField) : '@Model.AdditionalValue'
+                        })
+                    }
+                }
+            }
+        });
+
+        //TreeView modal
+        $("#" + "@Model.TreeType" + "-" + "@Model.TextFieldId").click(function(e){
+            e.preventDefault();
+            $.get('@Html.Raw(Url.Action("TreeView", Model.TreeType, new { valueFieldId = Model.ValueFieldId, textFieldId = Model.TextFieldId }))', function(data) {
+                showBSModal({
+                    title: "@T("Common.TreeView")",
+                    size: "large",
+                    body: data,
+                    actions: [{
+                        label: '@T("Common.Cancel")',
+                        cssClass: 'btn-danger',
+                        onClick: function(e){
+                            $(e.target).parents('.modal').modal('hide');
+                        }
+                    }]
+                });
+            });
+        });
+    });
+</script>

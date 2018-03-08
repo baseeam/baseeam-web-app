@@ -1,0 +1,144 @@
+﻿@using BaseEAM.Services.Security
+@model WorkflowDefinitionVersionModel
+@{
+    var permissionService = EngineContext.Current.Resolve<BaseEAM.Services.IPermissionService>();
+    var allowCreate = permissionService.Authorize(StandardPermissionName.Workflow_WorkflowDefinition_Create);
+    var allowRead = permissionService.Authorize(StandardPermissionName.Workflow_WorkflowDefinition_Read);
+    var allowUpdate = permissionService.Authorize(StandardPermissionName.Workflow_WorkflowDefinition_Update);
+    var allowDelete = permissionService.Authorize(StandardPermissionName.Workflow_WorkflowDefinition_Delete);
+}
+
+<div id="panel-workflowDefinitionVersion" class="panel panel-default eam-panel">
+    <div class="panel-heading">
+        <button type="button" id="saveWorkflowDefinitionVersion" class="btn btn-primary@(allowCreate || allowUpdate ? "" : " none-display")" title="@T("Common.Save")">
+            <i class="fa fa-floppy-o"></i>
+        </button>
+        <button type="button" id="cancelWorkflowDefinitionVersion" class="btn btn-primary" title="@T("Common.Cancel")">
+            <i class="fa fa-ban"></i>
+        </button>
+    </div>
+    <div class="panel-body">
+        <div id="workflowDefinitionVersion-error" class="validation-summary-errors none-display">
+        </div>
+        <div class="row">
+            @Html.Hidden("WorkflowDefinitionId", Model.WorkflowDefinitionId)
+            @Html.Hidden("WorkflowDefinitionVersionId", Model.Id)
+            <div class="form-group">
+                <div class="col-md-3">
+                    @Html.BaseEamLabelFor(model => model.WorkflowXamlFileName, required: true)
+                </div>
+                <div class="col-md-6">
+                    @Html.TextBoxFor(model => model.WorkflowXamlFileName, new { disabled = "disabled", @readonly = "readonly", @class = "form-control" })
+                </div>
+                <div class="col-md-3">
+                    <label class="btn btn-default btn-file">
+                        @T("Common.Upload") <input id="inputXamlFile" type="file" name="uploadFile" style="display: none;">
+                    </label>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-md-3">
+                    @Html.BaseEamLabelFor(model => model.WorkflowPictureFileName, required: true)
+                </div>
+                <div class="col-md-6">
+                    @Html.TextBoxFor(model => model.WorkflowPictureFileName, new { disabled = "disabled", @readonly = "readonly", @class = "form-control" })
+                </div>
+                <div class="col-md-3">
+                    <label class="btn btn-default btn-file">
+                        @T("Common.Upload") <input id="inputPictureFile" type="file" name="uploadFile" style="display: none;">
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script type="text/javascript">
+        function getFileNameFromPath(fullPath) {
+            var value = "";
+            if (fullPath) {
+                value = fullPath.split(/[\/\\]/).pop();
+            }
+            return value;
+        }
+
+        $("#saveWorkflowDefinitionVersion").click(function (e) {
+            e.preventDefault();
+            var formdata = new FormData();
+            //append  workflow xaml file into formData
+            var xamlFile = $('#inputXamlFile')[0];
+            if (xamlFile.files.length > 0) {
+                formdata.append(xamlFile.files[0].name, xamlFile.files[0]);
+            }
+             //append  workflow picture file into formData
+            var pictureFile = $('#inputPictureFile')[0];
+            if (pictureFile.files.length > 0) {
+                formdata.append(pictureFile.files[0].name, pictureFile.files[0]);
+            }
+            //append WorkflowDefinitionId into  formData
+            formdata.append("WorkflowDefinitionId", @Model.WorkflowDefinitionId);
+            //append WorkflowDefinitionVersionId into  formData
+            formdata.append("WorkflowDefinitionVersionId", @Model.Id);
+
+            var token = $('input[name="__RequestVerificationToken"]').val();
+            formdata.append("__RequestVerificationToken", token);
+
+            $.ajax({
+                cache: false,
+                type: "POST",
+                url: "@(Url.Action("SaveWorkflowDefinitionVersion", "WorkflowDefinition"))",
+                data: formdata,
+                contentType: false,
+                processData: false,
+                success: function (data) {
+                    if (data && data.Errors) {
+                        showErrors(data.Errors, '#workflowDefinitionVersion-error');
+                    } else {
+                        //then toggle the panel
+                        togglePanelWorkflowDefinitionVersion(false);
+
+                        //refresh grid
+                        var grid = $('#workflowDefinitionVersions-grid').data('kendoGrid');
+                        grid.dataSource.page(1);
+                    }
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    showBSModal({ title: 'ERROR', body: thrownError });
+                },
+                traditional: true
+            });
+        });
+
+        $("#cancelWorkflowDefinitionVersion").click(function (e) {
+            e.preventDefault();
+            var postData = {
+                id: $("#WorkflowDefinitionVersionId").val()
+            };
+            addAntiForgeryToken(postData);
+
+            $.ajax({
+                cache: false,
+                type: "POST",
+                url: "@(Url.Action("CancelWorkflowDefinitionVersion", "WorkflowDefinition"))",
+                data: postData,
+                success: function (data) {
+                    //toggle the panel
+                    togglePanelWorkflowDefinitionVersion(false);
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    showBSModal({ title: 'ERROR', body: thrownError });
+                },
+                traditional: true
+            });
+        });
+        $(document).ready(function () {
+            $('#inputXamlFile').change(function (e) {
+                var fileName = getFileNameFromPath(this.value);
+                $('#WorkflowXamlFileName').val(fileName);
+            });
+
+            $('#inputPictureFile').change(function (e) {
+                var fileName = getFileNameFromPath(this.value);
+                $('#WorkflowPictureFileName').val(fileName);
+            });
+        });
+    </script>
+</div>

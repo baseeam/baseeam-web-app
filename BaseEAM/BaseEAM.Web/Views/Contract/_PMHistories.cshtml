@@ -1,0 +1,91 @@
+﻿﻿﻿@using BaseEAM.Services.Security
+@model ContractModel
+@{
+    var defaultGridPageSize = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().DefaultGridPageSize;
+    var gridPageSizes = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().GridPageSizes;
+
+    var permissionService = EngineContext.Current.Resolve<BaseEAM.Services.IPermissionService>();
+    var allowCreate = permissionService.Authorize(StandardPermissionName.Purchasing_Contract_Create);
+    var allowRead = permissionService.Authorize(StandardPermissionName.Purchasing_Contract_Read);
+    var allowUpdate = permissionService.Authorize(StandardPermissionName.Purchasing_Contract_Update);
+    var allowDelete = permissionService.Authorize(StandardPermissionName.Purchasing_Contract_Delete);
+}
+<div id="group-pms" class="panel-group">
+    <div class="panel panel-default">
+        <div class="panel-body">
+            <div id="pms-grid"></div>
+            <script>
+                $(document).ready(function () {
+                    $("#pms-grid").kendoGrid({
+                        dataSource: {
+                            type: "json",
+                            transport: {
+                                read: {
+                                    url: "@Html.Raw(Url.Action("PMList", "Contract", new { contractId = Model.Id }))",
+                                    type: "POST",
+                                    dataType: "json",
+                                    data: addAntiForgeryToken
+                                },
+                                //This is used to map field to format that the server can understand
+                                //it runs after the data (additionalData) populated
+                                parameterMap: function (data, operation) {
+                                    sortMapping = [{ from: "AssetName", to: "Asset.Name" },
+                                        { from: "LocationName", to: "Location.Name" }
+                                    ];
+                                    BaseEam.Grid.mapSortColumns(data.sort, sortMapping);
+                                    return data;
+                                }
+                            },
+                            schema: {
+                                data: "Data",
+                                total: "Total",
+                                errors: "Errors",
+                                model: {
+                                    id: "Id"
+                                }
+                            },
+                            error: function(e) {
+                                display_kendoui_grid_error(e);
+                                // Cancel the changes
+                                this.cancelChanges();
+                            },
+                            pageSize: @(defaultGridPageSize),
+                            serverPaging: true,
+                            serverFiltering: true,
+                            serverSorting: true
+                        },
+                        pageable: {
+                            refresh: true,
+                            pageSizes: [@(gridPageSizes)],
+                            @Html.Partial("_GridPagerMessages")
+                        },
+                        sortable: true,
+                        editable: false,
+                        scrollable: false,
+                        columns: [{
+                            field: "Number",
+                            title: "@T("PreventiveMaintenance.Number")",
+                            template: '<a target="_blank" href="@Url.Content("~/PreventiveMaintenance/Edit/")#=Id#">#=Number#</a>'
+                        }, {
+                            field: "Description",
+                            title: "@T("PreventiveMaintenance.Description")"
+                        }, {
+                            field: "PriorityText",
+                            title: "@T("Priority")",
+                            sortable: false
+                        }, {
+                            field: "AssetName",
+                            title: "@T("Asset")"
+                        }, {
+                            field: "LocationName",
+                            title: "@T("Location")"
+                        }, {
+                            field: "Status",
+                            title: "@T("PreventiveMaintenance.Status")"
+                        }]
+                    });
+                });
+            </script>
+        </div>
+    </div>
+</div>

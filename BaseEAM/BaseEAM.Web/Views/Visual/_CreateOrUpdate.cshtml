@@ -1,0 +1,139 @@
+﻿@model VisualModel
+@Html.HiddenFor(model => model.Id)
+@Html.HiddenFor(model => model.IsNew)
+
+<script>
+    $(document).ready(function () {
+        bindBootstrapTabSelectEvent('visual-edit');
+    });
+
+    function savedCallback(data) {
+        viewModel.isNew(false);
+    }
+</script>
+
+<div class="content">
+    <div class="form-horizontal">
+        <div id="visual-edit" class="nav-tabs-custom">
+            <ul class="nav nav-tabs">
+                @Html.RenderBootstrapTabHeader("tab-info", @T("Visual.Info"), true)
+                @Html.RenderBootstrapTabHeader("tab-visualFilters", @T("Visual.VisualFilters"))
+                @Html.RenderBootstrapTabHeader("tab-visualQuery", @T("Visual.VisualQuery"))
+                @Html.RenderBootstrapTabHeader("tab-securityGroups", @T("Visual.SecurityGroups"))
+            </ul>
+            <div class="tab-content">
+                @Html.RenderBootstrapTabContent("tab-info", @TabInfo(), true)
+                @Html.RenderBootstrapTabContent("tab-visualFilters", @TabVisualFilters(), dataBind: "visible: !isNew()")
+                @Html.RenderBootstrapTabContent("tab-visualQuery", @TabVisualQuery(), dataBind: "visible: !isNew()")
+                @Html.RenderBootstrapTabContent("tab-securityGroups", @TabSecurityGroups(), dataBind: "visible: !isNew()")
+            </div>
+        </div>
+    </div>
+</div>
+
+@{
+    //custom tabs
+    var eventMessage = new AdminTabStripCreated(this.Html, "visual-edit");
+    EngineContext.Current.Resolve<IEventPublisher>().Publish(eventMessage);
+    foreach (var eventBlock in eventMessage.BlocksToRender)
+    {
+        @eventBlock
+    }
+}
+
+@helper TabInfo()
+{
+    <div class="panel-group">
+        <div class="panel panel-default">
+            <div class="panel-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.Name, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamEditorFor(model => model.Name)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.Description)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamEditorFor(model => model.Description)
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.VisualType, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.EnumDropDownListFor(model => model.VisualType, new { @class = "form-control" })
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.XAxis, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamEditorFor(model => model.XAxis)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.YAxis, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamEditorFor(model => model.YAxis)
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <hr />
+                @if (Model.Id > 0 && Model.IsNew == false)
+                {
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <div class="col-md-3">
+                                    @Html.BaseEamLabelFor(model => model.FirstCreatedBy)
+                                </div>
+                                <div class="col-md-9">
+                                    @Html.BaseEamDisplayFor(model => model.FirstCreatedBy)
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <div class="col-md-3">
+                                    @Html.BaseEamLabelFor(model => model.LastUpdatedBy)
+                                </div>
+                                <div class="col-md-9">
+                                    @Html.BaseEamDisplayFor(model => model.LastUpdatedBy)
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>   
+}
+
+@helper TabVisualFilters()
+{
+    @Html.Partial("_VisualFilters", new VisualFilterModel())
+}
+
+@helper TabVisualQuery()
+{
+    @Html.Partial("_VisualQuery", Model)
+}
+
+@helper TabSecurityGroups()
+{
+    @Html.Partial("_SecurityGroups", new SecurityGroupModel())
+}
+
+

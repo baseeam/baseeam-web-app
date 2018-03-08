@@ -1,0 +1,146 @@
+﻿@model SearchModel
+@{
+    var defaultGridPageSize = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().DefaultGridPageSize;
+    var gridPageSizes = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().GridPageSizes;
+    var primarySystemCurrencySymbol = EngineContext.Current.Resolve<BaseEAM.Core.IWorkContext>().WorkingCurrency.CurrencySymbol;
+}
+<div class="content" id="createReturnItems-popup">
+    <div class="validation-summary-errors none-display" id="createReturnItems-error">
+    </div>
+    <div class="form-horizontal">
+        <div class="panel-group">
+            @Html.Partial("Filter", Model)
+            <div class="panel panel-default">
+                <div class="panel-body">
+                    <div id="createReturnItems-grid"></div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        function additionalData() {
+            var data = {
+                searchValues: $("div.panel-search").find(':input').serialize(),
+                returnId: $('#Id').val(),
+                storeId: $('#StoreId').val()
+            };
+            addAntiForgeryToken(data);
+            return data;
+        }
+
+        $("#createReturnItems-grid").kendoGrid({
+            dataSource: {
+                type: "json",
+                transport: {
+                    read: {
+                        url: "@Html.Raw(Url.Action("CreateReturnItemList", "Return"))",
+                        type: "POST",
+                        dataType: "json",
+                        data: additionalData
+                    },
+                    //This is used to map field to format that the server can understand
+                    //it runs after the data (additionalData) populated
+                    parameterMap: function (data, operation) {
+                        sortMapping = [{ from: "IssueItem.ItemName", to: "Item.Name" },
+                                        { from: "IssueItem.IssueNumber", to: "Issue.Number" },
+                                        { from: "IssueItem.IssueDate", to: "Issue.IssueDate" }];
+                        BaseEam.Grid.mapSortColumns(data.sort, sortMapping);
+                        return data;
+                    }
+                },
+                schema: {
+                    data: "Data",
+                    total: "Total",
+                    errors: "Errors",
+                    model: {
+                        id: "Id",
+                        fields: {
+                            'IssueItem.ItemUnitOfMeasureId': { editable: false },
+                            'IssueItem.ItemName': { editable: false },
+                            'IssueItem.ItemUnitOfMeasureName': { editable: false },
+                            'IssueItem.StoreLocatorName': { editable: false },
+                            'IssueItem.IssueNumber': { editable: false },
+                            'IssueItem.IssueDate': { editable: false },
+                            'IssueItem.IssueQuantity': { editable: false },
+                            ReturnQuantity: { editable: true, type: 'number', validation: { required: { message: '@T("ReturnItem.Quantity.Required")'}} },
+                        }
+                    }
+                },
+                batch: true,
+                error: function (e) {
+                    display_kendoui_grid_error(e);
+                    // Cancel the changes
+                    this.cancelChanges();
+                },
+                change: function (e) {
+                    if (e.action == "itemchange") {
+                        e.items[0].dirtyFields = e.items[0].dirtyFields || {};
+                        e.items[0].dirtyFields[e.field] = true;
+                    }
+                },
+                pageSize: @(defaultGridPageSize),
+                serverPaging: true,
+                serverFiltering: true,
+                serverSorting: true
+            },
+            pageable: {
+                refresh: true,
+                pageSizes: [@(gridPageSizes)],
+                @Html.Partial("_GridPagerMessages")
+            },
+            navigatable: true,
+            sortable: true,
+            editable: true,
+            scrollable: false,
+            columns: [{
+                field: "IssueItem.ItemName",
+                title: "@T("Item")",
+                sortable: true
+            },{
+                field: "IssueItem.ItemUnitOfMeasureName",
+                title: "@T("UnitOfMeasure")",
+                sortable: false
+            },{
+                field: "IssueItem.StoreLocatorName",
+                title: "@T("StoreLocator")",
+                sortable: false
+            },{
+                field: "IssueItem.IssueNumber",
+                title: "@T("Issue.Number")",
+                sortable: true
+            },{
+                field: "IssueItem.IssueDate",
+                title: "@T("Issue.IssueDate")",
+                template: '#= IssueItem.IssueDate != null ? kendo.toString(kendo.parseDate(IssueItem.IssueDate, "MM/dd/yyyy HH:mm:ss"), "MM/dd/yyyy HH:mm:ss") : "" #',
+                sortable: true
+            },{
+                field: "IssueItem.IssueQuantity",
+                title: "@T("IssueItem.IssueQuantity")",
+                template: '#= IssueItem.IssueQuantity != null ? kendo.toString(IssueItem.IssueQuantity, "n") : "" #',
+                sortable: false
+            },{
+                field: "ReturnQuantity",
+                title: "@T("ReturnItem.ReturnQuantity")",
+                template: '#= ReturnQuantity != null ? kendo.toString(ReturnQuantity, "n") : "" #',
+                sortable: false
+            }]
+        });
+
+        //search button
+        $('#createReturnItems-popup').find('#search').click(function () {
+            //search
+            var grid = $('#createReturnItems-grid').data('kendoGrid');
+            grid.dataSource.page(1); //new search. Set page size to 1
+            //grid.dataSource.read(); we already loaded the grid above using "page" function
+            return false;
+        });
+
+        $("#createReturnItems-popup div.panel-search").find(':input').keydown(function (event) {
+            if (event.keyCode == 13) {
+                $('#createReturnItems-popup').find('#search').click();
+                return false;
+            }
+        });
+    </script>
+</div>

@@ -1,0 +1,182 @@
+﻿@model ScheduledJobModel
+
+<div class="content">
+    <div class="form-horizontal">
+        <div id="scheduledJob-edit" class="nav-tabs-custom">
+            <ul class="nav nav-tabs">
+                @Html.RenderBootstrapTabHeader("tab-info", @T("ScheduledJob.Info"), true)
+            </ul>
+            <div class="tab-content">
+                @Html.RenderBootstrapTabContent("tab-info", @TabInfo(), true)
+            </div>
+        </div>
+    </div>
+</div>
+
+@{
+    //custom tabs
+    var eventMessage = new AdminTabStripCreated(this.Html, "scheduledJob-edit");
+    EngineContext.Current.Resolve<IEventPublisher>().Publish(eventMessage);
+    foreach (var eventBlock in eventMessage.BlocksToRender)
+    {
+        @eventBlock
+    }
+}
+
+@helper TabInfo()
+{
+    <div class="panel-group">
+        <div class="panel panel-default">
+            <div class="panel-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.GroupName)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamDisplayFor(model => model.GroupName)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.JobName)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamDisplayFor(model => model.JobName)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.JobDescription)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamDisplayFor(model => model.JobDescription)
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.TriggerGroupName)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamDisplayFor(model => model.TriggerGroupName)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.TriggerName)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamDisplayFor(model => model.TriggerName)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.TriggerType)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamDisplayFor(model => model.TriggerType)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.TriggerState)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamDisplayFor(model => model.TriggerState)
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <hr />
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.IsSimpleTrigger)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamDisplayFor(model => model.IsSimpleTrigger)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.RepeatCount)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamDisplayFor(model => model.RepeatCount)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.RepeatInterval)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamDisplayFor(model => model.RepeatInterval)
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.IsCronTrigger)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamDisplayFor(model => model.IsCronTrigger)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.CronExpression)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamDisplayFor(model => model.CronExpression)
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <hr />
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.MisfireInstructionText)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamDisplayFor(model => model.MisfireInstructionText)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.RunTime)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamDisplayFor(model => model.RunTime)
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.NextFireTime)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamDisplayFor(model => model.NextFireTime)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.PreviousFireTime)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamDisplayFor(model => model.PreviousFireTime)
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}

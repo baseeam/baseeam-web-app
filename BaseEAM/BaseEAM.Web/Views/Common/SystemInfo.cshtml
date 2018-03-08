@@ -1,0 +1,93 @@
+﻿@using BaseEAM.Services.Security
+@model SystemInfoModel
+
+@{
+    //page title
+    ViewBag.Title = T("System.SystemInfo").Text;
+
+    var permissionService = EngineContext.Current.Resolve<BaseEAM.Services.IPermissionService>();
+    var allowClearCache = permissionService.Authorize(StandardPermissionName.System_SystemInfo_ClearCache);
+}
+
+@Html.AntiForgeryToken()
+<div class="content-header clearfix">
+    <h1 class="pull-left">
+        @T("System.SystemInfo")
+    </h1>
+    <div class="pull-right">
+        <button type="button" id="clearCache" class="btn btn-primary@(allowClearCache ? "" : " none-display")" title="@T("Common.ClearCache")">
+            <i class="fa fa-eraser"></i>
+        </button>
+    </div>
+</div>
+
+<div class="content">
+    <div class="form-horizontal">
+        <div class="panel-group">
+            <div class="panel panel-default">
+                <div class="panel-body">
+                    <div class="form-group">
+                        <div class="col-md-3">
+                            @Html.BaseEamLabelFor(model => model.BaseEamVersion)
+                        </div>
+                        <div class="col-md-9">
+                            @Html.BaseEamDisplayFor(model => model.BaseEamVersion)
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="col-md-3">
+                            @Html.BaseEamLabelFor(model => model.ServerTimeZone)
+                        </div>
+                        <div class="col-md-9">
+                            @Html.BaseEamDisplayFor(model => model.ServerTimeZone)
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="col-md-3">
+                            @Html.BaseEamLabelFor(model => model.ServerLocalTime)
+                        </div>
+                        <div class="col-md-9">
+                            @Html.BaseEamDisplay(Model.ServerLocalTime.ToString("F"))
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="col-md-3">
+                            @Html.BaseEamLabelFor(model => model.UtcTime)
+                        </div>
+                        <div class="col-md-9">
+                            @Html.BaseEamDisplay(Model.UtcTime.ToString("F"))
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="col-md-3">
+                            @Html.BaseEamLabelFor(model => model.CurrentUserTime)
+                        </div>
+                        <div class="col-md-9">
+                            @Html.BaseEamDisplay(Model.CurrentUserTime.ToString("F"))
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    $(document).ready(function () {
+        $('#clearCache').click(function (e) {
+            e.preventDefault();
+            $.ajax({
+                cache: false,
+                type: "POST",
+                url: '@Url.Action("ClearCache", "Common")',
+                data: addAntiForgeryToken(),
+                success: function (data) {
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    showBSModal({ title: "Error", body: thrownError });
+                },
+                traditional: true
+            });
+        });
+    });
+</script>

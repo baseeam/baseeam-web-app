@@ -1,0 +1,30 @@
+@model Double
+
+@{
+    var postfix = "";
+    if (ViewData.ContainsKey("postfix") && ViewData["postfix"] != null)
+    {
+        postfix = ViewData["postfix"].ToString();
+    }
+
+    var dataBind = "";
+    if (ViewData.ContainsKey("dataBind") && ViewData["dataBind"] != null)
+    {
+        dataBind = ViewData["dataBind"].ToString();
+    }
+}
+
+@Html.TextBoxFor(model => model, new { data_bind = dataBind })
+
+<script>
+    $(document).ready(function() {
+        $("#@ViewData.TemplateInfo.GetFullHtmlFieldId(string.Empty)").TouchSpin({
+            min: @(double.MinValue),
+            max: @(double.MaxValue),
+            decimals: 4, //always display 4 digits
+            forcestepdivisibility: "none",
+            verticalbuttons: true,
+            postfix: "@postfix"
+        });
+    });
+</script>

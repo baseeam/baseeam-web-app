@@ -1,0 +1,37 @@
+﻿@model UserDashboardModel
+
+@for (int i = 0; i < Model.RegionCount; i++)
+{
+    if (Model.DashboardLayoutType == DashboardLayoutType.HeroSidebar)
+    {
+        @Html.Partial("_HeroSidebar", i);
+    }
+    else if (Model.DashboardLayoutType == DashboardLayoutType.HeroThirds)
+    {
+        @Html.Partial("_HeroThirds", i);
+    }
+    else if (Model.DashboardLayoutType == DashboardLayoutType.QuarterGrid)
+    {
+        @Html.Partial("_QuarterGrid", i);
+    }
+    else if (Model.DashboardLayoutType == DashboardLayoutType.SplitCentered)
+    {
+        @Html.Partial("_SplitCentered", i);
+    }
+    else if (Model.DashboardLayoutType == DashboardLayoutType.SplitColumns)
+    {
+        @Html.Partial("_SplitColumns", i);
+    }
+    else if (Model.DashboardLayoutType == DashboardLayoutType.SplitRows)
+    {
+        @Html.Partial("_SplitRows", i);
+    }
+    else if (Model.DashboardLayoutType == DashboardLayoutType.ThirdsGrid)
+    {
+        @Html.Partial("_ThirdsGrid", i);
+    }
+    else if (Model.DashboardLayoutType == DashboardLayoutType.TwoAndOne)
+    {
+        @Html.Partial("_TwoAndOne", i);
+    }
+}

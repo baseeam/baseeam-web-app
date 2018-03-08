@@ -1,0 +1,260 @@
+﻿@using BaseEAM.Services.Security
+@model IssueItemModel
+@{
+    var defaultGridPageSize = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().DefaultGridPageSize;
+    var gridPageSizes = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().GridPageSizes;
+    var primarySystemCurrencySymbol = EngineContext.Current.Resolve<BaseEAM.Core.IWorkContext>().WorkingCurrency.CurrencySymbol;
+
+    var permissionService = EngineContext.Current.Resolve<BaseEAM.Services.IPermissionService>();
+    var allowCreate = permissionService.Authorize(StandardPermissionName.Inventory_Issue_Create);
+    var allowRead = permissionService.Authorize(StandardPermissionName.Inventory_Issue_Read);
+    var allowUpdate = permissionService.Authorize(StandardPermissionName.Inventory_Issue_Update);
+    var allowDelete = permissionService.Authorize(StandardPermissionName.Inventory_Issue_Delete);
+}
+<div id="group-issueItems" class="panel-group" data-bind="visible: !isNew()">
+    <div class="panel panel-default">
+        <div class="panel-heading" data-bind="visible: !isApproved()">
+            <button type="button" id="createIssueItem" class="btn btn-primary@(allowCreate || allowUpdate ? "" : " none-display")" title="@T("Common.AddNew")">
+                <i class="fa fa-plus-square"></i>
+            </button>
+            <button type="button" id="createIssueItems" class="btn btn-primary@(allowCreate || allowUpdate ? "" : " none-display")" title="@T("Common.AddMultiple")">
+                <i class="fa fa-angle-double-down"></i>
+            </button>
+            <button type="button" id="deleteSelectedIssueItems" class="btn btn-primary@(allowCreate || allowUpdate ? "" : " none-display")" title="@T("Common.Delete.Selected")">
+                <i class="fa fa-trash-o"></i>
+            </button>
+        </div>
+        <div class="panel-body">
+            <div id="issueItems-grid" data-bind="gridDeleteRowEnabled: !isApproved()"></div>
+            <script>
+                var gridCheckboxHandler = new BaseEam.CheckBoxHandler('issueItems-grid');
+                gridCheckboxHandler.init();
+
+                $(document).ready(function () {
+                    $("#issueItems-grid").kendoGrid({
+                        dataSource: {
+                            type: "json",
+                            transport: {
+                                read: {
+                                    url: "@Html.Raw(Url.Action("IssueItemList", "Issue"))",
+                                    type: "POST",
+                                    dataType: "json",
+                                    data: additionalData
+                                },
+                                parameterMap: function (data, operation) {
+                                    sortMapping = [{ from: "ItemName", to: "Item.Name" },
+                                                    { from: "StoreLocatorName", to: "StoreLocator.Name" },
+                                                    { from: "IssueUnitOfMeasureName", to: "IssueUnitOfMeasure.Name" }];
+                                    BaseEam.Grid.mapSortColumns(data.sort, sortMapping);
+                                    return data;
+                                }
+                            },
+                            schema: {
+                                data: "Data",
+                                total: "Total",
+                                errors: "Errors",
+                                model: {
+                                    id: "Id"
+                                }
+                            },
+                            aggregate: [
+                                        { field: "IssueCost", aggregate: "sum" }
+                            ],
+                            error: function(e) {
+                                display_kendoui_grid_error(e);
+                                // Cancel the changes
+                                this.cancelChanges();
+                            },
+                            pageSize: @(defaultGridPageSize),
+                            serverPaging: true,
+                            serverFiltering: true,
+                            serverSorting: true
+                        },
+                        pageable: {
+                            refresh: true,
+                            pageSizes: [@(gridPageSizes)],
+                            @Html.Partial("_GridPagerMessages")
+                        },
+                        sortable: true,
+                        editable: false,
+                        scrollable: false,
+                        dataBound: gridCheckboxHandler.onDataBound,
+                        columns: [{
+                            field: "Id",
+                            headerTemplate: "<input id='issueItems-grid-mastercheckbox' type='checkbox'/>",
+                            headerAttributes: { style: "text-align:center" },
+                            attributes: { style: "text-align:center" },
+                            template: "<input type='checkbox' value='#=Id#' class='checkboxGroups'/>",
+                            width: 50,
+                            sortable: false
+                        },{
+                            field: "ItemName",
+                            title: "@T("IssueItem.Item")"
+                        },{
+                            field: "StoreLocatorName",
+                            title: "@T("IssueItem.StoreLocator")"
+                        },{
+                            field: "IssueUnitOfMeasureName",
+                            title: "@T("UnitOfMeasure")"
+                        },{
+                            field: "IssueQuantity",
+                            title: "@T("IssueItem.IssueQuantity")",
+                            template: '#= IssueQuantity != null ? kendo.toString(IssueQuantity, "n") : "" #'
+                        }, {
+                            field: "IssueCost",
+                            title: "@T("IssueItem.IssueCost") [@(primarySystemCurrencySymbol)]",
+                            template: '#= IssueCost != null ? kendo.toString(IssueCost, "n") : "" #',
+                            footerTemplate: '#= sum != null ? kendo.toString(sum, "n") : "" #'
+                        }, {
+                            field: "Id",
+                            headerTemplate: "",
+                            width: 100,
+                            template: '<button type="button" class="btn btn-primary@(allowRead || allowUpdate ? "" : " none-display")" onclick="editIssueItem(event, #=Id#);"></span><i class="fa fa-pencil aria-hidden="true""></i></a>' +
+                                    '<button type="button" class="deleteRow btn btn-primary@(allowDelete ? "" : " none-display")" href="" onclick="deleteIssueItem(event, #=Id#);"></span><i class="fa fa-trash aria-hidden="true""></i></a>',
+                            sortable: false
+                        }]
+                    });
+                });
+            </script>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    function createIssueItems(e) {
+        e.preventDefault();
+        BaseEam.Grid.saveChanges('@Url.Action("CreateIssueItems", "Issue")', '#createIssueItems-grid', '#createIssueItems-error', false);
+    };
+
+    function editIssueItem(e, id){
+        e.preventDefault();
+        //check if panel-issueItem is open => close it before edit
+        if($('#panel-issueItem').is(":visible")){
+            togglePanelIssueItem(false);
+        }
+        var postData = {
+            id : id
+        };
+        addAntiForgeryToken(postData);
+
+        $.ajax({
+            cache: false,
+            type: "POST",
+            url: "@(Url.Action("IssueItem", "Issue"))",
+            data: postData,
+            success: function(data) {
+                //append html
+                $("#group-issueItems").append(data.Html);
+
+                //apply binding for the newly generated element
+                ko.applyBindings(viewModel, $("#panel-issueItem")[0]);
+
+                //then toggle the panel
+                togglePanelIssueItem(true);
+            },
+            error: function(xhr, ajaxOptions, thrownError) {
+                showBSModal({title: 'ERROR', body: thrownError});
+            },
+            traditional: true
+        });
+    };
+
+    function deleteIssueItem(e, id){
+        e.preventDefault();
+        //check if panel-issueItem is open => close it before delete
+        if($('#panel-issueItem').is(":visible")){
+            togglePanelIssueItem(false);
+        }
+
+        BaseEam.Grid.deleteRow($("#Id").val(), id, "@Url.Action("DeleteIssueItem", "Issue")", "issueItems-grid", "", true);
+    };
+
+    function additionalData() {
+        var data = {
+            issueId: $("#Id").val()
+        };
+        addAntiForgeryToken(data);
+        return data;
+    }
+
+    function togglePanelIssueItem(editmode) {
+        if (editmode) {
+            $('#panel-issueItem').show();
+            $('#createIssueItem').hide();
+            $('#createIssueItems').hide();
+            $('#deleteSelectedIssueItems').hide();
+        }
+        else {
+            ////remove the panel html so we won't care
+            //about dirty change tracking for newly added input tag
+            $('#panel-issueItem').remove();
+            $('#createIssueItem').show();
+            $('#createIssueItems').show();
+            $('#deleteSelectedIssueItems').show();
+        }
+    }
+
+    $(document).ready(function () {
+        $("#createIssueItem").click(function(e){
+            e.preventDefault();
+            var postData = {
+                issueId : $("#Id").val()
+            };
+            addAntiForgeryToken(postData);
+
+            $.ajax({
+                cache: false,
+                type: "POST",
+                url: "@(Url.Action("CreateIssueItem", "Issue"))",
+                data: postData,
+                success: function(data) {
+                    //append html
+                    $("#group-issueItems").append(data.Html);
+
+                    //then toggle the panel
+                    togglePanelIssueItem(true);
+                },
+                error: function(xhr, ajaxOptions, thrownError) {
+                    showBSModal({title: 'ERROR', body: thrownError});
+                },
+                traditional: true
+            });
+        });
+
+        $("#createIssueItems").click(function(e){
+            e.preventDefault();
+            $.get('@Url.Action("CreateIssueItemsView", "Issue")', function(data) {
+                showBSModal({
+                    title: "@T("Common.AddMultiple")",
+                    size: "large",
+                    body: data,
+                    actions: [{
+                        label: '@T("Common.Save")',
+                        cssClass: 'btn-success',
+                        onClick: createIssueItems
+                    },{
+                        label: '@T("Common.Cancel")',
+                        cssClass: 'btn-danger',
+                        onClick: function(e){
+                            $(e.target).parents('.modal').modal('hide');
+                        }
+                    }]
+                });
+            });
+        });
+
+        $("#deleteSelectedIssueItems").click(function(e){
+            e.preventDefault();
+            BaseEam.Grid.deleteSelectedRows($("#Id").val(), gridCheckboxHandler.selectedIds, "@Url.Action("DeleteSelectedIssueItems", "Issue")", "issueItems-grid", "", true);
+        });
+
+        window.EventBroker.subscribe("grid_batch_saved", function (message, data) {
+            //hide modal popup
+            $('.modal').modal('hide');
+
+            //refresh grid
+            var grid = $('#issueItems-grid').data('kendoGrid');
+            grid.dataSource.page(1);
+        });
+    });
+</script>

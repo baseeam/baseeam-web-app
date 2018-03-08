@@ -1,0 +1,109 @@
+﻿@model SearchModel
+@{
+    var defaultGridPageSize = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().DefaultGridPageSize;
+    var gridPageSizes = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().GridPageSizes;
+}
+<div class="content" id="ml-attributes-popup">
+    <div class="validation-summary-errors none-display" id="ml-attributes-error">
+    </div>
+    <div class="form-horizontal">
+        <div class="panel-group">
+            @Html.Partial("Filter", Model)
+            <div class="panel panel-default">
+                <div class="panel-body">
+                    <div id="ml-attributes-grid"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        var attributesCheckboxHandler = new BaseEam.CheckBoxHandler('ml-attributes-grid');
+        attributesCheckboxHandler.init();
+
+        function additionalData() {
+            var data = {
+                searchValues: $("#ml-attributes-popup div.panel-search").find(':input').serialize()
+            };
+            addAntiForgeryToken(data);
+            return data;
+        }
+
+        $("#ml-attributes-grid").kendoGrid({
+            dataSource: {
+                type: "json",
+                transport: {
+                    read: {
+                        url: "@Html.Raw(Url.Action("AttributeList", "Lookup"))",
+                        type: "POST",
+                        dataType: "json",
+                        data: additionalData
+                    }
+                },
+                schema: {
+                    data: "Data",
+                    total: "Total",
+                    errors: "Errors",
+                    model: {
+                        fields: {
+                        }
+                    }
+                },
+                error: function (e) {
+                    display_kendoui_grid_error(e);
+                    // Cancel the changes
+                    this.cancelChanges();
+                },
+                pageSize: @(defaultGridPageSize),
+                serverPaging: true,
+                serverFiltering: true,
+                serverSorting: true
+            },
+            pageable: {
+                refresh: true,
+                pageSizes: [@(gridPageSizes)],
+                @Html.Partial("_GridPagerMessages")
+            },
+            sortable: true,
+            editable: false,
+            scrollable: false,
+            dataBound: attributesCheckboxHandler.onDataBound,
+            columns: [{
+                field: "Id",
+                headerTemplate: "<input id='ml-attributes-grid-mastercheckbox' type='checkbox'/>",
+                headerAttributes: { style: "text-align:center" },
+                attributes: { style: "text-align:center" },
+                template: "<input type='checkbox' value='#=Id#' class='checkboxGroups'/>",
+                width: 50,
+                sortable: false
+            },{
+                field: "Name",
+                title: "@T("Attribute.Name")"
+            }, {
+                field: "ControlTypeText",
+                title: "@T("Attribute.ControlType")",
+            }, {
+                field: "DataTypeText",
+                title: "@T("Attribute.DataType")",
+            }, {
+                field: "DataSourceText",
+                title: "@T("Attribute.DataSource")",
+            }]
+        });
+
+        //search button
+        $('#ml-attributes-popup').find('#search').click(function () {
+            //search
+            var grid = $('#ml-attributes-grid').data('kendoGrid');
+            grid.dataSource.page(1); //new search. Set page size to 1
+            //grid.dataSource.read(); we already loaded the grid above using "page" function
+            return false;
+        });
+
+        $("#ml-attributes-popup div.panel-search").find(':input').keydown(function (event) {
+            if (event.keyCode == 13) {
+                $('#ml-attributes-popup').find('#search').click();
+                return false;
+            }
+        });
+    </script>
+</div>

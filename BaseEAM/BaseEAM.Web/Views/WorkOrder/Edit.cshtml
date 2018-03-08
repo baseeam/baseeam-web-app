@@ -1,0 +1,171 @@
+﻿@using BaseEAM.Services.Security
+@model WorkOrderModel
+
+@{
+    //page title
+    ViewBag.Title = T("WorkOrder.EditWorkOrderDetails").Text;
+    var permissionService = EngineContext.Current.Resolve<BaseEAM.Services.IPermissionService>();
+    var allowCreate = permissionService.Authorize(StandardPermissionName.Maintenance_WorkOrder_Create);
+    var allowRead = permissionService.Authorize(StandardPermissionName.Maintenance_WorkOrder_Read);
+    var allowUpdate = permissionService.Authorize(StandardPermissionName.Maintenance_WorkOrder_Update);
+    var allowDelete = permissionService.Authorize(StandardPermissionName.Maintenance_WorkOrder_Delete);
+    var allowReassign = permissionService.Authorize(StandardPermissionName.Maintenance_WorkOrder_Reassign);
+}
+@using (Html.BeginForm("Edit", "WorkOrder", FormMethod.Post, new { id = "workOrder-form" }))
+{
+    @Html.AntiForgeryToken()
+    <div class="content-header clearfix">
+        <h1 class="pull-left">
+            <small><i class="fa fa-arrow-circle-left fa-padding"></i>@Html.ActionLink(T("Common.BackToList").Text, "List")</small>
+        </h1>
+        <div class="pull-right">
+            <button type="button" id="save" name="save" class="btn btn-primary@(allowCreate || allowUpdate ? "" : " none-display")" title="@T("Common.Save")">
+                <i class="fa fa-floppy-o"></i>
+            </button>
+            <button type="button" id="cancel" name="cancel" class="btn btn-primary@(Model.IsNew == true ? "" : " none-display")" title="@T("Common.Cancel")">
+                <i class="fa fa-ban"></i>
+            </button>
+            <button type="button" id="workOrder-delete" class="btn btn-primary@(allowDelete && Model.IsNew == false ? "" : " none-display")" title="@T("Common.Delete")">
+                <i class="fa fa-trash-o"></i>
+            </button>
+            <button type="button" id="reassign" class="btn btn-primary@(allowReassign && Model.IsNew == false ? "" : " none-display")" title="@T("Common.Reassign")">
+                <i class="fa fa-exchange"></i>
+            </button>
+            <div class="btn-group" data-bind="visible: availableActions().length > 0">
+                <button type="button" class="btn btn-primary" title="@T("Common.Actions")">
+                    <i class="fa fa-bolt"></i>
+                </button>
+                <button type="button" class="btn btn-success dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
+                    <span class="caret"></span>
+                    <span class="sr-only">&nbsp;</span>
+                </button>
+                <ul id="actions" class="dropdown-menu" role="menu"
+                    data-bind="template: { name: 'action-template', foreach: availableActions, as: 'action' }"></ul>
+            </div>
+
+        </div>
+    </div>
+    <div id="validation-summary" class="validation-summary-errors" style="display:none">
+    </div>
+    @Html.Partial("_CreateOrUpdate", Model)
+    <script type="text/javascript">
+        var actionName = '';
+        var viewModel;
+        function initializeViewModel() {
+            viewModel = {
+                isNew: ko.observable($('#IsNew').val() == 'True' ? true : false),
+                number: ko.observable('@Model.Number'),
+                status: ko.observable('@Model.Status'),
+                assignedUsers: ko.observable('@Model.AssignedUsers'),
+                availableActions: ko.observableArray(baseSplit($('#AvailableActions').val())),
+                taskGroup: ko.observable('@Model.TaskGroupId'),
+                itemCategoryTool: ko.observable($('#ItemCategory').val() == 'Tool' ? true : false)
+            };
+            ko.applyBindings(viewModel);
+        };
+
+        function executeAction(e) {
+            e.preventDefault();
+            var $form = $("#workOrder-form");
+            var postData = $form.serializeJSON({ checkboxUncheckedValue: "false" });
+            postData.ActionName = actionName;
+            postData.comment = $("#add-comment-popup").find("#Message").val();
+            addAntiForgeryToken(postData);
+
+            //hide comment popup before ajax call
+            //so we can see validation errors
+            $(e.target).parents('.modal').modal('hide');
+
+            $.ajax({
+                cache: false,
+                type: "POST",
+                url: "@(Url.Action("Edit", "WorkOrder"))",
+                data: postData,
+                success: function (data) {
+                    if (data && data.Errors) {
+                        showErrors(data.Errors);
+                    } else {
+                        viewModel.isNew(false);
+                        viewModel.number(data.number);
+                        viewModel.status(data.status);
+                        viewModel.assignedUsers(data.assignedUsers);
+                        viewModel.availableActions(baseSplit(data.availableActions));
+
+                        registerActionEvent();
+                        //fire status changed event
+                        window.EventBroker.publish(BaseEam.Events.StatusChanged, null);
+
+                        refreshTasksTab();
+
+                        refreshDirtyTracking();
+                    }
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    showBSModal({ title: 'ERROR', body: thrownError });
+                },
+                traditional: true
+            });
+        };
+
+        function registerActionEvent() {
+            $("#actions button").click(function(e) {
+                e.preventDefault();
+                actionName = this.id;
+                $.get('@Url.Action("AddCommentView", "Comment")', function(data) {
+                    showBSModal({
+                        title: "@T("Comment.AddNew")",
+                        body: data,
+                        actions: [{
+                            label: '@T("Common.Save")',
+                            cssClass: 'btn-success',
+                            onClick: executeAction
+                        },{
+                            label: '@T("Common.Cancel")',
+                            cssClass: 'btn-danger',
+                            onClick: function(e){
+                                $(e.target).parents('.modal').modal('hide');
+                            }
+                        }]
+                    });
+                });
+            });
+        }
+
+        function refreshTasksTab(){
+            var grid = $('#workOrderTasks-grid').data('kendoGrid');
+            grid.dataSource.page(1);
+        }
+
+        $(document).ready(function () {
+            //initialize view model
+            initializeViewModel();
+            
+            //setup reassign
+            $('#reassign').reassign({ entityId: @Model.Id, entityType: 'WorkOrder'});
+
+            registerActionEvent();
+
+            $("#save").click(function (e) {
+                e.preventDefault();
+                saveForm('workOrder-form', '@(Url.Action("Edit", "WorkOrder"))', savedCallback);
+            });
+
+            $("#cancel").click(function (e) {
+                e.preventDefault();
+                $('#form').removeClass('dirty');
+                BaseEam.Grid.deleteRow(null, @Model.Id, "@Url.Action("Cancel", "WorkOrder")", "",  "@Url.Action("List", "WorkOrder")", false);
+            });
+
+            $("#workOrder-delete").click(function (e) {
+                e.preventDefault();
+                BaseEam.Grid.deleteRow(null, @Model.Id, "@Url.Action("Delete", "WorkOrder")", "", "@Url.Action("List", "WorkOrder")", true);
+            });
+        });
+    </script>
+
+    <script type="text/html" id="action-template">
+        <li>
+            <button type="button" data-bind="attr: { id: action, name: action }, text: action"></button>
+        </li>
+    </script>
+}

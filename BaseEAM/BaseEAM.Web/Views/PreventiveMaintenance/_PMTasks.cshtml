@@ -1,0 +1,261 @@
+﻿﻿@using BaseEAM.Services.Security
+@model PMTaskModel
+@{
+    var defaultGridPageSize = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().DefaultGridPageSize;
+    var gridPageSizes = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().GridPageSizes;
+
+    var permissionService = EngineContext.Current.Resolve<BaseEAM.Services.IPermissionService>();
+    var allowCreate = permissionService.Authorize(StandardPermissionName.Maintenance_PreventiveMaintenance_Create);
+    var allowRead = permissionService.Authorize(StandardPermissionName.Maintenance_PreventiveMaintenance_Read);
+    var allowUpdate = permissionService.Authorize(StandardPermissionName.Maintenance_PreventiveMaintenance_Update);
+    var allowDelete = permissionService.Authorize(StandardPermissionName.Maintenance_PreventiveMaintenance_Delete);
+}
+<div id="group-pMTasks" class="panel-group">
+    <div class="row">
+        <div class="col-md-6">
+            <div class="form-group">
+                <div class="col-md-3">
+                    @Html.BaseEamLabelFor(model => model.PreventiveMaintenanceNumber, required: true)
+                </div>
+                <div class="col-md-9">
+                    <div class="form-text-row" data-bind="html: number"></div>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-md-3">
+                    @Html.BaseEamLabelFor(model => model.TaskGroupId)
+                </div>
+                <div class="col-md-9">
+                    @Html.BaseEamComboBoxFor(model => model.TaskGroupId, "GetChoices", "Common",
+                                            new RouteValueDictionary { { "dbTable", "TaskGroup" }, { "dbTextColumn", "Name" }, { "dbValueColumn", "Id" } }, true)
+                </div>
+            </div>
+        </div>
+    </div>
+    <hr />
+    <div class="panel panel-default">
+        <div class="panel-heading" data-bind="visible: !taskGroup()">
+            <button type="button" id="createPMTask" class="btn btn-primary@(allowCreate || allowUpdate ? "" : " none-display")" title="@T("Common.AddNew")">
+                <i class="fa fa-plus-square"></i>
+            </button>
+            <button type="button" id="deleteSelectedPMTasks" class="btn btn-primary@(allowCreate || allowUpdate ? "" : " none-display")" title="@T("Common.Delete.Selected")">
+                <i class="fa fa-trash-o"></i>
+            </button>
+        </div>
+        <div class="panel-body">
+            <div id="pMTasks-grid" data-bind="gridDeleteRowEnabled: !taskGroup()"></div>
+            <script>
+                var gridCheckboxHandler3 = new BaseEam.CheckBoxHandler('pMTasks-grid');
+                gridCheckboxHandler3.init();
+
+                $(document).ready(function () {
+                    $("#pMTasks-grid").kendoGrid({
+                        dataSource: {
+                            type: "json",
+                            transport: {
+                                read: {
+                                    url: "@Html.Raw(Url.Action("PMTaskList", "PreventiveMaintenance"))",
+                                    type: "POST",
+                                    dataType: "json",
+                                    data: additionalData3
+                                },
+                                //This is used to map field to format that the server can understand
+                                //it runs after the data (additionalData) populated
+                                parameterMap: function (data, operation) {
+                                    sortMapping = [{ from: "AssignedUserUserName", to: "AssignedUser.User.Name" },
+                                        { from: "CompletedUserUserName", to: "CompletedUser.User.Name" }
+                                    ];
+                                    BaseEam.Grid.mapSortColumns(data.sort, sortMapping);
+                                    return data;
+                                }
+                            },
+                            schema: {
+                                data: "Data",
+                                total: "Total",
+                                errors: "Errors",
+                                model: {
+                                    id: "Id"
+                                }
+                            },
+                            error: function(e) {
+                                display_kendoui_grid_error(e);
+                                // Cancel the changes
+                                this.cancelChanges();
+                            },
+                            pageSize: @(defaultGridPageSize),
+                            serverPaging: true,
+                            serverFiltering: true,
+                            serverSorting: true
+                        },
+                        pageable: {
+                            refresh: true,
+                            pageSizes: [@(gridPageSizes)],
+                            @Html.Partial("_GridPagerMessages")
+                        },
+                        sortable: true,
+                        editable: false,
+                        scrollable: false,
+                        dataBound: gridCheckboxHandler3.onDataBound,
+                        columns: [{
+                            field: "Id",
+                            headerTemplate: "<input id='pMTasks-grid-mastercheckbox' type='checkbox'/>",
+                            headerAttributes: { style: "text-align:center" },
+                            attributes: { style: "text-align:center" },
+                            template: "<input type='checkbox' value='#=Id#' class='checkboxGroups'/>",
+                            width: 50,
+                            sortable: false
+                        },{
+                            field: "Sequence",
+                            title: "@T("PMTask.Sequence")"
+                        }, {
+                            field: "Description",
+                            title: "@T("PMTask.Description")"
+                        }, {
+                            field: "AssignedUserUserName",
+                            title: "@T("AssignedUser")"
+                        }, {
+                            field: "Id",
+                            headerTemplate: "",
+                            width: 100,
+                            template: '<button type="button" class="btn btn-primary@(allowRead || allowUpdate ? "" : " none-display")" onclick="editPMTask(event, #=Id#);"></span><i class="fa fa-pencil aria-hidden="true""></i></a>' +
+                                      '<button type="button" class="deleteRow btn btn-primary@(allowDelete ? "" : " none-display")" onclick="deletePMTask(event, #=Id#);"></span><i class="fa fa-trash aria-hidden="true""></i></a>',
+                            sortable: false
+                        }]
+                    });
+                });
+            </script>
+        </div>
+    </div>
+</div>
+<script type="text/javascript">
+
+     $("#TaskGroupId").change(function (e) {
+         e.preventDefault();
+         var taskGroupId = $("#TaskGroupId").val();
+         if (taskGroupId == '') {
+            viewModel.taskGroup(false);
+        } else {
+
+             viewModel.taskGroup(taskGroupId);
+        }
+        var postData = {
+            preventiveMaintenanceId: '@Model.PreventiveMaintenanceId',
+            taskGroupId: taskGroupId
+        };
+        addAntiForgeryToken(postData);
+        $.ajax({
+            cache: false,
+            type: "POST",
+            url: "@(Url.Action("CreatePMTasks", "PreventiveMaintenance"))",
+            data: postData,
+            success: function (data) {
+                if (data && data.Errors) {
+                    showErrors(data.Errors, '#validation-summary');
+                } else {
+                    //refresh grid
+                    var grid = $('#pMTasks-grid').data('kendoGrid');
+                    grid.dataSource.page(1);
+                }
+            },
+            error: function (xhr, ajaxOptions, thrownError) {
+                showBSModal({ title: 'ERROR', body: thrownError });
+            },
+            traditional: true
+        });
+                });
+
+    function editPMTask(e, id){
+        e.preventDefault();
+        if($('#panel-pMTask').is(":visible")){
+            togglePanelPMTask(false);
+        }
+        var postData = {
+            id : id
+        };
+        addAntiForgeryToken(postData);
+
+        $.ajax({
+            cache: false,
+            type: "POST",
+            url: "@(Url.Action("PMTask", "PreventiveMaintenance"))",
+            data: postData,
+            success: function(data) {
+                //append html
+                $("#group-pMTasks").append(data.Html);
+
+                //then toggle the panel
+                togglePanelPMTask(true);
+            },
+            error: function(xhr, ajaxOptions, thrownError) {
+                showBSModal({title: 'ERROR', body: thrownError});
+            },
+            traditional: true
+        });
+    };
+
+    function deletePMTask(e, id){
+        e.preventDefault();
+        //check if panel-pMTask is open => close it before delete
+        if($('#panel-pMTask').is(":visible")){
+            togglePanelPMTask(false);
+        }
+
+        BaseEam.Grid.deleteRow($("#Id").val(), id, "@Url.Action("DeletePMTask", "PreventiveMaintenance")", "pMTasks-grid", "", true);
+    };
+
+    function additionalData3() {
+        var data = {
+            preventiveMaintenanceId: $("#Id").val()
+        };
+        addAntiForgeryToken(data);
+        return data;
+    }
+
+    function togglePanelPMTask(editmode) {
+        if (editmode) {
+            $('#panel-pMTask').show();
+            $('#createPMTask').hide();
+            $('#deleteSelectedPMTasks').hide();
+        }
+        else {
+            ////remove the panel html so we won't care
+            //about dirty change tracking for newly added input tag
+            $('#panel-pMTask').remove();
+            $('#createPMTask').show();
+            $('#deleteSelectedPMTasks').show();
+        }
+    }
+
+    $(document).ready(function () {
+        $("#createPMTask").click(function(e){
+            e.preventDefault();
+            var postData = {
+                preventiveMaintenanceId : $("#Id").val()
+            };
+            addAntiForgeryToken(postData);
+
+            $.ajax({
+                cache: false,
+                type: "POST",
+                url: "@(Url.Action("CreatePMTask", "PreventiveMaintenance"))",
+                data: postData,
+                success: function(data) {
+                    //append html
+                    $("#group-pMTasks").append(data.Html);
+
+                    //then toggle the panel
+                    togglePanelPMTask(true);
+                },
+                error: function(xhr, ajaxOptions, thrownError) {
+                    showBSModal({title: 'ERROR', body: thrownError});
+                },
+                traditional: true
+            });
+        });
+
+        $("#deleteSelectedPMTasks").click(function(e){
+            e.preventDefault();
+            BaseEam.Grid.deleteSelectedRows($("#Id").val(), gridCheckboxHandler3.selectedIds, "@Url.Action("DeleteSelectedPMTasks", "PreventiveMaintenance")", "pMTasks-grid", "", true);
+        });
+    });
+</script>

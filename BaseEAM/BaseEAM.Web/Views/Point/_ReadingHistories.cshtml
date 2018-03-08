@@ -1,0 +1,105 @@
+﻿@model PointMeterLineItemModel
+@{
+    var defaultGridPageSize = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().DefaultGridPageSize;
+    var gridPageSizes = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().GridPageSizes;
+    var primarySystemCurrencySymbol = EngineContext.Current.Resolve<BaseEAM.Core.IWorkContext>().WorkingCurrency.CurrencySymbol;
+}
+<div class="content" id="readingHistories-popup">
+    <div class="form-horizontal">
+        <div class="panel-group">
+            <div class="panel panel-default">
+                <div class="panel-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <div class="col-md-3">
+                                    @Html.BaseEamLabelFor(model => model.MeterName, required: true)
+                                </div>
+                                <div class="col-md-9">
+                                    @Html.BaseEamDisplayFor(model => model.MeterName)
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <div class="col-md-3">
+                                    @Html.BaseEamLabelFor(model => model.MeterUnitOfMeasureName, required: true)
+                                </div>
+                                <div class="col-md-9">
+                                    @Html.BaseEamDisplayFor(model => model.MeterUnitOfMeasureName)
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <div class="col-md-3">
+                                    @Html.BaseEamLabelFor(model => model.MeterMeterTypeName, required: true)
+                                </div>
+                                <div class="col-md-9">
+                                    @Html.BaseEamDisplayFor(model => model.MeterMeterTypeName)
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="readingHistories-grid"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        $("#readingHistories-grid").kendoGrid({
+            dataSource: {
+                type: "json",
+                transport: {
+                    read: {
+                        url: "@Html.Raw(Url.Action("ReadingHistoryList", "Point"))",url: "@Html.Raw(Url.Action("ReadingHistoryList", "Point", new { pointMeterLineItemId = Model.Id }))",
+                        type: "POST",
+                        dataType: "json",
+                        data: addAntiForgeryToken
+                    }
+                },
+                schema: {
+                    data: "Data",
+                    total: "Total",
+                    errors: "Errors",
+                    model: {
+                        id: "Id",
+                        fields: {
+                        }
+                    }
+                },
+                error: function (e) {
+                    display_kendoui_grid_error(e);
+                    // Cancel the changes
+                    this.cancelChanges();
+                },
+                pageSize: @(defaultGridPageSize),
+                serverPaging: true,
+                serverFiltering: true,
+                serverSorting: true
+            },
+            pageable: {
+                refresh: true,
+                pageSizes: [@(gridPageSizes)],
+                @Html.Partial("_GridPagerMessages")
+            },
+            navigatable: true,
+            sortable: true,
+            editable: false,
+            scrollable: false,
+            columns: [{
+                field: "ReadingValue",
+                title: "@T("Reading.ReadingValue")",
+                template: '#= ReadingValue != null ? kendo.toString(ReadingValue, "n") : "" #'
+            },{
+                field: "DateOfReading",
+                title: "@T("Reading.DateOfReading")",
+                template: '#= DateOfReading != null ? kendo.toString(kendo.parseDate(DateOfReading, "MM/dd/yyyy HH:mm:ss"), "MM/dd/yyyy HH:mm:ss") : "" #'
+            },{
+                field: "ReadingSourceText",
+                title: "@T("Reading.ReadingSource")",
+                sortable: false
+            }
+            ]
+        });
+
+    </script>
+</div>

@@ -1,0 +1,202 @@
+﻿@using BaseEAM.Services.Security
+@model ReportColumnModel
+@{
+    var defaultGridPageSize = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().DefaultGridPageSize;
+    var gridPageSizes = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().GridPageSizes;
+
+    var permissionService = EngineContext.Current.Resolve<BaseEAM.Services.IPermissionService>();
+    var allowCreate = permissionService.Authorize(StandardPermissionName.Report_Report_Create);
+    var allowRead = permissionService.Authorize(StandardPermissionName.Report_Report_Read);
+    var allowUpdate = permissionService.Authorize(StandardPermissionName.Report_Report_Update);
+    var allowDelete = permissionService.Authorize(StandardPermissionName.Report_Report_Delete);
+}
+<div id="group-reportColumns" class="panel-group">
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <button type="button" id="createReportColumn" class="btn btn-primary@(allowCreate || allowUpdate ? "" : " none-display")" title="@T("Common.AddNew")">
+                <i class="fa fa-plus-square"></i>
+            </button>
+            <button type="button" id="deleteSelectedReportColumns" class="btn btn-primary@(allowCreate || allowUpdate ? "" : " none-display")" title="@T("Common.Delete.Selected")">
+                <i class="fa fa-trash-o"></i>
+            </button>
+        </div>
+        <div class="panel-body">
+            <div id="reportColumns-grid"></div>
+            <script>
+                var gridCheckboxHandler3 = new BaseEam.CheckBoxHandler('reportColumns-grid');
+                gridCheckboxHandler3.init();
+
+                $(document).ready(function () {
+                    $("#reportColumns-grid").kendoGrid({
+                        dataSource: {
+                            type: "json",
+                            transport: {
+                                read: {
+                                    url: "@Html.Raw(Url.Action("ReportColumnList", "Report"))",
+                                    type: "POST",
+                                    dataType: "json",
+                                    data: additionalData3
+                                }
+                            },
+                            schema: {
+                                data: "Data",
+                                total: "Total",
+                                errors: "Errors",
+                                model: {
+                                    id: "Id"
+                                }
+                            },
+                            error: function(e) {
+                                display_kendoui_grid_error(e);
+                                // Cancel the changes
+                                this.cancelChanges();
+                            },
+                            pageSize: @(defaultGridPageSize),
+                            serverPaging: true,
+                            serverFiltering: true,
+                            serverSorting: true
+                        },
+                        pageable: {
+                            refresh: true,
+                            pageSizes: [@(gridPageSizes)],
+                            @Html.Partial("_GridPagerMessages")
+                        },
+                        sortable: true,
+                        editable: false,
+                        scrollable: false,
+                        dataBound: gridCheckboxHandler3.onDataBound,
+                        columns: [{
+                            field: "Id",
+                            headerTemplate: "<input id='reportColumns-grid-mastercheckbox' type='checkbox'/>",
+                            headerAttributes: { style: "text-align:center" },
+                            attributes: { style: "text-align:center" },
+                            template: "<input type='checkbox' value='#=Id#' class='checkboxGroups'/>",
+                            width: 50,
+                            sortable: false
+                        },{
+                            field: "DisplayOrder",
+                            title: "@T("Common.DisplayOrder")"
+                        },{
+                            field: "ColumnName",
+                            title: "@T("ReportColumn.ColumnName")"
+                        }, {
+                            field: "DataType",
+                            title: "@T("ReportColumn.DataType")",
+                            sortable: false
+                        }, {
+                            field: "FormatString",
+                            title: "@T("ReportColumn.FormatString")"
+                        }, {
+                            field: "ResourceKey",
+                            title: "@T("ReportColumn.ResourceKey")"
+                        }, {
+                            field: "Id",
+                            headerTemplate: "",
+                            width: 100,
+                             template: '<button type="button" class="btn btn-primary@(allowRead || allowUpdate ? "" : " none-display")" onclick="editReportColumn(event, #=Id#);"></span><i class="fa fa-pencil aria-hidden="true""></i></a>' +
+                                    '<button type="button" class="deleteRow btn btn-primary@(allowDelete ? "" : " none-display")" onclick="deleteReportColumn(event, #=Id#);"></span><i class="fa fa-trash aria-hidden="true""></i></a>',
+                            sortable: false
+                        }]
+                    });
+                });
+            </script>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    function editReportColumn(e, id){
+        e.preventDefault();
+        if($('#panel-reportColumn').is(":visible")){
+            togglePanelReportColumn(false);
+        }
+        var postData = {
+            id : id
+        };
+        addAntiForgeryToken(postData);
+
+        $.ajax({
+            cache: false,
+            type: "POST",
+            url: "@(Url.Action("ReportColumn", "Report"))",
+            data: postData,
+            success: function(data) {
+                //append html
+                $("#group-reportColumns").append(data.Html);
+
+                //then toggle the panel
+                togglePanelReportColumn(true);
+            },
+            error: function(xhr, ajaxOptions, thrownError) {
+                showBSModal({title: 'ERROR', body: thrownError});
+            },
+            traditional: true
+        });
+    };
+
+    function deleteReportColumn(e, id){
+        e.preventDefault();
+        //check if panel-reportColumn is open => close it before delete
+        if($('#panel-reportColumn').is(":visible")){
+            togglePanelReportColumn(false);
+        }
+
+        BaseEam.Grid.deleteRow($("#Id").val(), id, "@Url.Action("DeleteReportColumn", "Report")", "reportColumns-grid", "", true);
+    };
+
+    function additionalData3() {
+        var data = {
+            reportId: $("#Id").val()
+        };
+        addAntiForgeryToken(data);
+        return data;
+    }
+
+    function togglePanelReportColumn(editmode) {
+        if (editmode) {
+            $('#panel-reportColumn').show();
+            $('#createReportColumn').hide();
+            $('#deleteSelectedReportColumns').hide();
+        }
+        else {
+            ////remove the panel html so we won't care
+            //about dirty change tracking for newly added input tag
+            $('#panel-reportColumn').remove();
+            $('#createReportColumn').show();
+            $('#deleteSelectedReportColumns').show();
+        }
+    }
+
+    $(document).ready(function () {
+        $("#createReportColumn").click(function(e){
+            e.preventDefault();
+            var postData = {
+                reportId : $("#Id").val()
+            };
+            addAntiForgeryToken(postData);
+
+            $.ajax({
+                cache: false,
+                type: "POST",
+                url: "@(Url.Action("CreateReportColumn", "Report"))",
+                data: postData,
+                success: function(data) {
+                    //append html
+                    $("#group-reportColumns").append(data.Html);
+
+                    //then toggle the panel
+                    togglePanelReportColumn(true);
+                },
+                error: function(xhr, ajaxOptions, thrownError) {
+                    showBSModal({title: 'ERROR', body: thrownError});
+                },
+                traditional: true
+            });
+        });
+
+        $("#deleteSelectedReportColumns").click(function(e){
+            e.preventDefault();
+            BaseEam.Grid.deleteSelectedRows($("#Id").val(), gridCheckboxHandler3.selectedIds, "@Url.Action("DeleteSelectedReportColumns", "Report")", "reportColumns-grid", "", true);
+        });
+    });
+</script>

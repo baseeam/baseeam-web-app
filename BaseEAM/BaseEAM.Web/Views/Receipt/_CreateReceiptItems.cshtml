@@ -1,0 +1,162 @@
+﻿@model SearchModel
+@{
+    var defaultGridPageSize = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().DefaultGridPageSize;
+    var gridPageSizes = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().GridPageSizes;
+    var primarySystemCurrencySymbol = EngineContext.Current.Resolve<BaseEAM.Core.IWorkContext>().WorkingCurrency.CurrencySymbol;
+}
+<div class="content" id="createReceiptItems-popup">
+    <div class="validation-summary-errors none-display" id="createReceiptItems-error">
+    </div>
+    <div class="form-horizontal">
+        <div class="panel-group">
+            @Html.Partial("Filter", Model)
+            <div class="panel panel-default">
+                <div class="panel-body">
+                    <div id="createReceiptItems-grid"></div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        function additionalData() {
+            var data = {
+                searchValues: $("div.panel-search").find(':input').serialize(),
+                receiptId: $('#Id').val()
+            };
+            addAntiForgeryToken(data);
+            return data;
+        }
+
+        function storeLocatorEditor(container, options) {
+            var model = {
+                field: options.field,
+                required_msg: '@T("ReceiptItem.StoreLocator.Required")',
+                url: '@Url.Action("GetStoreLocators", "Store")',
+                dbTable: '',
+                parentValue: $('#StoreId').val(),
+                additionalValue: options.model.id
+            };
+            BaseEam.Grid.comboBoxEditor(container, model);
+        }
+
+        $("#createReceiptItems-grid").kendoGrid({
+            dataSource: {
+                type: "json",
+                transport: {
+                    read: {
+                        url: "@Html.Raw(Url.Action("CreateReceiptItemList", "Receipt"))",
+                        type: "POST",
+                        dataType: "json",
+                        data: additionalData
+                    },
+                    //this map is used along with BaseEam.Grid.saveChanges
+                    //we only have data in updated list
+                    parameterMap: function(data, operation) {
+                        if (operation != "read") {
+                            for(var index in data.updated){
+                                if(data.updated[index].ExpiryDate !== null){
+                                    var ExpiryDate = new Date(data.updated[index].ExpiryDate);
+                                    data.updated[index].ExpiryDate =  kendo.toString(new Date(ExpiryDate), "MM/dd/yyyy");
+                                }
+                            }
+                        }
+                        return data;
+                    }
+                },
+                schema: {
+                    data: "Data",
+                    total: "Total",
+                    errors: "Errors",
+                    model: {
+                        id: "ItemId",
+                        fields: {
+                            ItemName: { editable: false },
+                            ItemUnitOfMeasureName: { editable: false },
+                            StoreLocator: { editable: true, defaultValue: {} },
+                            UnitPrice: { editable: true, type: 'number', validation: { required: { message: '@T("ReceiptItem.UnitPrice.Required")'}} },
+                            Quantity: { editable: true, type: 'number', validation: { required: { message: '@T("ReceiptItem.Quantity.Required")'}} },
+                            LotNumber: { editable: true, type: 'string' },
+                            ExpiryDate: { editable: true, type: 'date' }
+                        }
+                    }
+                },
+                batch: true,
+                error: function (e) {
+                    display_kendoui_grid_error(e);
+                    // Cancel the changes
+                    this.cancelChanges();
+                },
+                change: function (e) {
+                    if (e.action == "itemchange") {
+                        e.items[0].dirtyFields = e.items[0].dirtyFields || {};
+                        e.items[0].dirtyFields[e.field] = true;
+                    }
+                },
+                pageSize: @(defaultGridPageSize),
+                serverPaging: true,
+                serverFiltering: true,
+                serverSorting: true
+            },
+            pageable: {
+                refresh: true,
+                pageSizes: [@(gridPageSizes)],
+                @Html.Partial("_GridPagerMessages")
+            },
+            navigatable: true,
+            sortable: true,
+            editable: true,
+            scrollable: false,
+            columns: [{
+                field: "ItemName",
+                title: "@T("ReceiptItem.Item")"
+            }, {
+                field: "ReceiptUnitOfMeasureName",
+                title: "@T("UnitOfMeasure")",
+                sortable: false
+            },{
+                field: "StoreLocator",
+                title: "@T("ReceiptItem.StoreLocator")",
+                editor: storeLocatorEditor,
+                template: "#=BaseEam.Grid.dirtyHtml(data,'StoreLocator.Name')# #:StoreLocator.Name ? StoreLocator.Name : '' #",
+                sortable: false
+            },{
+                field: "ReceiptUnitPrice",
+                title: "@T("ReceiptItem.UnitPrice") [@(primarySystemCurrencySymbol)]",
+                template: '#= ReceiptUnitPrice != null ? kendo.toString(ReceiptUnitPrice, "n") : "" #',
+                sortable: false
+            },{
+                field: "ReceiptQuantity",
+                title: "@T("ReceiptItem.Quantity")",
+                template: '#= ReceiptQuantity != null ? kendo.toString(ReceiptQuantity, "n") : "" #',
+                sortable: false
+            },{
+                field: "LotNumber",
+                title: "@T("ReceiptItem.LotNumber")",
+                sortable: false
+            },{
+                field: "ExpiryDate",
+                title: "@T("ReceiptItem.ExpiryDate")",
+                template: '#= ExpiryDate != null ? kendo.toString(kendo.parseDate(ExpiryDate, "MM/dd/yyyy"), "MM/dd/yyyy") : "" #',
+                sortable: false
+            }
+            ]
+        });
+
+        //search button
+        $('#createReceiptItems-popup').find('#search').click(function () {
+            //search
+            var grid = $('#createReceiptItems-grid').data('kendoGrid');
+            grid.dataSource.page(1); //new search. Set page size to 1
+            //grid.dataSource.read(); we already loaded the grid above using "page" function
+            return false;
+        });
+
+        $("#createReceiptItems-popup div.panel-search").find(':input').keydown(function (event) {
+            if (event.keyCode == 13) {
+                $('#createReceiptItems-popup').find('#search').click();
+                return false;
+            }
+        });
+    </script>
+</div>

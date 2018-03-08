@@ -1,0 +1,405 @@
+﻿@using BaseEAM.Services.Security
+@model SearchModel
+
+@{
+    //page title
+    ViewBag.Title = T("Analytics.ReportViewer").Text;
+    var defaultGridPageSize = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().DefaultGridPageSize;
+    var gridPageSizes = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().GridPageSizes;
+}
+
+@Html.Hidden("reportId", (long)ViewBag.ReportId)
+
+@Html.AntiForgeryToken()
+<div class="content-header clearfix">    
+    <h1 class="pull-left">
+        @ViewBag.ReportName
+    </h1>
+    <div class="pull-right">
+        <button type="button" id="btnExportToExcel" class="btn btn-primary btn-master" title="@T("Common.ExportToExcel")">
+            @T("Common.ExportToExcel")
+        </button>
+        <button type="button" id="btnExportToPdf" class="btn btn-primary btn-master" title="@T("Common.ExportToPdf")">
+            @T("Common.ExportToPdf")
+        </button>
+        <button type="button" id="btnExportToCsv" class="btn btn-primary btn-master" title="@T("Common.ExportToCsv")">
+            @T("Common.ExportToCsv")
+        </button>
+    </div>
+</div>
+<div class="validation-summary-errors none-display">
+</div>
+<div class="content">
+    <div class="form-horizontal">
+        <div class="panel-group">
+            @Html.Partial("Filter", Model)
+            <div class="panel panel-default">
+                <div class="panel-body">
+                    <div id="grid"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script type="text/javascript">
+    function additionalData() {
+        var data = {
+            searchValues: $("div.panel-search").find(':input').serialize(),
+            reportId: $("#reportId").val()
+        };
+        addAntiForgeryToken(data);
+        return data;
+    };
+
+    var dateFields = [];
+    var aggregates = [];
+    var gridModel = {};
+    var gridColumns = {};
+
+    function generateGrid(data, rebuildModel) {
+        //destroy first, if not will lead to memory leak
+        destroyGrid();
+        if(rebuildModel == true){
+            gridModel = generateModel(data);
+            gridColumns = generateColumns(data);
+        }
+
+        var parseFunction;
+        if (dateFields.length > 0) {
+            parseFunction = function (response) {
+                for (var i = 0; i < response.Data.length; i++) {
+                    for (var fieldIndex = 0; fieldIndex < dateFields.length; fieldIndex++) {
+                        var record = response.Data[i];
+                        record[dateFields[fieldIndex].field] = kendo.toString(kendo.parseDate(record[dateFields[fieldIndex].field]), dateFields[fieldIndex].format);
+                    }
+                }
+                return response;
+            };
+        }
+
+        var grid = $("#grid").kendoGrid({
+            dataSource: {
+                type: "json",
+                transport: {
+                    read: {
+                        url: "@Html.Raw(Url.Action("List", "ReportViewer"))",
+                        type: "POST",
+                        dataType: "json",
+                        data: additionalData
+                    }
+                },
+                change: function(e) {
+                    var gridGroup = this.group();
+                    $.each(gridGroup, function(id, group) {
+                        group.aggregates = aggregates;
+                    });
+                },
+                schema: {
+                    data: "Data",
+                    total: "Total",
+                    errors: "Errors",
+                    model: gridModel,
+                    parse: parseFunction
+                },
+                aggregate: aggregates,
+                error: function(e) {
+                    display_kendoui_grid_error(e);
+                    // Cancel the changes
+                    this.cancelChanges();
+
+                },
+                pageSize: @(defaultGridPageSize),
+                serverPaging: true,
+                serverFiltering: true,
+                serverSorting: true
+            },
+            pageable: {
+                refresh: true,
+                pageSizes: [@(gridPageSizes)]
+            },
+            groupable: true,
+            sortable: true,
+            reorderable: true,
+            resizable: true,
+            columnMenu: true,
+            editable: {
+                confirmation: false,
+                mode: "inline"
+            },
+            scrollable: true,
+            columns: gridColumns,
+            columnMenuInit: function (e) {
+                var popup = e.container.data('kendoPopup');
+                var menu = e.container.find(".k-menu").data("kendoMenu");
+                var field = e.field;
+                menu.append([
+                    {
+                        text: "Group",
+                        spriteCssClass: "k-i-columns",
+                        items: [
+                            { text: "count"},
+                            { text: "sum"},
+                            { text: "average"},
+                            { text: "min"},
+                            { text: "max"}
+                        ]
+                    }
+                ]);
+
+                // event handler
+                menu.bind("select", function (e) {
+                    var menuText = $(e.item).text();
+                    if(menuText != "count" && menuText != "sum" && menuText != "average" && menuText != "min" && menuText != "max") {
+                        menu.close();
+                        popup.close();
+                        return;
+                    }
+
+                    var grid = $("#grid").data("kendoGrid");
+                    for (i = 0; i < grid.columns.length; i++) {
+                        var column = grid.columns[i];
+                        if(column.field == field){
+                            if (menuText == "count") {
+                                column.footerTemplate = "Total Count: #=count#";
+                                column.groupFooterTemplate = "Count: #=count#";
+                            } else if (menuText == "sum") {
+                                if(gridModel.fields[field].type == "number") {
+                                    column.footerTemplate = "Total Sum: #=sum#";
+                                    column.groupFooterTemplate = "Sum: #=sum#";
+                                } else {
+                                    alert("sum() function only apply for number columns.");
+                                    return false;
+                                }
+                            } else if (menuText == "average") {
+                                if(gridModel.fields[field].type == "number") {
+                                    column.footerTemplate = "Average: #=average#";
+                                    column.groupFooterTemplate = "Average: #=average#";
+                                } else {
+                                    alert("average() function only apply for number columns.");
+                                    return false;
+                                }
+                            } else if (menuText == "min") {
+                                if(gridModel.fields[field].type == "number") {
+                                    column.footerTemplate = "Min: #=min#";
+                                    column.groupFooterTemplate = "Min: #=min#";
+                                } else {
+                                    alert("min() function only apply for number columns.");
+                                    return false;
+                                }
+                            } else if (menuText == "max") {
+                                if(gridModel.fields[field].type == "number") {
+                                    column.footerTemplate = "Max: #=max#";
+                                    column.groupFooterTemplate = "Max: #=max#";
+                                } else {
+                                    alert("max() function only apply for number columns.");
+                                    return false;
+                                }
+                            }
+
+                            column.aggregates = [];
+                            column.aggregates.push(menuText);
+
+                            //Refer: http://jsbin.com/sufah/1/edit?html,output
+
+                            updateAggregates(menuText, field);
+
+                            grid.setOptions({
+                                columns: grid.columns
+                            });
+
+                            gridGroup = grid.dataSource.group();
+                            if(gridGroup.length > 0){
+                                $.each(gridGroup, function(id, group) {
+                                    group.aggregates = aggregates;
+                                });
+                                grid.dataSource.group(gridGroup);
+                                grid.dataSource.aggregate(aggregates);
+                            }
+                            else {
+                                //recreate grid
+                                gridColumns = grid.columns;
+                                generateGrid(data, false);
+                            }
+
+                            menu.close();
+                            popup.close();
+                            return false;
+                        }
+                    };
+                });
+            }
+
+        });
+    }
+
+    function destroyGrid(){
+        var grid = $('#grid').data('kendoGrid');
+        if(grid){
+            $('#grid').kendoGrid('destroy').empty();
+        }
+    }
+
+    function updateAggregates(menuText, field) {
+        var found = false;
+        $.each(aggregates, function(id, aggregate) {
+            if(aggregate.field == field){
+                aggregate.aggregate = menuText;
+                found = true;
+            }
+        });
+
+        if (found == false) {
+            aggregates.push({ field: field, aggregate : menuText });
+        }
+    }
+
+    function generateColumns(data) {
+        var columns = [];
+        $.each(data, function (id, item) {
+            if(item.dataType != "date"){
+                columns.push({field: item.columnName, title: item.headerText, format: item.format, footerTemplate: "", groupFooterTemplate: "", width: 200});
+            } else {
+                columns.push({field: item.columnName, title: item.headerText, footerTemplate: "", groupFooterTemplate: "", width: 200});
+            }
+        });
+        return columns;
+    }
+
+    function generateModel(data) {
+        var model = {};
+        model.id = "Id";
+        var fields = {};
+        $.each(data, function (id, item) {
+            var propType = item.dataType;
+            if (propType == "number") {
+                fields[item.columnName] = {
+                    type: "number",
+                    validation: {
+                        required: true
+                    }
+                };
+            } else if (propType == "boolean") {
+                fields[item.columnName] = {
+                    type: "boolean",
+                    validation: {
+                        required: true
+                    }
+                };
+            } else if (propType == "date") {
+                fields[item.columnName] = {
+                    type: "string",
+                    validation: {
+                        required: true
+                    }
+                };
+                dateFields.push({field: item.columnName, format: item.format});
+            } else if (propType == "string") {
+                var parsedDate = kendo.parseDate(data[item.columnName]);
+                if (parsedDate) {
+                    fields[item.columnName] = {
+                        type: "date",
+                        validation: {
+                            required: true
+                        }
+                    };
+                    dateFields.push({field: item.columnName, format: item.format});
+                } else {
+                    fields[item.columnName] = {
+                        validation: {
+                            required: true
+                        }
+                    };
+                }
+            } else {
+                fields[item.columnName] = {
+                    validation: {
+                        required: true
+                    }
+                };
+            }
+        });
+
+        model.fields = fields;
+
+        return model;
+    }
+
+    function searchReport() {
+        var postData = {
+            reportId:  $("#reportId").val()
+        };
+        addAntiForgeryToken(postData);
+        $.ajax({
+            cache: false,
+            type: "POST",
+            url: "@(Url.Action("ColumnMappings", "ReportViewer"))",
+            data: postData,
+            success: function(data) {
+                if (data != null) {
+                    generateGrid(data, true);
+                }
+            },
+            error: function(xhr, ajaxOptions, thrownError) {
+                alert('Failed to retrieve column mappings.');
+            }
+        });
+        return false;
+    }
+
+    function ExportToExcel() {
+        var searchValues = $("div.panel-search").find(':input').serialize();
+        var reportId = $("#reportId").val();
+        var url = '@(Url.Action("ExportToExcel", "ReportViewer"))';
+        url = url + '?searchValues=' + encodeURIComponent(searchValues);
+        url = url + '&reportId=' + reportId;
+
+        OpenWindow(url, 1200, 500, true);
+        return false;
+    }
+
+    function ExportToPdf(){
+        searchValues = $("div.panel-search").find(':input').serialize();
+        reportId = $("#reportId").val();
+
+        var url = '@(Url.Action("ExportToPdf", "ReportViewer"))';
+        url = url + '?searchValues=' + encodeURIComponent(searchValues);
+        url = url + '&reportId=' + reportId;
+
+        OpenWindow(url, 1200, 500, true);
+        return false;
+    }
+
+    function ExportToCsv() {
+        searchValues = $("div.panel-search").find(':input').serialize();
+        reportId = $("#reportId").val();
+
+        var url = '@(Url.Action("ExportToCsv", "ReportViewer"))';
+        url = url + '?searchValues=' + encodeURIComponent(searchValues);
+        url = url + '&reportId=' + reportId;
+
+        OpenWindow(url, 1200, 500, true);
+        return false;
+    }
+
+    $(function () {
+        //search button
+        $('#search').click(function () {
+            searchReport();
+        });
+
+        $('#btnExportToExcel').click(function (e) {
+            e.preventDefault();
+            ExportToExcel();
+        });
+
+        $('#btnExportToPdf').click(function (e) {
+            e.preventDefault();
+            ExportToPdf();
+        });
+
+        $('#btnExportToCsv').click(function (e) {
+            e.preventDefault();
+            ExportToCsv();
+        });
+    });
+</script>

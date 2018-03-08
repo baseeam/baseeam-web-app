@@ -1,0 +1,110 @@
+﻿@model OrganizationModel
+@Html.HiddenFor(model => model.Id)
+@Html.HiddenFor(model => model.IsNew)
+
+<script>
+    $(document).ready(function() {
+        bindBootstrapTabSelectEvent('organization-edit');
+        if ($('#IsNew').val() == 'True') {
+            toggleTabs(false);
+        } else {
+            toggleTabs(true);
+        }
+    });
+
+    function toggleTabs(show) {
+        if (show) {
+            $('#tab-addresses-header').show();
+            $('#tab-sites-header').show();
+        } else {
+            $('#tab-addresses-header').hide();
+            $('#tab-sites-header').hide();
+        }
+    }
+</script>
+
+<div class="content">
+    <div class="form-horizontal">
+        <div id="organization-edit" class="nav-tabs-custom">
+            <ul class="nav nav-tabs">
+                @Html.RenderBootstrapTabHeader("tab-info", @T("Organization.Info"), true)
+                @Html.RenderBootstrapTabHeader("tab-addresses", @T("Organization.Addresses"))
+                @Html.RenderBootstrapTabHeader("tab-sites", @T("Organization.Sites"))
+                @Html.RenderBootstrapTabHeader("tab-inventorysettings", @T("InventorySettings"))
+            </ul>
+            <div class="tab-content">
+                @Html.RenderBootstrapTabContent("tab-info", @TabInfo(), true)
+                @Html.RenderBootstrapTabContent("tab-addresses", @TabAddresses())
+                @Html.RenderBootstrapTabContent("tab-sites", @TabSites())
+                @Html.RenderBootstrapTabContent("tab-inventorysettings", @TabInventorySettings())
+            </div>
+        </div>
+    </div>
+</div>
+
+@{
+    //custom tabs
+    var eventMessage = new AdminTabStripCreated(this.Html, "organization-edit");
+    EngineContext.Current.Resolve<IEventPublisher>().Publish(eventMessage);
+    foreach (var eventBlock in eventMessage.BlocksToRender)
+    {
+        @eventBlock
+    }
+}
+
+@helper TabInfo()
+{
+    <div class="panel-group">
+        <div class="panel panel-default">
+            <div class="panel-body">
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.BaseEamLabelFor(model => model.Name, required: true)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.BaseEamEditorFor(model => model.Name)
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.BaseEamLabelFor(model => model.Description)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.BaseEamEditorFor(model => model.Description)
+                    </div>
+                </div>
+                @if (Model.Id > 0 && Model.IsNew == false)
+                {
+                    <div class="form-group">
+                        <div class="col-md-3">
+                            @Html.BaseEamLabelFor(model => model.FirstCreatedBy)
+                        </div>
+                        <div class="col-md-9">
+                            @Html.BaseEamDisplayFor(model => model.FirstCreatedBy)
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="col-md-3">
+                            @Html.BaseEamLabelFor(model => model.LastUpdatedBy)
+                        </div>
+                        <div class="col-md-9">
+                            @Html.BaseEamDisplayFor(model => model.LastUpdatedBy)
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}
+@helper TabAddresses()
+{
+    @Html.Partial("_Addresses", new AddressModel())
+}
+@helper TabSites()
+{
+    @Html.Partial("_Sites", new SiteModel())
+}
+@helper TabInventorySettings()
+{
+    @Html.Partial("_InventorySettings", Model.InventorySettings)
+}

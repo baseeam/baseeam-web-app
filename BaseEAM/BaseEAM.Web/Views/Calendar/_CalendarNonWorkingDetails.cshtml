@@ -1,0 +1,102 @@
+﻿@using BaseEAM.Services.Security
+@model CalendarNonWorkingModel
+@{
+    var permissionService = EngineContext.Current.Resolve<BaseEAM.Services.IPermissionService>();
+    var allowCreate = permissionService.Authorize(StandardPermissionName.Resource_Calendar_Create);
+    var allowRead = permissionService.Authorize(StandardPermissionName.Resource_Calendar_Read);
+    var allowUpdate = permissionService.Authorize(StandardPermissionName.Resource_Calendar_Update);
+    var allowDelete = permissionService.Authorize(StandardPermissionName.Resource_Calendar_Delete);
+}
+
+<div id="panel-calendarNonWorking" class="panel panel-default eam-panel">
+    <div class="panel-heading">
+        <button type="button" id="saveCalendarNonWorkingDetail" class="btn btn-primary@(allowCreate || allowUpdate ? "" : " none-display")" title="@T("Common.Save")">
+            <i class="fa fa-floppy-o"></i>
+        </button>
+        <button type="button" id="cancelCalendarNonWorkingDetail" class="btn btn-primary" title="@T("Common.Cancel")">
+            <i class="fa fa-ban"></i>
+        </button>
+    </div>
+    <div class="panel-body">
+        @Html.Hidden("CalendarId", Model.CalendarId)
+        @Html.Hidden("CalendarNonWorkingId", Model.Id)
+        <div id="calendarNonWorking-error" class="validation-summary-errors none-display">
+        </div>
+        <div class="col-md-6">
+            <div class="form-group">
+                <div class="col-md-3">
+                    @Html.BaseEamLabelFor(model => model.Name, required: true)
+                </div>
+                <div class="col-md-9">
+                    @Html.BaseEamEditorFor(model => model.Name)
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="form-group">
+                <div class="col-md-3">
+                    @Html.BaseEamLabelFor(model => model.NonWorkingDate, required: true)
+                </div>
+                <div class="col-md-9">
+                    @Html.BaseEamEditorFor(model => model.NonWorkingDate)
+                </div>
+            </div>
+        </div>
+    </div>
+    <script type="text/javascript">
+        $("#saveCalendarNonWorkingDetail").click(function (e) {
+            e.preventDefault();
+            var $group = $("#panel-calendarNonWorking :input");
+            var postData = $group.serializeJSON({ checkboxUncheckedValue: "false" });
+            //change Id property name so it can map to MVC model
+            postData.Id = postData.CalendarNonWorkingId;
+            addAntiForgeryToken(postData);
+
+            $.ajax({
+                cache: false,
+                type: "POST",
+                url: "@(Url.Action("SaveCalendarNonWorking", "Calendar"))",
+                data: postData,
+                success: function (data) {
+                    if (data && data.Errors) {
+                        showErrors(data.Errors, '#calendarNonWorking-error');
+                    } else {
+                        //then toggle the panel
+                        togglePanelCalendarNonWorking(false);
+
+                        //refresh grid
+                        var grid = $('#calendarNonWorkings-grid').data('kendoGrid');
+                        grid.dataSource.page(1);
+                    }
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    showBSModal({ title: 'ERROR', body: thrownError });
+                },
+                traditional: true
+            });
+        });
+
+        $("#cancelCalendarNonWorkingDetail").click(function (e) {
+            e.preventDefault();
+            var postData = {
+                id: $("#CalendarNonWorkingId").val()
+            };
+            addAntiForgeryToken(postData);
+
+            $.ajax({
+                cache: false,
+                type: "POST",
+                url: "@(Url.Action("CancelCalendarNonWorking", "Calendar"))",
+                data: postData,
+                success: function (data) {
+                    //toggle the panel
+                    togglePanelCalendarNonWorking(false);
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    showBSModal({ title: 'ERROR', body: thrownError });
+                },
+                traditional: true
+            });
+        });
+    </script>
+</div>

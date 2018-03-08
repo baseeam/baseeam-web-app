@@ -1,0 +1,124 @@
+﻿@model SearchModel
+@{
+    var defaultGridPageSize = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().DefaultGridPageSize;
+    var gridPageSizes = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().GridPageSizes;
+
+    var valueFieldId = ViewBag.ValueFieldId;
+    var textFieldId = ViewBag.TextFieldId;
+}
+<div class="content" id="sl-assets-popup">
+    <div class="validation-summary-errors none-display" id="sl-assets-error">
+    </div>
+    <div class="form-horizontal">
+        <div class="panel-group">
+            @Html.Partial("Filter", Model)
+            <div class="panel panel-default">
+                <div class="panel-body">
+                    <div id="sl-assets-grid"></div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        function additionalData() {
+            var data = {
+                searchValues: $("#sl-assets-popup div.panel-search").find(':input').serialize()
+            };
+            addAntiForgeryToken(data);
+            return data;
+        }
+
+        $("#sl-assets-grid").kendoGrid({
+            dataSource: {
+                type: "json",
+                transport: {
+                    read: {
+                        url: "@Html.Raw(Url.Action("AssetList", "Lookup"))",
+                        type: "POST",
+                        dataType: "json",
+                        data: additionalData
+                    },
+                    parameterMap: function(data, operation) {
+                        return data;
+                    }
+                },
+                schema: {
+                    data: "Data",
+                    total: "Total",
+                    errors: "Errors",
+                    model: {
+                        fields: {
+                        }
+                    }
+                },
+                error: function (e) {
+                    display_kendoui_grid_error(e);
+                    // Cancel the changes
+                    this.cancelChanges();
+                },
+                pageSize: @(defaultGridPageSize),
+                serverPaging: true,
+                serverFiltering: true,
+                serverSorting: true
+            },
+            pageable: {
+                refresh: true,
+                pageSizes: [@(gridPageSizes)],
+                @Html.Partial("_GridPagerMessages")
+            },
+            sortable: true,
+            editable: false,
+            scrollable: false,
+            columns: [{
+                field: "Name",
+                title: "@T("Asset.Name")",
+                template: "<a href='' onclick='slAssetSelected(event, #=Id#, \"#=Name#\");'>#=Name#</a>"
+            }, {
+                field: "HierarchyNamePath",
+                title: "@T("Common.HierarchyNamePath")"
+            }, {
+                field: "AssetType.Name",
+                title: "@T("Asset.AssetType")"
+            }, {
+                field: "AssetStatus.Name",
+                title: "@T("Asset.AssetStatus")"
+            }, {
+                field: "Location.Name",
+                title: "@T("Asset.Location")"
+            }, {
+                field: "Site.Name",
+                title: "@T("Site")"
+            }
+            ]
+        });
+
+        //search button
+        $('#sl-assets-popup').find('#search').click(function () {
+            //search
+            var grid = $('#sl-assets-grid').data('kendoGrid');
+            grid.dataSource.page(1); //new search. Set page size to 1
+            //grid.dataSource.read(); we already loaded the grid above using "page" function
+            return false;
+        });
+
+        $("#sl-assets-popup div.panel-search").find(':input').keydown(function (event) {
+            if (event.keyCode == 13) {
+                $('#sl-assets-popup').find('#search').click();
+                return false;
+            }
+        });
+
+        function slAssetSelected(e, id, name){
+            e.preventDefault();
+            $('#@valueFieldId').val(id).change();
+            $('#@textFieldId').val(name);
+
+            //fire selected event
+            window.EventBroker.publish(BaseEam.Events.SLAssetSelected, null);
+
+            //hide modal popup
+            $('.modal').modal('hide');
+        }
+    </script>
+</div>

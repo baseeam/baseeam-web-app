@@ -1,0 +1,92 @@
+﻿@{
+    Layout = "";
+}
+@model LoginModel
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>BaseEAM | Log in</title>
+    <!-- Tell the browser to be responsive to screen width -->
+    <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
+    <!-- Bootstrap -->
+    <link rel="stylesheet" href="~/Content/bootstrap/css/bootstrap.min.css">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="~/Content/fontAwesome/css/font-awesome-4.6.3.min.css">
+    <!-- Ionicons -->
+    <link rel="stylesheet" href="~/Content/ionicons/css/ionicons-2.0.1.min.css">
+    <!-- Theme style -->
+    <link rel="stylesheet" href="~/Content/adminLTE/AdminLTE-2.3.0.min.css">
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+    <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
+    <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+</head>
+<body class="hold-transition login-page">
+    <div class="login-box">
+        <div class="login-logo">
+            <b>Base</b><span style="color:red">EAM</span>
+        </div>
+        <!-- /.login-logo -->
+        <div class="login-box-body">
+            <p class="login-box-msg">Sign in to start your session</p>
+            @using (Html.BeginForm())
+            {
+                @Html.AntiForgeryToken()
+                <div class="form-group has-feedback">
+                    <input type="text" id="LoginName" name="LoginName" class="form-control" placeholder="Login Name">
+                    @Html.ValidationMessageFor(model => model.LoginName)
+                    <span class="glyphicon glyphicon-user form-control-feedback"></span>
+                </div>
+                <div class="form-group has-feedback">
+                    <input type="password" id="LoginPassword" name="LoginPassword" class="form-control" placeholder="Login Password">
+                    @Html.ValidationMessageFor(model => model.LoginPassword)
+                    <span class="glyphicon glyphicon-lock form-control-feedback"></span>
+                </div>
+                <div class="row">
+                    <div class="col-xs-8">
+                    </div>
+                    <!-- /.col -->
+                    <div class="col-xs-4">
+                        <button type="submit" class="btn btn-primary btn-block btn-flat">Sign In</button>
+                    </div>
+                    <!-- /.col -->
+                </div>
+                <hr/>
+                <div class="row">
+                    <div class="col-xs-5">
+                        Login Name:
+                    </div>
+                    <div class="col-xs-7">
+                        appadmin
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-xs-5">
+                        Login Password:
+                    </div>
+                    <div class="col-xs-7">
+                        nx3#Lw3N
+                    </div>
+                </div>
+                <hr/>
+                <div class="row">
+                    <div class="col-xs-12">
+                        NOTE: we will reset data at the end of every week.
+                    </div>
+                </div>
+            }
+        </div>
+        <!-- /.login-box-body -->
+    </div>
+    <!-- /.login-box -->
+    <!-- jQuery -->
+    <script src="~/Scripts/jquery-1.10.2.min.js"></script>
+    <!-- Bootstrap 3.3.6 -->
+    <script src="~/Scripts/bootstrap/bootstrap.min.js"></script>
+</body>
+</html>

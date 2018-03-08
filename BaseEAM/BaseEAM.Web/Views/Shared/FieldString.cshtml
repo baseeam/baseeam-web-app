@@ -1,0 +1,4 @@
+﻿@using BaseEAM.Web.Framework.CustomField
+@model FieldModel
+
+@Html.TextBox(Model.Name, Model.Value == null ? "" : Model.Value, new { @class = "form-control" })

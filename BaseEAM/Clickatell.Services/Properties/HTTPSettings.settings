@@ -1,0 +1,51 @@
+﻿<?xml version='1.0' encoding='utf-8'?>
+<SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="Clickatell.Services.Properties" GeneratedClassName="HTTPSettings">
+  <Profiles />
+  <Settings>
+    <Setting Name="AuthenticateURL" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">http://api.clickatell.com/http/auth</Value>
+    </Setting>
+    <Setting Name="SendMessageURL" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">http://api.clickatell.com/http/sendmsg</Value>
+    </Setting>
+    <Setting Name="BalanceURL" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">http://api.clickatell.com/http/getbalance</Value>
+    </Setting>
+    <Setting Name="CoverageURL" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">http://api.clickatell.com/utils/routeCoverage.php</Value>
+    </Setting>
+    <Setting Name="StopMessageURL" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">http://api.clickatell.com/http/delmsg</Value>
+    </Setting>
+    <Setting Name="MessageChargeURL" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">http://api.clickatell.com/http/getmsgcharge</Value>
+    </Setting>
+    <Setting Name="MessageStatusURL" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">http://api.clickatell.com/http/querymsg</Value>
+    </Setting>
+    <Setting Name="QueryString_User" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">user</Value>
+    </Setting>
+    <Setting Name="QueryString_Password" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">password</Value>
+    </Setting>
+    <Setting Name="QueryString_ApiId" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">api_id</Value>
+    </Setting>
+    <Setting Name="QueryString_To" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">to</Value>
+    </Setting>
+    <Setting Name="QueryString_Text" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">text</Value>
+    </Setting>
+    <Setting Name="QueryString_ApiMsgId" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">apimsgid</Value>
+    </Setting>
+    <Setting Name="QueryString_MSISDN" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">msisdn</Value>
+    </Setting>
+    <Setting Name="PhoneNumberFormat" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">{0},</Value>
+    </Setting>
+  </Settings>
+</SettingsFile>

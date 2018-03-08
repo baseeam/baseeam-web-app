@@ -1,0 +1,228 @@
+﻿@using BaseEAM.Services.Security
+@model AdjustItemModel
+@{
+    var permissionService = EngineContext.Current.Resolve<BaseEAM.Services.IPermissionService>();
+    var allowCreate = permissionService.Authorize(StandardPermissionName.Inventory_Adjust_Create);
+    var allowRead = permissionService.Authorize(StandardPermissionName.Inventory_Adjust_Read);
+    var allowUpdate = permissionService.Authorize(StandardPermissionName.Inventory_Adjust_Update);
+    var allowDelete = permissionService.Authorize(StandardPermissionName.Inventory_Adjust_Delete);
+
+    var primarySystemCurrencySymbol = EngineContext.Current.Resolve<BaseEAM.Core.IWorkContext>().WorkingCurrency.CurrencySymbol;
+}
+
+<div id="panel-adjustItem" class="panel panel-default eam-panel">
+    <div class="panel-heading">
+        <button type="button" id="saveAdjustItemDetail" data-bind="visible: !isApproved()" class="btn btn-primary@(allowCreate || allowUpdate ? "" : " none-display")" title="@T("Common.Save")">
+            <i class="fa fa-floppy-o"></i>
+        </button>
+        <button type="button" id="cancelAdjustItemDetail" class="btn btn-primary" title="@T("Common.Cancel")">
+            <i class="fa fa-ban"></i>
+        </button>
+    </div>
+    <div class="panel-body">
+        @Html.Hidden("AdjustId", Model.AdjustId)
+        @Html.Hidden("AdjustItemId", Model.Id)
+        <div id="adjustItem-error" class="validation-summary-errors none-display">
+        </div>
+        <div class="col-md-6">
+            <div class="form-group">
+                <div class="col-md-3">
+                    @Html.BaseEamLabelFor(model => model.ItemId, required: true)
+                    @Html.HiddenFor(model => model.ItemId)
+                </div>
+                <div class="col-md-9">
+                    @Html.ItemLookupFor(model => model.ItemName)
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-md-3">
+                    @Html.BaseEamLabelFor(model => model.ItemUnitOfMeasureId)
+                </div>
+                <div class="col-md-9">
+                    <div class="form-text-row" id="adjustUOM">
+                        @(Model.ItemUnitOfMeasureId != null ? Model.ItemUnitOfMeasureName : "")
+                    </div>                     
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-md-3">
+                    @Html.BaseEamLabelFor(model => model.CurrentQuantity)
+                </div>
+                <div class="col-md-9">
+                    <div class="form-text-row" id="currentQuantity">
+                        @(Model.CurrentQuantity.ToString("#.##"))
+                    </div>
+                </div>
+            </div>            
+        </div>
+        <div class="col-md-6">
+            <div class="form-group">
+                <div class="col-md-3">
+                    @Html.BaseEamLabelFor(model => model.StoreLocatorId, required: true)
+                </div>
+                <div class="col-md-9">
+                    @Html.BaseEamComboBoxFor(model => model.StoreLocatorId, "GetStoreLocators", "Common",
+                                            new RouteValueDictionary { { "parentFieldName", "StoreId" }, { "additionalField", "ItemId" }, { "additionalValue", "" } }, true)
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-md-3">
+                    @Html.BaseEamLabelFor(model => model.AdjustQuantity, required: true)
+                </div>
+                <div class="col-md-9">
+                    @Html.BaseEamEditorFor(model => model.AdjustQuantity, dataBind: "enable: !isApproved()")
+                </div>
+            </div>
+            <div class="form-group  group-unitprice">
+                <div class="col-md-3">
+                    @Html.BaseEamLabelFor(model => model.AdjustUnitPrice, required: true)
+                </div>
+                <div class="col-md-9">
+                    @Html.BaseEamEditorFor(model => model.AdjustUnitPrice, dataBind: "enable: !isApproved()")
+                </div>
+            </div>
+        </div>
+    </div>
+    <script type="text/javascript">
+        $(document).ready(function () {
+           var currentQuantity = $("#panel-adjustItem").find("#currentQuantity").text();
+            var adjustQuantity = $("#panel-adjustItem").find("#@Html.FieldIdFor(model => model.AdjustQuantity)").val();
+            showHideUnitPrice(adjustQuantity);
+        });
+
+        $("#saveAdjustItemDetail").click(function (e) {
+            e.preventDefault();
+            var $group = $("#panel-adjustItem :input");
+            var postData = $group.serializeJSON({ checkboxUncheckedValue: "false" });
+            //change Id property name so it can map to MVC model
+            postData.Id = postData.AdjustItemId;
+            addAntiForgeryToken(postData);
+
+            $.ajax({
+                cache: false,
+                type: "POST",
+                url: "@(Url.Action("SaveAdjustItem", "Adjust"))",
+                data: postData,
+                success: function (data) {
+                    if (data && data.Errors) {
+                        showErrors(data.Errors, '#adjustItem-error');
+                    } else {
+                        //then toggle the panel
+                        togglePanelAdjustItem(false);
+
+                        //refresh grid
+                        var grid = $('#adjustItems-grid').data('kendoGrid');
+                        grid.dataSource.page(1);
+                    }
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    showBSModal({ title: 'ERROR', body: thrownError });
+                },
+                traditional: true
+            });
+        });
+
+        $("#cancelAdjustItemDetail").click(function (e) {
+            e.preventDefault();
+            var postData = {
+                id: $("#AdjustItemId").val()
+            };
+            addAntiForgeryToken(postData);
+
+            $.ajax({
+                cache: false,
+                type: "POST",
+                url: "@(Url.Action("CancelAdjustItem", "Adjust"))",
+                data: postData,
+                success: function (data) {
+                    //toggle the panel
+                    togglePanelAdjustItem(false);
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    showBSModal({ title: 'ERROR', body: thrownError });
+                },
+                traditional: true
+            });
+        });
+
+        //Show the unit price if the adjust quantity > 0
+        function showHideUnitPrice(adjustQuantity) {
+            if (adjustQuantity != "" && parseInt(adjustQuantity) > 0) {
+                $("#panel-adjustItem").find(".group-unitprice").show();
+            } else {
+                $("#panel-adjustItem").find(".group-unitprice").hide();
+            }
+        }
+
+         //Update Current Quantity Of StoreLocator, Item
+        function updateCurrentQuantity() {
+            var storeLocatorId = $("#StoreLocatorId").val();
+            var itemId = $("#ItemId").val();
+            if (storeLocatorId == "" || itemId == "") {
+                $("#panel-adjustItem").find("#currentQuantity").html("");
+                return false;
+            }
+            var postData = {
+                storeLocatorId,
+                itemId
+            };
+
+            addAntiForgeryToken(postData);
+            $.ajax({
+                cache: false,
+                type: "POST",
+                url: "@(Url.Action("GetCurrentQuantity", "Store"))",
+                data: postData,
+                success: function (data) {
+                    if (data != null) {
+                        $("#panel-adjustItem").find("#currentQuantity").html(data.currentQuantity);
+                        var currentQuantity = data.currentQuantity;
+                        var adjustQuantity = $("#panel-adjustItem").find("#@Html.FieldIdFor(model => model.AdjustQuantity)").val();
+                        showHideUnitPrice(adjustQuantity);
+                    }
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    showBSModal({ title: 'ERROR', body: thrownError });
+                },
+                traditional: true
+            });
+        }
+
+          $("#@Html.FieldIdFor(model => model.AdjustQuantity)").change(function () {
+            var currentQuantity = $("#panel-adjustItem").find("#currentQuantity").text();
+            var adjustQuantity = $("#panel-adjustItem").find("#@Html.FieldIdFor(model => model.AdjustQuantity)").val();
+            showHideUnitPrice(adjustQuantity);
+        });
+
+        $("#StoreLocatorId").change(function (e) {
+            e.preventDefault();
+            updateCurrentQuantity();
+        });
+
+        window.EventBroker.subscribe(BaseEam.Events.SLItemSelected, function (message, data) {
+            var postData = {
+                itemId: $("#ItemId").val()
+            };
+            addAntiForgeryToken(postData);
+
+            $.ajax({
+                cache: false,
+                type: "POST",
+                url: "@(Url.Action("ItemInfo", "Item"))",
+                data: postData,
+                success: function (data) {
+                    if (data != null && data.itemInfo != null) {
+                        $("#panel-adjustItem").find("#adjustUOM").html(data.itemInfo.UnitOfMeasure.Name);
+                        $("#panel-adjustItem").find("#AdjustUnitPrice").val(data.itemInfo.UnitPrice);
+                    }
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    showBSModal({ title: 'ERROR', body: thrownError });
+                },
+                traditional: true
+            });
+            updateCurrentQuantity();
+        });
+
+    </script>
+</div>

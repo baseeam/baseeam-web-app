@@ -1,0 +1,38 @@
+/*******************************************************
+ * Copyright 2016 (C) BaseEAM Systems, Inc
+ * All Rights Reserved
+*******************************************************/
+using System.Data.Entity;
+using System.Data.Entity.Core.Objects;
+using EntityFramework.Audit;
+
+namespace EntityFramework.Extensions
+{
+    /// <summary>
+    /// An extension class for <see cref="AuditLog"/>.
+    /// </summary>
+    public static class AuditExtensions
+    {
+        /// <summary>
+        /// Begin audit logging by attaching an <see cref="AuditLogger"/> to the <see cref="ObjectContext"/>.
+        /// </summary>
+        /// <param name="objectContext">The ObjectContext to create the AuditLog from.</param>
+        /// <param name="configuration">The AuditConfiguration to use when creating the AuditLog.</param>
+        /// <returns>An Auditlogger instance to create an AuditLog from.</returns>
+        public static AuditLogger BeginAudit(this ObjectContext objectContext, AuditConfiguration configuration = null)
+        {
+            return new AuditLogger(objectContext, configuration);
+        }
+
+        /// <summary>
+        /// Begin audit logging by attaching an <see cref="AuditLogger"/> to the <see cref="ObjectContext"/>.
+        /// </summary>
+        /// <param name="dbContext">The DbContext to create the AuditLog from.</param>
+        /// <param name="configuration">The AuditConfiguration to use when creating the AuditLog.</param>
+        /// <returns>An Auditlogger instance to create an AuditLog from.</returns>
+        public static AuditLogger BeginAudit(this DbContext dbContext, AuditConfiguration configuration = null)
+        {
+            return new AuditLogger(dbContext, configuration);
+        }
+    }
+}

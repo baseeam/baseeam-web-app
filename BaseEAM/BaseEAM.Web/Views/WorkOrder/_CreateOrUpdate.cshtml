@@ -1,0 +1,356 @@
+﻿@model WorkOrderModel
+@Html.HiddenFor(model => model.Id)
+@Html.HiddenFor(model => model.IsNew)
+@Html.HiddenFor(model => model.Status)
+@Html.HiddenFor(model => model.AvailableActions)
+
+<script>
+    $(document).ready(function () {
+        bindBootstrapTabSelectEvent('workOrder-edit');
+    });
+
+    function savedCallback(data) {
+        viewModel.isNew(false);
+        viewModel.number(data.number);
+
+        refreshTasksTab();
+    }
+</script>
+
+<div class="content">
+    <div class="form-horizontal">
+        <div id="workOrder-edit" class="nav-tabs-custom">
+            <ul class="nav nav-tabs">
+                @Html.RenderBootstrapTabHeader("tab-info", @T("WorkOrder.Info"), true)
+                @Html.RenderBootstrapTabHeader("tab-costing", @T("WorkOrder.Costing"))
+                @Html.RenderBootstrapTabHeader("tab-workOrderTasks", @T("WorkOrder.WorkOrderTasks"))
+                @Html.RenderBootstrapTabHeader("tab-workOrderActuals", @T("WorkOrder.WorkOrderActuals"))
+                @Html.RenderBootstrapTabHeader("tab-points", @T("Points"))
+                @Html.RenderBootstrapTabHeader("tab-workOrderRelated", @T("WorkOrder.WorkOrderRelated"))
+                @Html.RenderBootstrapTabHeader("tab-assignmentHistories", @T("AssignmentHistories"))
+                @Html.RenderBootstrapTabHeader("tab-attachments", @T("Common.Attachments"))
+                @Html.RenderBootstrapTabHeader("tab-comments", @T("Common.Comments"))
+            </ul>
+            <div class="tab-content">
+                @Html.RenderBootstrapTabContent("tab-info", @TabInfo(), true)
+                @Html.RenderBootstrapTabContent("tab-costing", @TabCosting(), dataBind: "visible: !isNew()")
+                @Html.RenderBootstrapTabContent("tab-workOrderTasks", @TabWorkOrderTasks(), dataBind: "visible: !isNew()")
+                @Html.RenderBootstrapTabContent("tab-workOrderActuals", @TabWorkOrderActuals(), dataBind: "visible: !isNew()")
+                @Html.RenderBootstrapTabContent("tab-points", @TabPoints(), dataBind: "visible: !isNew()")
+                @Html.RenderBootstrapTabContent("tab-workOrderRelated", @TabWorkOrderRelated(), dataBind: "visible: !isNew()")
+                @Html.RenderBootstrapTabContent("tab-assignmentHistories", @TabAssignmentHistories(), dataBind: "visible: !isNew()")
+                @Html.RenderBootstrapTabContent("tab-attachments", @TabAttachments(), dataBind: "visible: !isNew()")
+                @Html.RenderBootstrapTabContent("tab-comments", @TabComments(), dataBind: "visible: !isNew()")
+            </div>
+        </div>
+    </div>
+</div>
+
+@{
+    //custom tabs
+    var eventMessage = new AdminTabStripCreated(this.Html, "workOrder-edit");
+    EngineContext.Current.Resolve<IEventPublisher>().Publish(eventMessage);
+    foreach (var eventBlock in eventMessage.BlocksToRender)
+    {
+        @eventBlock
+    }
+}
+
+@helper TabInfo()
+{
+    <div class="panel-group">
+        <div class="panel panel-default">
+            <div class="panel-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.Number, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                <div class="form-text-row" data-bind="html: number">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.Description, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamEditorFor(model => model.Description)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.SiteId, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamComboBoxFor(model => model.SiteId, "SiteList", "Site", null, true)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.AssetId, required: true)
+                                @Html.HiddenFor(model => model.AssetId)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.AssetLookupFor(model => model.AssetName)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.LocationId, required: true)
+                                @Html.HiddenFor(model => model.LocationId)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.LocationLookupFor(model => model.LocationName)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.ParentId)
+                                @Html.HiddenFor(model => model.ParentId)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.WorkOrderLookupFor(model => model.ParentNumber, valueFieldId: "ParentId")
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.ServiceRequestId)
+                                @Html.HiddenFor(model => model.ServiceRequestId)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.ServiceRequestLookupFor(model => model.ServiceRequestNumber)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.PreventiveMaintenanceId)
+                                @Html.HiddenFor(model => model.PreventiveMaintenanceId)
+                            </div>
+                            <div class="col-md-9">
+                                @if (!string.IsNullOrEmpty(Model.PreventiveMaintenanceNumber))
+                                {
+                                    @Html.ActionLink(Model.PreventiveMaintenanceNumber, "Edit", "PreventiveMaintenance", new { Id = (long?)Model.PreventiveMaintenanceId }, new { target = "_blank" })
+                                }
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.Status, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                <div class="form-text-row" data-bind="html: status">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.AssignedUsers, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                <div class="form-text-row" id="assignedUsers" data-bind="html: assignedUsers"></div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.Priority, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.EnumDropDownListFor(model => model.Priority, new { @class = "form-control" })
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.WorkCategoryId)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamComboBoxFor(model => model.WorkCategoryId, "ValueItems", "Common",
+                                            new RouteValueDictionary { { "additionalField", "category" }, { "additionalValue", "Work Category" } }, true)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.WorkTypeId)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamComboBoxFor(model => model.WorkTypeId, "ValueItems", "Common",
+                                            new RouteValueDictionary { { "additionalField", "category" }, { "additionalValue", "Work Type" } }, true)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.FailureGroupId)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamComboBoxFor(model => model.FailureGroupId, "FailureGroupList", "Code")
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <hr />
+                <h4>@T("Contractor")</h4>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.ContractId)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamComboBoxFor(model => model.ContractId, "GetChoices", "Common",
+                                            new RouteValueDictionary { { "dbTable", "Contract" }, { "dbTextColumn", "Number" }, { "dbValueColumn", "Id" } }, true)
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <hr />
+                <h4>@T("WorkOrder.Requestor")</h4>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.RequestorName)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamEditorFor(model => model.RequestorName)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.RequestorEmail)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamEditorFor(model => model.RequestorEmail)
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.RequestorPhone)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamEditorFor(model => model.RequestorPhone)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.RequestedDateTime)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamEditorFor(model => model.RequestedDateTime)
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <hr />
+                <h4>@T("WorkOrder.Schedule")</h4>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.ExpectedStartDateTime)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamEditorFor(model => model.ExpectedStartDateTime)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.DueDateTime)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamEditorFor(model => model.DueDateTime)
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.OnSiteDateTime)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamEditorFor(model => model.OnSiteDateTime)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.SLAEnabled)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamCheckBoxFor(model => model.SLAEnabled)
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <hr />
+                @if (Model.Id > 0 && Model.IsNew == false)
+                {
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <div class="col-md-3">
+                                    @Html.BaseEamLabelFor(model => model.FirstCreatedBy)
+                                </div>
+                                <div class="col-md-9">
+                                    @Html.BaseEamDisplayFor(model => model.FirstCreatedBy)
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <div class="col-md-3">
+                                    @Html.BaseEamLabelFor(model => model.LastUpdatedBy)
+                                </div>
+                                <div class="col-md-9">
+                                    @Html.BaseEamDisplayFor(model => model.LastUpdatedBy)
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+@helper TabCosting()
+{
+    @Html.Partial("_Costing", Model)
+}
+
+@helper TabWorkOrderTasks()
+{
+    @Html.Partial("_WorkOrderTasks", new WorkOrderTaskModel { WorkOrderId = Model.Id, WorkOrderNumber = Model.Number, WorkOrderStatus = Model.Status, TaskGroupId = Model.TaskGroupId })
+}
+
+@helper TabWorkOrderActuals()
+{
+    @Html.Partial("_WorkOrderActuals", Model)
+}
+
+@helper TabPoints()
+{
+    @Html.Partial("_Points", new PointModel { AssetId = Model.AssetId, LocationId = Model.LocationId })
+}
+
+@helper TabWorkOrderRelated()
+{
+    @Html.Partial("_WorkOrderRelated", Model)
+}
+
+@helper TabAssignmentHistories()
+{
+    @Html.Partial("AssignmentHistory", new AssignmentHistoryModel { EntityId = Model.Id, EntityType = EntityType.WorkOrder })
+}
+
+@helper TabAttachments()
+{
+    @Html.Partial("Attachment", new AttachmentModel { EntityId = Model.Id, EntityType = EntityType.WorkOrder })
+}
+
+@helper TabComments()
+{
+    @Html.Partial("Comment", new CommentModel { EntityId = Model.Id, EntityType = EntityType.WorkOrder })
+}

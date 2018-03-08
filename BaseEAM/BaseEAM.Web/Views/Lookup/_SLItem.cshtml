@@ -1,0 +1,126 @@
+﻿@model SearchModel
+@{
+    var defaultGridPageSize = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().DefaultGridPageSize;
+    var gridPageSizes = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().GridPageSizes;
+
+    var valueFieldId = ViewBag.ValueFieldId;
+    var textFieldId = ViewBag.TextFieldId;
+}
+<div class="content" id="sl-items-popup">
+    <div class="validation-summary-errors none-display" id="sl-items-error">
+    </div>
+    <div class="form-horizontal">
+        <div class="panel-group">
+            @Html.Partial("Filter", Model)
+            <div class="panel panel-default">
+                <div class="panel-body">
+                    <div id="sl-items-grid"></div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        function additionalData() {
+            var data = {
+                searchValues: $("#sl-items-popup div.panel-search").find(':input').serialize()
+            };
+            addAntiForgeryToken(data);
+            return data;
+        }
+
+        $("#sl-items-grid").kendoGrid({
+            dataSource: {
+                type: "json",
+                transport: {
+                    read: {
+                        url: "@Html.Raw(Url.Action("ItemList", "Lookup"))",
+                        type: "POST",
+                        dataType: "json",
+                        data: additionalData
+                    },
+                    parameterMap: function(data, operation) {
+                        sortMapping = [
+                            { from: "Name", to: "Item.Name" },
+                            { from: "ItemCategoryText", to: "ItemCategory" }
+                        ];
+                        BaseEam.Grid.mapSortColumns(data.sort, sortMapping);
+                        return data;
+                    }
+                },
+                schema: {
+                    data: "Data",
+                    total: "Total",
+                    errors: "Errors",
+                    model: {
+                        fields: {
+                        }
+                    }
+                },
+                error: function (e) {
+                    display_kendoui_grid_error(e);
+                    // Cancel the changes
+                    this.cancelChanges();
+                },
+                pageSize: @(defaultGridPageSize),
+                serverPaging: true,
+                serverFiltering: true,
+                serverSorting: true
+            },
+            pageable: {
+                refresh: true,
+                pageSizes: [@(gridPageSizes)],
+                @Html.Partial("_GridPagerMessages")
+            },
+            sortable: true,
+            editable: false,
+            scrollable: false,
+            columns: [{
+                field: "Name",
+                title: "@T("Item.Name")",
+                template: "<a href='' onclick='slItemSelected(event, #=Id#, \"#=Name#\");'>#=Name#</a>"
+            }, {
+                field: "ItemGroup.Name",
+                title: "@T("Item.ItemGroup")"
+            }, {
+                field: "ItemCategoryText",
+                title: "@T("Item.ItemCategory")"
+            }, {
+                field: "Barcode",
+                title: "@T("Item.Barcode")"
+            }, {
+                field: "UnitOfMeasure.Name",
+                title: "@T("Item.UnitOfMeasure")"
+            }
+            ]
+        });
+
+        //search button
+        $('#sl-items-popup').find('#search').click(function () {
+            //search
+            var grid = $('#sl-items-grid').data('kendoGrid');
+            grid.dataSource.page(1); //new search. Set page size to 1
+            //grid.dataSource.read(); we already loaded the grid above using "page" function
+            return false;
+        });
+
+        $("#sl-items-popup div.panel-search").find(':input').keydown(function (event) {
+            if (event.keyCode == 13) {
+                $('#sl-items-popup').find('#search').click();
+                return false;
+            }
+        });
+
+        function slItemSelected(e, id, name){
+            e.preventDefault();
+            $('#@valueFieldId').val(id).change();
+            $('#@textFieldId').val(name);
+
+            //fire selected event
+            window.EventBroker.publish(BaseEam.Events.SLItemSelected, null);
+
+            //hide modal popup
+            $('.modal').modal('hide');
+        }
+    </script>
+</div>

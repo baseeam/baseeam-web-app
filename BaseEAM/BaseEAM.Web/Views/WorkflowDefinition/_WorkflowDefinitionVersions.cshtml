@@ -1,0 +1,193 @@
+﻿@using BaseEAM.Services.Security
+@model WorkflowDefinitionVersionModel
+@{
+    var defaultGridPageSize = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().DefaultGridPageSize;
+    var gridPageSizes = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().GridPageSizes;
+
+    var permissionService = EngineContext.Current.Resolve<BaseEAM.Services.IPermissionService>();
+    var allowCreate = permissionService.Authorize(StandardPermissionName.Workflow_WorkflowDefinition_Create);
+    var allowRead = permissionService.Authorize(StandardPermissionName.Workflow_WorkflowDefinition_Read);
+    var allowUpdate = permissionService.Authorize(StandardPermissionName.Workflow_WorkflowDefinition_Update);
+    var allowDelete = permissionService.Authorize(StandardPermissionName.Workflow_WorkflowDefinition_Delete);
+}
+<div id="group-workflowDefinitionVersions" class="panel-group">
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <button type="button" id="createWorkflowDefinitionVersion" class="btn btn-primary@(allowCreate || allowUpdate ? "" : " none-display")" title="@T("Common.AddNew")">
+                <i class="fa fa-plus-square"></i>
+            </button>
+            <button type="button" id="deleteSelectedWorkflowDefinitionVersions" class="btn btn-primary@(allowCreate || allowUpdate ? "" : " none-display")" title="@T("Common.Delete.Selected")">
+                <i class="fa fa-trash-o"></i>
+            </button>
+        </div>
+        <div class="panel-body">
+            <div id="workflowDefinitionVersions-grid"></div>
+            <script>
+                var gridCheckboxHandler1 = new BaseEam.CheckBoxHandler('workflowDefinitionVersions-grid');
+                gridCheckboxHandler1.init();
+
+                $(document).ready(function () {
+                    $("#workflowDefinitionVersions-grid").kendoGrid({
+                        dataSource: {
+                            type: "json",
+                            transport: {
+                                read: {
+                                    url: "@Html.Raw(Url.Action("WorkflowDefinitionVersionList", "WorkflowDefinition"))",
+                                    type: "POST",
+                                    dataType: "json",
+                                    data: additionalData
+                                }
+                            },
+                            schema: {
+                                data: "Data",
+                                total: "Total",
+                                errors: "Errors",
+                                model: {
+                                    id: "Id"
+                                }
+                            },
+                            error: function(e) {
+                                display_kendoui_grid_error(e);
+                                // Cancel the changes
+                                this.cancelChanges();
+                            },
+                            pageSize: @(defaultGridPageSize),
+                            serverPaging: true,
+                            serverFiltering: true,
+                            serverSorting: true
+                        },
+                        pageable: {
+                            refresh: true,
+                            pageSizes: [@(gridPageSizes)],
+                            @Html.Partial("_GridPagerMessages")
+                        },
+                        sortable: true,
+                        editable: false,
+                        scrollable: false,
+                        dataBound: gridCheckboxHandler1.onDataBound,
+                        columns: [{
+                            field: "Id",
+                            headerTemplate: "<input id='addresses-grid-mastercheckbox' type='checkbox'/>",
+                            headerAttributes: { style: "text-align:center" },
+                            attributes: { style: "text-align:center" },
+                            template: "<input type='checkbox' value='#=Id#' class='checkboxGroups'/>",
+                            width: 50,
+                            sortable: false
+                        },{
+                            field: "WorkflowVersion",
+                            title: "@T("WorkflowDefinitionVersion.WorkflowVersion")"
+                        }, {
+                            field: "WorkflowXamlFileName",
+                            title: "@T("WorkflowDefinitionVersion.WorkflowXamlFileName")"
+                        }, {
+                            field: "WorkflowPictureFileName",
+                            title: "@T("WorkflowDefinitionVersion.WorkflowPictureFileName")"
+                        }, {
+                            field: "Id",
+                            headerTemplate: "",
+                            width: 150,
+                            template: '<a class="btn btn-primary@(allowCreate || allowUpdate ? "" : " none-display")" href="@Url.Action("Image", "WorkflowDefinition")/#=Id#" target="_blank"></span><i class="fa fa-eye aria-hidden="true""></i></a>' +
+                                    '<a class="btn btn-primary@(allowCreate || allowUpdate ? "" : " none-display")" href="" onclick="deleteWorkflowDefinitionVersion(event, #=Id#);"></span><i class="fa fa-trash aria-hidden="true""></i></a>',
+                            sortable: false
+                        }]
+                    });
+                });
+            </script>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    function editWorkflowDefinitionVersion(e, id){
+        e.preventDefault();
+        if($('#panel-workflowDefinitionVersion').is(":visible")){
+            togglePanelWorkflowDefinitionVersion(false);
+        }
+        var postData = {
+            id : id
+        };
+        addAntiForgeryToken(postData);
+
+        $.ajax({
+            cache: false,
+            type: "POST",
+            url: "@(Url.Action("WorkflowDefinitionVersion", "WorkflowDefinition"))",
+            data: postData,
+            success: function(data) {
+                //append html
+                $("#group-workflowDefinitionVersions").append(data.Html);
+
+                //then toggle the panel
+                togglePanelWorkflowDefinitionVersion(true);
+            },
+            error: function(xhr, ajaxOptions, thrownError) {
+                showBSModal({title: 'ERROR', body: thrownError});
+            },
+            traditional: true
+        });
+    };
+
+    function deleteWorkflowDefinitionVersion(e, id){
+        e.preventDefault();
+        //check if panel-workflowDefinitionVersion is open => close it before delete
+        if($('#panel-workflowDefinitionVersion').is(":visible")){
+            togglePanelWorkflowDefinitionVersion(false);
+        }
+
+        BaseEam.Grid.deleteRow($("#Id").val(), id, "@Url.Action("DeleteWorkflowDefinitionVersion", "WorkflowDefinition")", "workflowDefinitionVersions-grid", "", true);
+    };
+
+    function additionalData() {
+        var data = {
+            workflowDefinitionId: $("#Id").val()
+        };
+        addAntiForgeryToken(data);
+        return data;
+    }
+
+    function togglePanelWorkflowDefinitionVersion(editmode) {
+        if (editmode) {
+            $('#panel-workflowDefinitionVersion').show();
+            $('#createWorkflowDefinitionVersion').hide();
+        }
+        else {
+            ////remove the panel html so we won't care
+            //about dirty change tracking for newly added input tag
+            $('#panel-workflowDefinitionVersion').remove();
+            $('#createWorkflowDefinitionVersion').show();
+        }
+    }
+
+    $(document).ready(function () {
+        $("#createWorkflowDefinitionVersion").click(function(e){
+            e.preventDefault();
+            var postData = {
+                workflowDefinitionId : $("#Id").val()
+            };
+            addAntiForgeryToken(postData);
+
+            $.ajax({
+                cache: false,
+                type: "POST",
+                url: "@(Url.Action("CreateWorkflowDefinitionVersion", "WorkflowDefinition"))",
+                data: postData,
+                success: function(data) {
+                    //append html
+                    $("#group-workflowDefinitionVersions").append(data.Html);
+
+                    //then toggle the panel
+                    togglePanelWorkflowDefinitionVersion(true);
+                },
+                error: function(xhr, ajaxOptions, thrownError) {
+                    showBSModal({title: 'ERROR', body: thrownError});
+                },
+                traditional: true
+            });
+        });
+
+        $("#deleteSelectedWorkflowDefinitionVersions").click(function(e){
+            e.preventDefault();
+            BaseEam.Grid.deleteSelectedRows($("#Id").val(), gridCheckboxHandler1.selectedIds, "@Url.Action("DeleteSelectedWorkflowDefinitionVersions", "WorkflowDefinition")", "workflowDefinitionVersions-grid", "", true);
+        });
+    });
+</script>

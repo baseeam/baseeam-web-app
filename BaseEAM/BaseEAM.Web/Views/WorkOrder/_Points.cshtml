@@ -1,0 +1,143 @@
+﻿@using BaseEAM.Services.Security
+@model PointModel
+@{
+    var defaultGridPageSize = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().DefaultGridPageSize;
+    var gridPageSizes = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().GridPageSizes;
+
+        var permissionService = EngineContext.Current.Resolve<BaseEAM.Services.IPermissionService>();
+    var allowCreate = permissionService.Authorize(StandardPermissionName.Maintenance_WorkOrder_Create);
+    var allowRead = permissionService.Authorize(StandardPermissionName.Maintenance_WorkOrder_Read);
+    var allowUpdate = permissionService.Authorize(StandardPermissionName.Maintenance_WorkOrder_Update);
+    var allowDelete = permissionService.Authorize(StandardPermissionName.Maintenance_WorkOrder_Delete);
+}
+<div class="validation-summary-errors none-display" id="pointMeterLineItem-error">
+</div>
+<div id="group-pointMeterLineItems" class="panel-group">
+    <div class="panel panel-default">
+        <div class="panel-body">
+            <div id="pointMeterLineItems-grid"></div>
+            <script>
+                $(document).ready(function () {
+                    $("#pointMeterLineItems-grid").kendoGrid({
+                        dataSource: {
+                            type: "json",
+                            transport: {
+                                read: {
+                                    url: "@Html.Raw(Url.Action("PointMeterLineItemList", "WorkOrder", new { assetId = Model.AssetId, locationId = Model.LocationId }))",
+                                    type: "POST",
+                                    dataType: "json",
+                                    data: addAntiForgeryToken
+                                },
+                                //This is used to map field to format that the server can understand
+                                //it runs after the data (additionalData) populated
+                                parameterMap: function (data, operation) {
+                                    //Update the format date time when edit 
+                                    for (var model in data.updated) {
+                                        var dateOfReading = kendo.parseDate(data.updated[model].DateOfReading);
+                                        data.updated[model].DateOfReading = kendo.toString(dateOfReading, "MM/dd/yyyy HH:mm");
+                                        var lastDateOfReading = kendo.parseDate(data.updated[model].LastDateOfReading);
+                                        data.updated[model].LastDateOfReading = kendo.toString(lastDateOfReading, "MM/dd/yyyy HH:mm");
+                                        data.updated[model].WorkOrderId = $('#WorkOrderId').val();
+                                    }
+
+                                    sortMapping = [{ from: "MeterName", to: "Meter.Name" },
+                                        { from: "MeterMeterTypeName", to: "Meter.MeterType.Name" },
+                                        { from: "MeterUnitOfMeasureName", to: "Meter.UnitOfMeasure.Name" }];
+                                    BaseEam.Grid.mapSortColumns(data.sort, sortMapping);
+
+                                    return data;
+                                }
+                            },
+                            schema: {
+                                data: "Data",
+                                total: "Total",
+                                errors: "Errors",
+                                model: {
+                                    id: "Id",
+                                    fields: {
+                                        Id: { hidden: true, editable: false, defaultValue: 0 },
+                                        PointAssetName: { editable: false },
+                                        DisplayOrder: { editable: false },
+                                        MeterName: { editable: false },
+                                        MeterMeterTypeName: { editable: false },
+                                        MeterUnitOfMeasureName: { editable: false },
+                                        LastReadingValue: { editable: false },
+                                        LastDateOfReading: { editable: false },
+                                        ReadingValue: { editable: true, type: "number" },
+                                        DateOfReading: { editable: true }
+                                    }
+                                }
+                            },
+                            batch: true,
+                            error: function (e) {
+                                display_kendoui_grid_error(e);
+                                // Cancel the changes
+                                this.cancelChanges();
+                            },
+                            change: function (e) {
+                                if (e.action == "itemchange") {
+                                    e.items[0].dirtyFields = e.items[0].dirtyFields || {};
+                                    e.items[0].dirtyFields[e.field] = true;
+                                }
+                            },
+                            pageSize: @(defaultGridPageSize),
+                            serverPaging: true,
+                            serverFiltering: true,
+                            serverSorting: true
+                        },
+                        pageable: {
+                            refresh: true,
+                            pageSizes: [@(gridPageSizes)],
+                            @Html.Partial("_GridPagerMessages")
+                        },
+                        toolbar: ["save", "cancel"],
+                        saveChanges: function(e) {
+                            e.preventDefault();
+                            BaseEam.Grid.saveChanges('@Url.Action("SaveChanges","WorkOrder")', '#pointMeterLineItems-grid', '#pointMeterLineItem-error');
+                        },
+                        navigatable: true,
+                        sortable: true,
+                        editable: true,
+                        scrollable: false,
+                        columns: [{
+                            field: "PointAssetName",
+                            title: "@T("PointMeterLineItem.LocationOrAsset")",
+                            template: '#= PointAssetName != null ? PointAssetName : PointLocationName #',
+                            sortable: false
+                        },{
+                            field: "DisplayOrder",
+                            title: "@T("PointMeterLineItem.DisplayOrder")",
+                        },{
+                            field: "MeterName",
+                            title: "@T("Meter")",
+                        },{
+                            field: "MeterMeterTypeName",
+                            title: "@T("MeterType")",
+                        },{
+                            field: "MeterUnitOfMeasureName",
+                            title: "@T("UnitOfMeasure")",
+                        },{
+                            field: "LastReadingValue",
+                            title: "@T("PointMeterLineItem.LastReadingValue")",
+                        },{
+                            field: "LastDateOfReading",
+                            title: "@T("PointMeterLineItem.LastDateOfReading")",
+                            template: '#= LastDateOfReading != null ? kendo.toString(kendo.parseDate(LastDateOfReading, "MM/dd/yyyy HH:mm"), "MM/dd/yyyy HH:mm") : "" #',
+                        },{
+                            field: "ReadingValue",
+                            title: "@T("PointMeterLineItem.ReadingValue")",
+                            sortable: false
+                        },{
+                            field: "DateOfReading",
+                            title: "@T("PointMeterLineItem.DateOfReading")",
+                            template: '#= DateOfReading != null ? kendo.toString(kendo.parseDate(DateOfReading, "MM/dd/yyyy HH:mm"), "MM/dd/yyyy HH:mm") : "" #',
+                            format: "{0:MM/dd/yyyy HH:mm}",
+                            editor: BaseEam.Grid.dateTimeEditor,
+                            sortable: false
+                        }]
+                    });
+                });
+            </script>
+        </div>
+    </div>
+</div>

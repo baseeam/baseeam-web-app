@@ -1,0 +1,82 @@
+﻿@using BaseEAM.Services.Security
+@model AddressModel
+@{
+    var permissionService = EngineContext.Current.Resolve<BaseEAM.Services.IPermissionService>();
+    var allowCreate = permissionService.Authorize(StandardPermissionName.Administration_Organization_Create);
+    var allowRead = permissionService.Authorize(StandardPermissionName.Administration_Organization_Read);
+    var allowUpdate = permissionService.Authorize(StandardPermissionName.Administration_Organization_Update);
+    var allowDelete = permissionService.Authorize(StandardPermissionName.Administration_Organization_Delete);
+}
+
+<div id="panel-address" class="panel panel-default eam-panel">
+    <div class="panel-heading">
+        <button type="button" id="saveAddress" class="btn btn-primary@(allowCreate || allowUpdate ? "" : " none-display")" title="@T("Common.Save")">
+            <i class="fa fa-floppy-o"></i>
+        </button>
+        <button type="button" id="cancelAddress" class="btn btn-primary" title="@T("Common.Cancel")">
+            <i class="fa fa-ban"></i>
+        </button>
+    </div>
+    <div class="panel-body">
+        @Html.Hidden("AddressId", Model.Id)
+        <div id="address-error" class="validation-summary-errors none-display">
+        </div>
+        @Html.EditorFor(model => model, "Address")
+    </div>
+    <script type="text/javascript">
+        $("#saveAddress").click(function (e) {
+            e.preventDefault();
+            var $group = $("#panel-address :input");
+            var postData = $group.serializeJSON({ checkboxUncheckedValue: "false" });
+            //change Id property name so it can map to MVC model
+            postData.Id = postData.AddressId;
+            addAntiForgeryToken(postData);
+
+            $.ajax({
+                cache: false,
+                type: "POST",
+                url: "@(Url.Action("SaveAddress", "Organization"))",
+                data: postData,
+                success: function (data) {
+                    if (data && data.Errors) {
+                        showErrors(data.Errors, '#address-error');
+                    } else {
+                        //then toggle the panel
+                        togglePanelAddress(false);
+
+                        //refresh grid
+                        var grid = $('#addresses-grid').data('kendoGrid');
+                        grid.dataSource.page(1);
+                    }
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    showBSModal({ title: 'ERROR', body: thrownError });
+                },
+                traditional: true
+            });
+        });
+
+        $("#cancelAddress").click(function (e) {
+            e.preventDefault();
+            var postData = {
+                id: $("#AddressId").val()
+            };
+            addAntiForgeryToken(postData);
+
+            $.ajax({
+                cache: false,
+                type: "POST",
+                url: "@(Url.Action("CancelAddress", "Organization"))",
+                data: postData,
+                success: function (data) {
+                    //toggle the panel
+                    togglePanelAddress(false);
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    showBSModal({ title: 'ERROR', body: thrownError });
+                },
+                traditional: true
+            });
+        });
+    </script>
+</div>

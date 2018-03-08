@@ -1,0 +1,158 @@
+﻿@using BaseEAM.Services.Security
+@model VisualFilterModel
+@{
+    var permissionService = EngineContext.Current.Resolve<BaseEAM.Services.IPermissionService>();
+    var allowCreate = permissionService.Authorize(StandardPermissionName.Report_Visual_Create);
+    var allowRead = permissionService.Authorize(StandardPermissionName.Report_Visual_Read);
+    var allowUpdate = permissionService.Authorize(StandardPermissionName.Report_Visual_Update);
+    var allowDelete = permissionService.Authorize(StandardPermissionName.Report_Visual_Delete);
+}
+
+<div id="panel-visualFilter" class="panel panel-default eam-panel">
+    <div class="panel-heading">
+        <button type="button" id="saveVisualFilter" class="btn btn-primary@(allowCreate || allowUpdate ? "" : " none-display")" title="@T("Common.Save")">
+            <i class="fa fa-floppy-o"></i>
+        </button>
+        <button type="button" id="cancelVisualFilter" class="btn btn-primary" title="@T("Common.Cancel")">
+            <i class="fa fa-ban"></i>
+        </button>
+    </div>
+    <div class="panel-body">
+        @Html.Hidden("VisualId", Model.VisualId)
+        @Html.Hidden("VisualFilterId", Model.Id)
+        <div id="visualFilter-error" class="validation-summary-errors none-display">
+        </div>
+        <div class="col-md-6">
+            <div class="form-group">
+                <div class="col-md-3">
+                    @Html.BaseEamLabelFor(model => model.DisplayOrder, required: true)
+                </div>
+                <div class="col-md-9">
+                    @Html.BaseEamEditorFor(model => model.DisplayOrder)
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-md-3">
+                    @Html.BaseEamLabelFor(model => model.IsRequired)
+                </div>
+                <div class="col-md-9">
+                    @Html.BaseEamCheckBoxFor(model => model.IsRequired)
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-md-3">
+                    @Html.BaseEamLabelFor(model => model.ResourceKey, required: true)
+                </div>
+                <div class="col-md-9">
+                    @Html.BaseEamEditorFor(model => model.ResourceKey)
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="form-group">
+                <div class="col-md-3">
+                    @Html.BaseEamLabelFor(model => model.FilterId, required: true)
+                </div>
+                <div class="col-md-9">
+                    @Html.BaseEamComboBoxFor(model => model.FilterId, "GetChoices", "Common",
+                                            new RouteValueDictionary { { "dbTable", "Filter" }, { "dbTextColumn", "Name" }, { "dbValueColumn", "Id" } }, true)
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-md-3">
+                    @Html.BaseEamLabelFor(model => model.DbColumn, required: true)
+                </div>
+                <div class="col-md-9">
+                    @Html.BaseEamEditorFor(model => model.DbColumn)
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-md-3">
+                    @Html.BaseEamLabelFor(model => model.ParentVisualFilterId)
+                </div>
+                <div class="col-md-9">
+                    @Html.BaseEamComboBoxFor(model => model.ParentVisualFilterId, "ParentVisualFilterList", "Visual",
+                                            new RouteValueDictionary { { "additionalField", "visualId" }, { "additionalValue", Model.VisualId } }, true)
+                </div>
+            </div>
+        </div>
+    </div>
+    <script type="text/javascript">
+        $("#saveVisualFilter").click(function (e) {
+            e.preventDefault();
+            var $group = $("#panel-visualFilter :input");
+            var postData = $group.serializeJSON({ checkboxUncheckedValue: "false" });
+            //change Id property name so it can map to MVC model
+            postData.Id = postData.VisualFilterId;
+            addAntiForgeryToken(postData);
+
+            $.ajax({
+                cache: false,
+                type: "POST",
+                url: "@(Url.Action("SaveVisualFilter", "Visual"))",
+                data: postData,
+                success: function (data) {
+                    if (data && data.Errors) {
+                        showErrors(data.Errors, '#visualFilter-error');
+                    } else {
+                        //then toggle the panel
+                        togglePanelVisualFilter(false);
+
+                        //refresh grid
+                        var grid = $('#visualFilters-grid').data('kendoGrid');
+                        grid.dataSource.page(1);
+                    }
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    showBSModal({ title: 'ERROR', body: thrownError });
+                },
+                traditional: true
+            });
+        });
+
+        $("#cancelVisualFilter").click(function (e) {
+            e.preventDefault();
+            var postData = {
+                id: $("#VisualFilterId").val()
+            };
+            addAntiForgeryToken(postData);
+
+            $.ajax({
+                cache: false,
+                type: "POST",
+                url: "@(Url.Action("CancelVisualFilter", "Visual"))",
+                data: postData,
+                success: function (data) {
+                    //toggle the panel
+                    togglePanelVisualFilter(false);
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    showBSModal({ title: 'ERROR', body: thrownError });
+                },
+                traditional: true
+            });
+        });
+
+        $("#FilterId").change(function (e) {
+            var postData = {
+                filterId: $("#FilterId").val()
+            };
+            addAntiForgeryToken(postData);
+            $.ajax({
+                cache: false,
+                type: "POST",
+                url: "@(Url.Action("FilterInfo", "Filter"))",
+                data: postData,
+                success: function (data) {
+                    if (data != null && data.filterInfo != null) {
+                        $("#panel-visualFilter").find("#ResourceKey").val(data.filterInfo.ResourceKey);
+                    }
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    showBSModal({ title: 'ERROR', body: thrownError });
+                },
+                traditional: true
+            });
+        });
+    </script>
+</div>

@@ -1,0 +1,125 @@
+﻿@model SearchModel
+@{
+    var defaultGridPageSize = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().DefaultGridPageSize;
+    var gridPageSizes = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().GridPageSizes;
+
+    var assetId = ViewBag.AssetId;
+    var locationId = ViewBag.LocationId;
+}
+<div class="content" id="ml-meterEvents-popup">
+    <div class="validation-summary-errors none-display" id="ml-meterEvents-error">
+    </div>
+    <div class="form-horizontal">
+        <div class="panel-group">
+            @Html.Partial("Filter", Model)
+            <div class="panel panel-default">
+                <div class="panel-body">
+                    <div id="ml-meterEvents-grid"></div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        var meterEventsCheckboxHandler = new BaseEam.CheckBoxHandler('ml-meterEvents-grid');
+        meterEventsCheckboxHandler.init();
+
+        function additionalDataForMLMeterEvent() {
+            var data = {
+                 meterName: $("#ml-meterEvents-popup div.panel-search").find(':input[id="Name"]').val(),
+                 assetId: '@assetId',
+                 locationId: '@locationId'
+            };
+            addAntiForgeryToken(data);
+            return data;
+        }
+
+        $("#ml-meterEvents-grid").kendoGrid({
+            dataSource: {
+                type: "json",
+                transport: {
+                    read: {
+                        url: "@Html.Raw(Url.Action("MeterEventList", "Lookup"))",
+                        type: "POST",
+                        dataType: "json",
+                        data: additionalDataForMLMeterEvent
+                    },
+                    //This is used to map field to format that the server can understand
+                    //it runs after the data (additionalData) populated
+                    parameterMap: function (data, operation) {
+                        sortMapping = [{ from: "MeterName", to: "Meter.Name" }];
+                        BaseEam.Grid.mapSortColumns(data.sort, sortMapping);
+                        return data;
+                    }
+                },
+                schema: {
+                    data: "Data",
+                    total: "Total",
+                    errors: "Errors",
+                    model: {
+                        fields: {
+                        }
+                    }
+                },
+                error: function (e) {
+                    display_kendoui_grid_error(e);
+                    // Cancel the changes
+                    this.cancelChanges();
+                },
+                pageSize: @(defaultGridPageSize),
+                serverPaging: true,
+                serverFiltering: true,
+                serverSorting: true
+            },
+            pageable: {
+                refresh: true,
+                pageSizes: [@(gridPageSizes)],
+                @Html.Partial("_GridPagerMessages")
+            },
+            sortable: false,
+            editable: false,
+            scrollable: false,
+            dataBound: meterEventsCheckboxHandler.onDataBound,
+            columns: [{
+                field: "Id",
+                headerTemplate: "<input id='ml-meterEvents-grid-mastercheckbox' type='checkbox'/>",
+                headerAttributes: { style: "text-align:center" },
+                attributes: { style: "text-align:center" },
+                template: "<input type='checkbox' value='#=Id#' class='checkboxGroups'/>",
+                width: 50,
+            },{
+                field: "MeterName",
+                title: "@T("Meter")"
+            }, {
+                field: "Description",
+                title: "@T("MeterEvent.Description")"
+            },{
+                field: "LowerLimit",
+                title: "@T("MeterEvent.LowerLimit")",
+                template: '#= LowerLimit != null ? kendo.toString(LowerLimit, "n") : "" #'
+            },{
+                field: "UpperLimit",
+                title: "@T("MeterEvent.UpperLimit")",
+                template: '#= UpperLimit != null ? kendo.toString(UpperLimit, "n") : "" #'
+            }
+            ]
+        });
+
+        //search button
+        $('#ml-meterEvents-popup').find('#search').click(function () {
+            //search
+            var grid = $('#ml-meterEvents-grid').data('kendoGrid');
+            grid.dataSource.page(1); //new search. Set page size to 1
+            //grid.dataSource.read(); we already loaded the grid above using "page" function
+            return false;
+        });
+
+        $("#ml-meterEvents-popup div.panel-search").find(':input').keydown(function (event) {
+            if (event.keyCode == 13) {
+                $('#ml-meterEvents-popup').find('#search').click();
+                return false;
+            }
+        });
+
+    </script>
+</div>

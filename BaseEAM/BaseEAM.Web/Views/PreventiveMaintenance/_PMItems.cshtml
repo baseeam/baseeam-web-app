@@ -1,0 +1,240 @@
+﻿@using BaseEAM.Services.Security
+@model PMItemModel
+@{
+    var defaultGridPageSize = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().DefaultGridPageSize;
+    var gridPageSizes = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().GridPageSizes;
+    var primarySystemCurrencySymbol = EngineContext.Current.Resolve<BaseEAM.Core.IWorkContext>().WorkingCurrency.CurrencySymbol;
+
+    var permissionService = EngineContext.Current.Resolve<BaseEAM.Services.IPermissionService>();
+    var allowCreate = permissionService.Authorize(StandardPermissionName.Maintenance_PreventiveMaintenance_Create);
+    var allowRead = permissionService.Authorize(StandardPermissionName.Maintenance_PreventiveMaintenance_Read);
+    var allowUpdate = permissionService.Authorize(StandardPermissionName.Maintenance_PreventiveMaintenance_Update);
+    var allowDelete = permissionService.Authorize(StandardPermissionName.Maintenance_PreventiveMaintenance_Delete);
+}
+<div id="group-pMItems" class="panel-group" data-bind="visible: !isNew()">
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <button type="button" id="createPMItem" class="btn btn-primary@(allowCreate || allowUpdate ? "" : " none-display")" title="@T("Common.AddNew")">
+                <i class="fa fa-plus-square"></i>
+            </button>
+            <button type="button" id="deleteSelectedPMItems" class="btn btn-primary@(allowCreate || allowUpdate ? "" : " none-display")" title="@T("Common.Delete.Selected")">
+                <i class="fa fa-trash-o"></i>
+            </button>
+        </div>
+        <div class="panel-body">
+            <div id="pMItems-grid"></div>
+            <script>
+                var gridCheckboxHandler2_1 = new BaseEam.CheckBoxHandler('pMItems-grid');
+                gridCheckboxHandler2_1.init();
+
+                $(document).ready(function () {
+                    $("#pMItems-grid").kendoGrid({
+                        dataSource: {
+                            type: "json",
+                            transport: {
+                                read: {
+                                    url: "@Html.Raw(Url.Action("PMItemList", "PreventiveMaintenance"))",
+                                    type: "POST",
+                                    dataType: "json",
+                                    data: additionalData2_1
+                                },
+                                parameterMap: function(data, operation) {
+                                    sortMapping = [
+                                        {from: "StoreName", to: "Store.Name"},
+                                        {from: "ItemName", to: "Item.Name"},
+                                        {from: "StoreLocatorName", to: "StoreLocator.Name"}
+                                    ];
+                                    BaseEam.Grid.mapSortColumns(data.sort, sortMapping);
+                                    return data;
+                                }
+                            },
+                            schema: {
+                                data: "Data",
+                                total: "Total",
+                                errors: "Errors",
+                                model: {
+                                    id: "Id"
+                                }
+                            },
+                            aggregate: [
+                                        { field: "PlanTotal", aggregate: "sum" }
+                            ],
+                            error: function(e) {
+                                display_kendoui_grid_error(e);
+                                // Cancel the changes
+                                this.cancelChanges();
+                            },
+                            pageSize: @(defaultGridPageSize),
+                            serverPaging: true,
+                            serverFiltering: true,
+                            serverSorting: true
+                        },
+                        pageable: {
+                            refresh: true,
+                            pageSizes: [@(gridPageSizes)],
+                            @Html.Partial("_GridPagerMessages")
+                        },
+                        sortable: true,
+                        editable: false,
+                        scrollable: false,
+                        dataBound: function(e) {
+                            gridCheckboxHandler2_1.onDataBound(e);
+                        },
+                        columns: [{
+                            field: "Id",
+                            headerTemplate: "<input id='pMItems-grid-mastercheckbox' type='checkbox'/>",
+                            headerAttributes: { style: "text-align:center" },
+                            attributes: { style: "text-align:center" },
+                            template: "<input type='checkbox' value='#=Id#' class='checkboxGroups'/>",
+                            width: 50,
+                            sortable: false
+                        },{
+                            field: "StoreName",
+                            title: "@T("Store")"
+                        },{
+                            field: "ItemName",
+                            title: "@T("Item")"
+                        },{
+                            field: "StoreLocatorName",
+                            title: "@T("StoreLocator")"
+                        }, {
+                            field: "UnitPrice",
+                            title: "@T("PMItem.UnitPrice") [@(primarySystemCurrencySymbol)]",
+                            template: '#= UnitPrice != null ? kendo.toString(UnitPrice, "n") : "" #'
+                        }, {
+                            field: "PlanQuantity",
+                            title: "@T("PMItem.PlanQuantity")",
+                            template: '#= PlanQuantity != null ? kendo.toString(PlanQuantity, "n") : "" #'
+                        },{
+                            field: "PlanTotal",
+                            title: "@T("PMItem.PlanTotal") [@(primarySystemCurrencySymbol)]",
+                            template: '#= PlanTotal != null ? kendo.toString(PlanTotal, "n") : "" #',
+                            footerTemplate: '#= sum != null ? kendo.toString(sum, "n") : "" #'
+                        }, {
+                            field: "PlanToolHours",
+                            title: "@T("PMItem.PlanToolHours")",
+                            template: '#= PlanToolHours != null ? kendo.toString(PlanToolHours, "n") : "" #',
+                        }, {
+                            field: "ToolRate",
+                            title: "@T("PMItem.ToolRate")",
+                            template: '#= ToolRate != null ? kendo.toString(ToolRate, "n") : "" #',
+                        }, {
+                            field: "Id",
+                            headerTemplate: "",
+                            width: 100,
+                            template: '<button type="button" class="btn btn-primary@(allowRead || allowUpdate ? "" : " none-display")" onclick="editPMItem(event, #=Id#);"></span><i class="fa fa-pencil aria-hidden="true""></i></a>' +
+                                    '<button type="button" class="deleteRow btn btn-primary@(allowDelete ? "" : " none-display")" onclick="deletePMItem(event, #=Id#);"></span><i class="fa fa-trash aria-hidden="true""></i></a>',
+                            sortable: false
+                        }]
+                    });
+                });
+            </script>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    function editPMItem(e, id){
+        e.preventDefault();
+        //check if panel-pMItem is open => close it before edit
+        if($('#panel-pMItem').is(":visible")){
+            togglePanelPMItem(false);
+        }
+
+        var postData = {
+            id : id
+        };
+        addAntiForgeryToken(postData);
+
+        $.ajax({
+            cache: false,
+            type: "POST",
+            url: "@(Url.Action("PMItem", "PreventiveMaintenance"))",
+            data: postData,
+            success: function(data) {
+                //append html
+                $("#group-pMItems").append(data.Html);
+
+                //apply binding for the newly generated element
+                ko.applyBindings(viewModel, $("#panel-pMItem")[0]);
+                viewModel.itemCategoryTool($('#ItemCategory').val() == 'Tool' ? true : false);
+                //then toggle the panel
+                togglePanelPMItem(true);
+            },
+            error: function(xhr, ajaxOptions, thrownError) {
+                showBSModal({title: 'ERROR', body: thrownError});
+            },
+            traditional: true
+        });
+    };
+
+    function deletePMItem(e, id){
+        e.preventDefault();
+        //check if panel-pMItem is open => close it before delete
+        if($('#panel-pMItem').is(":visible")){
+            togglePanelPMItem(false);
+        }
+
+        BaseEam.Grid.deleteRow($("#Id").val(), id, "@Url.Action("DeletePMItem", "PreventiveMaintenance")", "pMItems-grid", "", true);
+    };
+
+    function additionalData2_1() {
+        var data = {
+            preventiveMaintenanceId: $("#Id").val()
+        };
+        addAntiForgeryToken(data);
+        return data;
+    }
+
+    function togglePanelPMItem(editmode) {
+        if (editmode) {
+            $('#panel-pMItem').show();
+            $('#createPMItem').hide();
+            $('#deleteSelectedPMItems').hide();
+        }
+        else {
+            ////remove the panel html so we won't care
+            //about dirty change tracking for newly added input tag
+            $('#panel-pMItem').remove();
+            $('#createPMItem').show();
+            $('#deleteSelectedPMItems').show();
+        }
+    }
+
+
+    $(document).ready(function () {
+
+        $("#createPMItem").click(function(e){
+            e.preventDefault();
+            var postData = {
+                preventiveMaintenanceId : $("#Id").val()
+            };
+            addAntiForgeryToken(postData);
+
+            $.ajax({
+                cache: false,
+                type: "POST",
+                url: "@(Url.Action("CreatePMItem", "PreventiveMaintenance"))",
+                data: postData,
+                success: function(data) {
+                    //append html
+                    $("#group-pMItems").append(data.Html);
+                    //apply binding for the newly generated element
+                    ko.applyBindings(viewModel, $("#panel-pMItem")[0]);
+                    viewModel.itemCategoryTool($('#ItemCategory').val() == 'Tool' ? true : false);
+                    //then toggle the panel
+                    togglePanelPMItem(true);
+                },
+                error: function(xhr, ajaxOptions, thrownError) {
+                    showBSModal({title: 'ERROR', body: thrownError});
+                },
+                traditional: true
+            });
+        });
+
+        $("#deleteSelectedPMItems").click(function(e){
+            e.preventDefault();
+            BaseEam.Grid.deleteSelectedRows($("#Id").val(), gridCheckboxHandler2_1.selectedIds, "@Url.Action("DeleteSelectedPMItems", "PreventiveMaintenance")", "pMItems-grid", "", true);
+        });
+    });
+</script>

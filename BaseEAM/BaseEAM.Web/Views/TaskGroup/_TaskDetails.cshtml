@@ -1,0 +1,101 @@
+﻿@using BaseEAM.Services.Security
+@model TaskModel
+@{
+    var permissionService = EngineContext.Current.Resolve<BaseEAM.Services.IPermissionService>();
+    var allowCreate = permissionService.Authorize(StandardPermissionName.Maintenance_TaskGroup_Create);
+    var allowRead = permissionService.Authorize(StandardPermissionName.Maintenance_TaskGroup_Read);
+    var allowUpdate = permissionService.Authorize(StandardPermissionName.Maintenance_TaskGroup_Update);
+    var allowDelete = permissionService.Authorize(StandardPermissionName.Maintenance_TaskGroup_Delete);
+
+}
+
+<div id="panel-task" class="panel panel-default eam-panel">
+    <div class="panel-heading">
+        <button type="button" id="saveTask" class="btn btn-primary@(allowCreate || allowUpdate ? "" : " none-display")" title="@T("Common.Save")">
+            <i class="fa fa-floppy-o"></i>
+        </button>
+        <button type="button" id="cancelTask" class="btn btn-primary" title="@T("Common.Cancel")">
+            <i class="fa fa-ban"></i>
+        </button>
+    </div>
+    <div class="panel-body">
+        @Html.Hidden("TaskGroupId", Model.TaskGroupId)
+        @Html.Hidden("TaskId", Model.Id)
+        <div id="task-error" class="validation-summary-errors none-display">
+        </div>
+        <div class="form-group">
+            <div class="col-md-3">
+                @Html.BaseEamLabelFor(model => model.Sequence, required: true)
+            </div>
+            <div class="col-md-9">
+                @Html.BaseEamEditorFor(model => model.Sequence)
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="col-md-3">
+                @Html.BaseEamLabelFor(model => model.Description, required: true)
+            </div>
+            <div class="col-md-9">
+                @Html.BaseEamEditorFor(model => model.Description)
+            </div>
+        </div>
+        <h4>@T("Common.Attachments")</h4>
+        @Html.Partial("Attachment", new AttachmentModel { EntityId = Model.Id, EntityType = EntityType.Task })
+    </div>
+    <script type="text/javascript">
+        $("#saveTask").click(function (e) {
+            e.preventDefault();
+            var $group = $("#panel-task :input");
+            var postData = $group.serializeJSON({ checkboxUncheckedValue: "false" });
+            //change Id property name so it can map to MVC model
+            postData.Id = postData.TaskId;
+            addAntiForgeryToken(postData);
+
+            $.ajax({
+                cache: false,
+                type: "POST",
+                url: "@(Url.Action("SaveTask", "TaskGroup"))",
+                data: postData,
+                success: function (data) {
+                    if (data && data.Errors) {
+                        showErrors(data.Errors, '#task-error');
+                    } else {
+                        //then toggle the panel
+                        togglePanelTask(false);
+
+                        //refresh grid
+                        var grid = $('#tasks-grid').data('kendoGrid');
+                        grid.dataSource.page(1);
+                    }
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    showBSModal({ title: 'ERROR', body: thrownError });
+                },
+                traditional: true
+            });
+        });
+
+        $("#cancelTask").click(function (e) {
+            e.preventDefault();
+            var postData = {
+                id: $("#TaskId").val()
+            };
+            addAntiForgeryToken(postData);
+
+            $.ajax({
+                cache: false,
+                type: "POST",
+                url: "@(Url.Action("CancelTask", "TaskGroup"))",
+                data: postData,
+                success: function (data) {
+                    //toggle the panel
+                    togglePanelTask(false);
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    showBSModal({ title: 'ERROR', body: thrownError });
+                },
+                traditional: true
+            });
+        });
+    </script>
+</div>

@@ -1,0 +1,207 @@
+﻿@using BaseEAM.Services.Security
+@model TeamModel
+@{
+    var defaultGridPageSize = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().DefaultGridPageSize;
+    var gridPageSizes = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().GridPageSizes;
+
+    var permissionService = EngineContext.Current.Resolve<BaseEAM.Services.IPermissionService>();
+    var allowCreate = permissionService.Authorize(StandardPermissionName.Resource_Team_Create);
+    var allowRead = permissionService.Authorize(StandardPermissionName.Resource_Team_Read);
+    var allowUpdate = permissionService.Authorize(StandardPermissionName.Resource_Team_Update);
+    var allowDelete = permissionService.Authorize(StandardPermissionName.Resource_Team_Delete);
+}
+<div class="validation-summary-errors none-display" id="teams-error">
+</div>
+<div id="group-teams" class="panel-group">
+    <div class="panel panel-default">
+        <div class="panel-body">
+            <div id="teams-grid"></div>
+            <script>
+                $(document).ready(function () {
+                    $("#teams-grid").kendoGrid({
+                        dataSource: {
+                            type: "json",
+                            transport: {
+                                read: {
+                                    url: "@Html.Raw(Url.Action("TeamList", "Technician"))",
+                                    type: "POST",
+                                    dataType: "json",
+                                    data: additionalData
+                                }
+                            },
+                            schema: {
+                                data: "Data",
+                                total: "Total",
+                                errors: "Errors",
+                                model: {
+                                    id: "Id",
+                                    fields: {
+                                        Name: { editable: false },
+                                        Email: { editable: false },
+                                        Phone: { editable: false }
+                                    }
+                                }
+                            },
+                            error: function(e) {
+                                display_kendoui_grid_error(e);
+                                // Cancel the changes
+                                this.cancelChanges();
+                            },
+                            pageSize: @(defaultGridPageSize),
+                            serverPaging: true,
+                            serverFiltering: true,
+                            serverSorting: true
+                        },
+                        pageable: {
+                            refresh: true,
+                            pageSizes: [@(gridPageSizes)],
+                            @Html.Partial("_GridPagerMessages")
+                        },
+                        toolbar: [{
+                            name: "selectTeams",
+                            text: "@T("Common.SelectItems")",
+                        }, {
+                            name: "DeleteSelectedTeams",
+                            text: "@T("Common.Delete.Selected")",
+                        }],
+                        saveChanges: function(e) {
+                            e.preventDefault();
+                            BaseEam.Grid.saveChanges('@Url.Action("SaveChanges","Technician")', '#teams-grid', '#teams-error');
+                        },
+                        sortable: true,
+                        editable: false,
+                        scrollable: false,
+                        dataBound: gridCheckboxHandler.onDataBound,
+                        columns: [{
+                            field: "Id",
+                            headerTemplate: "<input id='teams-grid-mastercheckbox' type='checkbox'/>",
+                            headerAttributes: { style: "text-align:center" },
+                            attributes: { style: "text-align:center" },
+                            template: "<input type='checkbox' value='#=Id#' class='checkboxGroups'/>",
+                            width: 50,
+                            sortable: false
+                        },{
+                            field: "Name",
+                            title: "@T("Team.Name")"
+                        },{
+                            field: "Description",
+                            title: "@T("Team.Description")"
+                        },{
+                            field: "Site.Name",
+                            title: "@T("Team.Site")"
+                        }, {
+                            field: "Id",
+                            headerTemplate: "",
+                            width: 50,
+                            template: '<button type="button" class="btn btn-primary@(allowDelete ? "" : " none-display")" title="@T("Common.Delete")" onclick="deleteTeam(event, #=Id#);"></span><i class="fa fa-trash aria-hidden="true""></i></a>',
+                            sortable: false
+                        }]
+                    });
+                });
+            </script>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    var gridCheckboxHandler = new BaseEam.CheckBoxHandler('teams-grid');
+    gridCheckboxHandler.init();
+
+    function additionalData() {
+        var data = {
+            technicianId: $("#Id").val()
+        };
+        addAntiForgeryToken(data);
+        return data;
+    }
+
+     function deleteTeam(e, id){
+        e.preventDefault();
+        BaseEam.Grid.deleteRow($("#Id").val(), id, "@Url.Action("DeleteTeam", "Technician")", "teams-grid", "", true);
+    }
+
+    function selectTeamsClick(e) {
+        e.preventDefault();
+        $.get('@Url.Action("MLTeamView", "Lookup")', function (data) {
+            showBSModal({
+                title: "@T("Team.SelectTeams")",
+                size: "large",
+                body: data,
+                actions: [{
+                    label: '@T("Common.Save")',
+                    cssClass: 'btn-success',
+                    onClick: selectTeams
+                }, {
+                    label: '@T("Common.Cancel")',
+                    cssClass: 'btn-danger',
+                    onClick: function (e) {
+                        $(e.target).parents('.modal').modal('hide');
+                    }
+                }]
+            });
+        });
+    }
+
+    $(document).ready(function () {
+        //click Select teams button
+        $(".k-grid-selectTeams", "#teams-grid").bind("click", function (e) {
+            e.preventDefault();
+            $.get('@Url.Action("MLTeamView", "Lookup")', function (data) {
+                showBSModal({
+                    title: "@T("Team.SelectTeams")",
+                    size: "large",
+                    body: data,
+                    actions: [{
+                        label: '@T("Common.Save")',
+                        cssClass: 'btn-success',
+                        onClick: selectTeams
+                    }, {
+                        label: '@T("Common.Cancel")',
+                        cssClass: 'btn-danger',
+                        onClick: function (e) {
+                            $(e.target).parents('.modal').modal('hide');
+                        }
+                    }]
+                });
+            });
+        });
+
+        //click Delete Selected teams button
+        $(".k-grid-DeleteSelectedTeams", "#teams-grid").bind("click", function (e) {
+            e.preventDefault();
+            BaseEam.Grid.deleteSelectedRows($("#Id").val(), gridCheckboxHandler.selectedIds, "@Url.Action("DeleteSelectedTeams", "Technician")", "teams-grid", "", true);
+            return false;
+        });
+    });
+
+    function selectTeams(e) {
+        e.preventDefault();
+        var postData = {
+            technicianId: $("#Id").val(),
+            selectedIds: teamsCheckboxHandler.selectedIds
+        };
+        addAntiForgeryToken(postData);
+        $.ajax({
+            cache: false,
+            type: "POST",
+            url: '@Url.Action("AddTeams", "Technician")',
+            data: postData,
+            success: function (data) {
+                if (data && data.Errors) {
+                    showErrors(data.Errors, '#ml-teams-error');
+                } else {
+                    //hide modal popup
+                    $(e.target).parents('.modal').modal('hide');
+
+                    //refresh grid
+                    var grid = $('#teams-grid').data('kendoGrid');
+                    grid.dataSource.page(1);
+                }
+            },
+            error: function (xhr, ajaxOptions, thrownError) {
+                showBSModal({ title: "Error", body: thrownError });
+            },
+            traditional: true
+        });
+    }
+</script>

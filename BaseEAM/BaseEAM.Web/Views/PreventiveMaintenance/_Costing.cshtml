@@ -1,0 +1,55 @@
+﻿@model PreventiveMaintenanceModel
+
+<div class="panel-group">
+    <div class="panel panel-default">
+        <div class="panel-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <div class="col-md-3">
+                            @Html.BaseEamLabelFor(model => model.Number, required: true)
+                        </div>
+                        <div class="col-md-9">
+                            <div class="form-text-row" data-bind="html: number"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <hr />
+            <div id="preventiveMaintenance-edit" class="nav-tabs-custom">
+                <ul class="nav nav-tabs">
+                    @Html.RenderBootstrapTabHeader("tab-pMLabor", @T("PMLabor"), true)             
+                    @Html.RenderBootstrapTabHeader("tab-pMItems", @T("PMItems"))       
+                    @Html.RenderBootstrapTabHeader("tab-pMServiceItems", @T("PMServiceItems"))                    
+                    @Html.RenderBootstrapTabHeader("tab-pMMiscCosts", @T("PMMiscCosts"))
+                </ul>
+                <div class="tab-content">
+                    @Html.RenderBootstrapTabContent("tab-pMLabor", @TabPMLabor(), true)           
+                    @Html.RenderBootstrapTabContent("tab-pMItems", @TabPMItems())         
+                    @Html.RenderBootstrapTabContent("tab-pMServiceItems", @TabPMServiceItems())                    
+                    @Html.RenderBootstrapTabContent("tab-pMMiscCosts", @TabPMMiscCosts())
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@helper TabPMLabor()
+{
+    @Html.Partial("_PMLabor", new PMLaborModel { PreventiveMaintenanceId = Model.Id })
+}
+
+@helper TabPMItems()
+{
+    @Html.Partial("_PMItems", new PMItemModel { PreventiveMaintenanceId = Model.Id })
+}
+
+@helper TabPMServiceItems()
+{
+    @Html.Partial("_PMServiceItems", new PMServiceItemModel { PreventiveMaintenanceId = Model.Id })
+}
+
+@helper TabPMMiscCosts()
+{
+    @Html.Partial("_PMMiscCosts", new PMMiscCostModel { PreventiveMaintenanceId = Model.Id })
+}

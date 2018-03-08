@@ -1,0 +1,142 @@
+﻿@model SearchModel
+@{
+    var defaultGridPageSize = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().DefaultGridPageSize;
+    var gridPageSizes = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().GridPageSizes;
+    var primarySystemCurrencySymbol = EngineContext.Current.Resolve<BaseEAM.Core.IWorkContext>().WorkingCurrency.CurrencySymbol;
+}
+<div class="content" id="createAdjustItems-popup">
+    <div class="validation-summary-errors none-display" id="createAdjustItems-error">
+    </div>
+    <div class="form-horizontal">
+        <div class="panel-group">
+            @Html.Partial("Filter", Model)
+            <div class="panel panel-default">
+                <div class="panel-body">
+                    <div id="createAdjustItems-grid"></div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        function additionalData() {
+            var data = {
+                searchValues: $("div.panel-search").find(':input').serialize(),
+                adjustId: $('#Id').val()
+            };
+            addAntiForgeryToken(data);
+            return data;
+        }
+
+        function storeLocatorEditor(container, options) {
+            var model = {
+                field: options.field,
+                required_msg: '@T("AdjustItem.FromStoreLocator.Required")',
+                url: '@Url.Action("GetStoreLocators", "Store")',
+                dbTable: '',
+                parentValue: $('#StoreId').val(),
+                additionalValue: options.model.id
+            };
+            BaseEam.Grid.comboBoxEditor(container, model);
+        }
+
+        $("#createAdjustItems-grid").kendoGrid({
+            dataSource: {
+                type: "json",
+                transport: {
+                    read: {
+                        url: "@Html.Raw(Url.Action("CreateAdjustItemList", "Adjust"))",
+                        type: "POST",
+                        dataType: "json",
+                        data: additionalData
+                    }
+                },
+                schema: {
+                    data: "Data",
+                    total: "Total",
+                    errors: "Errors",
+                    model: {
+                        id: "ItemId",
+                        fields: {
+                            ItemName: { editable: false },
+                            ItemUnitOfMeasureName: { editable: false },
+                            StoreLocator: { editable: true, defaultValue: {} },
+                            AdjustQuantity: { editable: true, type: 'number', validation: { required: { message: '@T("AdjustItem.AdjustQuantity.Required")' } } },
+                            AdjustCost: { editable: true, type: 'number' },
+                        }
+                    }
+                },
+                batch: true,
+                error: function (e) {
+                    display_kendoui_grid_error(e);
+                    // Cancel the changes
+                    this.cancelChanges();
+                },
+                change: function (e) {
+                    if (e.action == "itemchange") {
+                        e.items[0].dirtyFields = e.items[0].dirtyFields || {};
+                        e.items[0].dirtyFields[e.field] = true;
+                    }
+                },
+                pageSize: @(defaultGridPageSize),
+                serverPaging: true,
+                serverFiltering: true,
+                serverSorting: true
+            },
+            pageable: {
+                refresh: true,
+                pageSizes: [@(gridPageSizes)],
+                @Html.Partial("_GridPagerMessages")
+            },
+            navigatable: true,
+            sortable: true,
+            editable: true,
+            scrollable: false,
+            edit: function (e) {
+                if (e.model.isNew() == false) {
+                     
+                }
+            },
+            columns: [{
+                field: "ItemName",
+                title: "@T("Item")"
+            }, {
+                field: "ItemUnitOfMeasureName",
+                title: "@T("UnitOfMeasure")",
+                sortable: false
+            }, {
+                field: "StoreLocator",
+                title: "@T("AdjustItem.StoreLocator")",
+                editor: storeLocatorEditor,
+                template: "#=BaseEam.Grid.dirtyHtml(data,'StoreLocator.Name')# #:StoreLocator.Name ? StoreLocator.Name : '' #",
+                sortable: false
+            }, {
+                field: "AdjustQuantity",
+                title: "@T("AdjustItem.AdjustQuantity")",
+                template: '#= AdjustQuantity != null ? kendo.toString(AdjustQuantity, "n") : "" #',
+                sortable: false
+            }, {
+                field: "AdjustUnitPrice",
+                title: "@T("AdjustItem.AdjustUnitPrice")",
+                template: '#= AdjustUnitPrice != null ? kendo.toString(AdjustUnitPrice, "n") : "" #',
+                sortable: false
+            }]
+        });
+
+        //search button
+        $('#createAdjustItems-popup').find('#search').click(function () {
+            //search
+            var grid = $('#createAdjustItems-grid').data('kendoGrid');
+            grid.dataSource.page(1); //new search. Set page size to 1
+            //grid.dataSource.read(); we already loaded the grid above using "page" function
+            return false;
+        });
+
+        $("#createAdjustItems-popup div.panel-search").find(':input').keydown(function (event) {
+            if (event.keyCode == 13) {
+                $('#createAdjustItems-popup').find('#search').click();
+                return false;
+            }
+        });
+    </script>
+</div>

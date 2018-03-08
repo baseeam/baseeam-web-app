@@ -1,0 +1,29 @@
+﻿@model Int32?
+
+@{
+    var postfix = "";
+    if (ViewData.ContainsKey("postfix") && ViewData["postfix"] != null)
+    {
+        postfix = ViewData["postfix"].ToString();
+    }
+
+    var dataBind = "";
+    if (ViewData.ContainsKey("dataBind") && ViewData["dataBind"] != null)
+    {
+        dataBind = ViewData["dataBind"].ToString();
+    }
+}
+
+@Html.TextBoxFor(model => model, new { data_bind = dataBind })
+
+<script>
+    $(document).ready(function() {
+        $("#@ViewData.TemplateInfo.GetFullHtmlFieldId(string.Empty)").TouchSpin({
+            min: @(int.MinValue),
+            max: @(int.MaxValue),
+            decimals: 0,
+            verticalbuttons: true,
+            postfix: "@postfix"
+        });
+    });
+</script>

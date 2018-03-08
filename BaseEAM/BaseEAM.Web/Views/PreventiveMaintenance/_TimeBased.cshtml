@@ -1,0 +1,270 @@
+﻿@using BaseEAM.Services.Security
+@model PreventiveMaintenanceModel
+<div id="group-timeBased" class="panel-group" data-bind="visible: !isNew()">
+    <div class="panel panel-default">
+        <div class="panel-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <div class="col-md-3">
+                            @Html.BaseEamLabelFor(model => model.FirstWorkExpectedStartDateTime, required: true)
+                        </div>
+                        <div class="col-md-9">
+                            @Html.BaseEamEditorFor(model => model.FirstWorkExpectedStartDateTime)
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="col-md-3">
+                            @Html.BaseEamLabelFor(model => model.FirstWorkDueDateTime, required: true)
+                        </div>
+                        <div class="col-md-9">
+                            @Html.BaseEamEditorFor(model => model.FirstWorkDueDateTime)
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="col-md-3">
+                            @Html.BaseEamLabelFor(model => model.EndDateTime, required: true)
+                        </div>
+                        <div class="col-md-9">
+                            @Html.BaseEamEditorFor(model => model.EndDateTime)
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <hr />
+            <div class="row">
+                <div class="col-md-6">                    
+                    <div class="form-group">
+                        <div class="col-md-3">
+                            @Html.BaseEamLabelFor(model => model.FrequencyCount, required: true)
+                        </div>
+                        <div class="col-md-3">
+                            @Html.BaseEamEditorFor(model => model.FrequencyCount)
+                        </div>
+                        <div class="col-md-6">
+                            @Html.EnumDropDownListFor(model => model.FrequencyType, new { @class = "form-control" })
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!--Frequency Type: 1 Weekly-->
+            <div class="row" data-bind="visible: frequencyType() == '1'">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <div class="col-md-3" style="text-align: right">
+                            @Html.BaseEamCheckBoxFor(model => model.Sunday)
+                            @Html.BaseEamLabelFor(model => model.Sunday)
+                        </div>
+                        <div class="col-md-3" style="text-align: right">
+                            @Html.BaseEamCheckBoxFor(model => model.Monday)
+                            @Html.BaseEamLabelFor(model => model.Monday)
+                        </div>
+                        <div class="col-md-3" style="text-align: right">
+                            @Html.BaseEamCheckBoxFor(model => model.Tuesday)
+                            @Html.BaseEamLabelFor(model => model.Tuesday)
+                        </div>
+                        <div class="col-md-3" style="text-align: right">
+                            @Html.BaseEamCheckBoxFor(model => model.Wednesday)
+                            @Html.BaseEamLabelFor(model => model.Wednesday)
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <div class="col-md-3" style="text-align: right">
+                            @Html.BaseEamCheckBoxFor(model => model.Thursday)
+                            @Html.BaseEamLabelFor(model => model.Thursday)
+                        </div>
+                        <div class="col-md-3" style="text-align: right">
+                            @Html.BaseEamCheckBoxFor(model => model.Friday)
+                            @Html.BaseEamLabelFor(model => model.Friday)
+                        </div>
+                        <div class="col-md-3" style="text-align: right">
+                            @Html.BaseEamCheckBoxFor(model => model.Saturday)
+                            @Html.BaseEamLabelFor(model => model.Saturday)
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <br />
+            <!--Frequency Type:2 Monthly-->
+           <div class="row" data-bind="visible: frequencyType() == '2'">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <div class="col-md-3" style="text-align: right">
+                                @Html.BaseEamCheckBoxFor(model => model.Day1)
+                                @Html.BaseEamLabelFor(model => model.Day1)
+                            </div>
+                            <div class="col-md-3" style="text-align: right">
+                                @Html.BaseEamCheckBoxFor(model => model.Day2)
+                                @Html.BaseEamLabelFor(model => model.Day2)
+                            </div>
+                            <div class="col-md-3" style="text-align: right">
+                                @Html.BaseEamCheckBoxFor(model => model.Day3)
+                                @Html.BaseEamLabelFor(model => model.Day3)
+                            </div>
+                            <div class="col-md-3" style="text-align: right">
+                                @Html.BaseEamCheckBoxFor(model => model.Day4)
+                                @Html.BaseEamLabelFor(model => model.Day4)
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <div class="col-md-3" style="text-align: right">
+                                @Html.BaseEamCheckBoxFor(model => model.Day5)
+                                @Html.BaseEamLabelFor(model => model.Day5)
+                            </div>
+                            <div class="col-md-3" style="text-align: right">
+                                @Html.BaseEamCheckBoxFor(model => model.Day6)
+                                @Html.BaseEamLabelFor(model => model.Day6)
+                            </div>
+                            <div class="col-md-3" style="text-align: right">
+                                @Html.BaseEamCheckBoxFor(model => model.Day7)
+                                @Html.BaseEamLabelFor(model => model.Day7)
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <div class="col-md-3" style="text-align: right">
+                                @Html.BaseEamCheckBoxFor(model => model.Day8)
+                                @Html.BaseEamLabelFor(model => model.Day8)
+                            </div>
+                            <div class="col-md-3" style="text-align: right">
+                                @Html.BaseEamCheckBoxFor(model => model.Day9)
+                                @Html.BaseEamLabelFor(model => model.Day9)
+                            </div>
+                            <div class="col-md-3" style="text-align: right">
+                                @Html.BaseEamCheckBoxFor(model => model.Day10)
+                                @Html.BaseEamLabelFor(model => model.Day10)
+                            </div>
+                            <div class="col-md-3" style="text-align: right">
+                                @Html.BaseEamCheckBoxFor(model => model.Day11)
+                                @Html.BaseEamLabelFor(model => model.Day11)
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <div class="col-md-3" style="text-align: right">
+                                @Html.BaseEamCheckBoxFor(model => model.Day12)
+                                @Html.BaseEamLabelFor(model => model.Day12)
+                            </div>
+                            <div class="col-md-3" style="text-align: right">
+                                @Html.BaseEamCheckBoxFor(model => model.Day13)
+                                @Html.BaseEamLabelFor(model => model.Day13)
+                            </div>
+                            <div class="col-md-3" style="text-align: right">
+                                @Html.BaseEamCheckBoxFor(model => model.Day14)
+                                @Html.BaseEamLabelFor(model => model.Day14)
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <div class="col-md-3" style="text-align: right">
+                                @Html.BaseEamCheckBoxFor(model => model.Day15)
+                                @Html.BaseEamLabelFor(model => model.Day15)
+                            </div>
+                            <div class="col-md-3" style="text-align: right">
+                                @Html.BaseEamCheckBoxFor(model => model.Day16)
+                                @Html.BaseEamLabelFor(model => model.Day16)
+                            </div>
+                            <div class="col-md-3" style="text-align: right">
+                                @Html.BaseEamCheckBoxFor(model => model.Day17)
+                                @Html.BaseEamLabelFor(model => model.Day17)
+                            </div>
+                            <div class="col-md-3" style="text-align: right">
+                                @Html.BaseEamCheckBoxFor(model => model.Day18)
+                                @Html.BaseEamLabelFor(model => model.Day18)
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <div class="col-md-3" style="text-align: right">
+                                @Html.BaseEamCheckBoxFor(model => model.Day19)
+                                @Html.BaseEamLabelFor(model => model.Day19)
+                            </div>
+                            <div class="col-md-3" style="text-align: right">
+                                @Html.BaseEamCheckBoxFor(model => model.Day20)
+                                @Html.BaseEamLabelFor(model => model.Day20)
+                            </div>
+                            <div class="col-md-3" style="text-align: right">
+                                @Html.BaseEamCheckBoxFor(model => model.Day21)
+                                @Html.BaseEamLabelFor(model => model.Day21)
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <div class="col-md-3" style="text-align: right">
+                                @Html.BaseEamCheckBoxFor(model => model.Day22)
+                                @Html.BaseEamLabelFor(model => model.Day22)
+                            </div>
+                            <div class="col-md-3" style="text-align: right">
+                                @Html.BaseEamCheckBoxFor(model => model.Day23)
+                                @Html.BaseEamLabelFor(model => model.Day23)
+                            </div>
+                            <div class="col-md-3" style="text-align: right">
+                                @Html.BaseEamCheckBoxFor(model => model.Day24)
+                                @Html.BaseEamLabelFor(model => model.Day24)
+                            </div>
+                            <div class="col-md-3" style="text-align: right">
+                                @Html.BaseEamCheckBoxFor(model => model.Day25)
+                                @Html.BaseEamLabelFor(model => model.Day25)
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <div class="col-md-3" style="text-align: right">
+                                @Html.BaseEamCheckBoxFor(model => model.Day26)
+                                @Html.BaseEamLabelFor(model => model.Day26)
+                            </div>
+                            <div class="col-md-3" style="text-align: right">
+                                @Html.BaseEamCheckBoxFor(model => model.Day27)
+                                @Html.BaseEamLabelFor(model => model.Day27)
+                            </div>
+                            <div class="col-md-3" style="text-align: right">
+                                @Html.BaseEamCheckBoxFor(model => model.Day28)
+                                @Html.BaseEamLabelFor(model => model.Day28)
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <div class="col-md-3" style="text-align: right">
+                                @Html.BaseEamCheckBoxFor(model => model.Day29)
+                                @Html.BaseEamLabelFor(model => model.Day29)
+                            </div>
+                            <div class="col-md-3" style="text-align: right">
+                                @Html.BaseEamCheckBoxFor(model => model.Day30)
+                                @Html.BaseEamLabelFor(model => model.Day30)
+                            </div>
+                            <div class="col-md-3" style="text-align: right">
+                                @Html.BaseEamCheckBoxFor(model => model.Day31)
+                                @Html.BaseEamLabelFor(model => model.Day31)
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script type="text/javascript">
+    $("#@Html.FieldIdFor(model => model.FrequencyType)").change(function () {
+        viewModel.frequencyType($('#FrequencyType').val());
+    });
+</script>

@@ -1,0 +1,189 @@
+﻿@using BaseEAM.Services.Security
+@model TechnicianModel
+@{
+    var defaultGridPageSize = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().DefaultGridPageSize;
+    var gridPageSizes = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().GridPageSizes;
+
+    var permissionService = EngineContext.Current.Resolve<BaseEAM.Services.IPermissionService>();
+    var allowCreate = permissionService.Authorize(StandardPermissionName.Resource_Team_Create);
+    var allowRead = permissionService.Authorize(StandardPermissionName.Resource_Team_Read);
+    var allowUpdate = permissionService.Authorize(StandardPermissionName.Resource_Team_Update);
+    var allowDelete = permissionService.Authorize(StandardPermissionName.Resource_Team_Delete);
+}
+<div class="validation-summary-errors none-display" id="technicians-error">
+</div>
+<div id="group-technicians" class="panel-group">
+    <div class="panel panel-default">
+        <div class="panel-body">
+            <div id="technicians-grid"></div>
+            <script>
+                $(document).ready(function () {
+                    $("#technicians-grid").kendoGrid({
+                        dataSource: {
+                            type: "json",
+                            transport: {
+                                read: {
+                                    url: "@Html.Raw(Url.Action("TechnicianList", "Team"))",
+                                    type: "POST",
+                                    dataType: "json",
+                                    data: additionalData
+                                }
+                            },
+                            schema: {
+                                data: "Data",
+                                total: "Total",
+                                errors: "Errors",
+                                model: {
+                                    id: "Id",
+                                    fields: {
+                                        Name: { editable: false },
+                                        Email: { editable: false },
+                                        Phone: { editable: false }
+                                    }
+                                }
+                            },
+                            error: function(e) {
+                                display_kendoui_grid_error(e);
+                                // Cancel the changes
+                                this.cancelChanges();
+                            },
+                            pageSize: @(defaultGridPageSize),
+                            serverPaging: true,
+                            serverFiltering: true,
+                            serverSorting: true
+                        },
+                        pageable: {
+                            refresh: true,
+                            pageSizes: [@(gridPageSizes)],
+                            @Html.Partial("_GridPagerMessages")
+                        },
+                        toolbar: [{
+                            name: "selectTechnicians",
+                            text: "@T("Common.SelectItems")",
+                        }, {
+                            name: "DeleteSelectedTechnicians",
+                            text: "@T("Common.Delete.Selected")",
+                        }],
+                        saveChanges: function(e) {
+                            e.preventDefault();
+                            BaseEam.Grid.saveChanges('@Url.Action("SaveChanges","Team")', '#technicians-grid', '#technicians-error');
+                        },
+                        sortable: true,
+                        editable: false,
+                        scrollable: false,
+                        dataBound: gridCheckboxHandler.onDataBound,
+                        columns: [{
+                            field: "Id",
+                            headerTemplate: "<input id='technicians-grid-mastercheckbox' type='checkbox'/>",
+                            headerAttributes: { style: "text-align:center" },
+                            attributes: { style: "text-align:center" },
+                            template: "<input type='checkbox' value='#=Id#' class='checkboxGroups'/>",
+                            width: 50,
+                            sortable: false
+                        },{
+                            field: "User.Name",
+                            title: "@T("Technician.UserName")"
+                        },{
+                            field: "Calendar.Name",
+                            title: "@T("Technician.CalendarName")"
+                        },{
+                            field: "Shift.Name",
+                            title: "@T("Technician.ShiftName")"
+                        },{
+                            field: "Craft.Name",
+                            title: "@T("Technician.CraftName")"
+                        }, {
+                            field: "Id",
+                            headerTemplate: "",
+                            width: 50,
+                            template: '<button type="button" class="btn btn-primary@(allowDelete ? "" : " none-display")" title="@T("Common.Delete")" onclick="deleteTechnician(event, #=Id#);"></span><i class="fa fa-trash aria-hidden="true""></i></a>',
+                            sortable: false
+                        }]
+                    });
+                });
+            </script>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    var gridCheckboxHandler = new BaseEam.CheckBoxHandler('technicians-grid');
+    gridCheckboxHandler.init();
+
+    function additionalData() {
+        var data = {
+            teamId: $("#Id").val()
+        };
+        addAntiForgeryToken(data);
+        return data;
+    }
+
+     function deleteTechnician(e, id){
+        e.preventDefault();
+        BaseEam.Grid.deleteRow($("#Id").val(), id, "@Url.Action("DeleteTechnician", "Team")", "technicians-grid", "", true);
+    }
+
+     $(document).ready(function () {
+
+        //click Select technicians button
+         $(".k-grid-selectTechnicians", "#technicians-grid").bind("click", function (e) {
+             e.preventDefault();
+             $.get('@Url.Action("MLTechnicianView", "Lookup")', function (data) {
+                 showBSModal({
+                     title: "@T("Technician.SelectTechnicians")",
+                     size: "large",
+                     body: data,
+                     actions: [{
+                         label: '@T("Common.Save")',
+                         cssClass: 'btn-success',
+                         onClick: selectTechnicians
+                     }, {
+                         label: '@T("Common.Cancel")',
+                         cssClass: 'btn-danger',
+                         onClick: function (e) {
+                             $(e.target).parents('.modal').modal('hide');
+                         }
+                     }]
+                 });
+             });
+         });
+
+        //click Delete Selected technicians button
+        $(".k-grid-DeleteSelectedTechnicians", "#technicians-grid").bind("click", function (e) {
+            e.preventDefault();
+            BaseEam.Grid.deleteSelectedRows($("#Id").val(), gridCheckboxHandler.selectedIds, "@Url.Action("DeleteSelectedTechnicians", "Team")", "technicians-grid", "", true);
+            return false;
+        });
+    });
+
+    function selectTechnicians(e) {
+        e.preventDefault();
+        var postData = {
+            teamId: $("#Id").val(),
+            selectedIds: techniciansCheckboxHandler.selectedIds
+        };
+        addAntiForgeryToken(postData);
+        $.ajax({
+            cache: false,
+            type: "POST",
+            url: '@Url.Action("AddTechnicians", "Team")',
+            data: postData,
+            success: function (data) {
+                if (data && data.Errors) {
+                    showErrors(data.Errors, '#ml-technicians-error');
+                } else {
+                    //hide modal popup
+                    $(e.target).parents('.modal').modal('hide');
+
+                    //refresh grid
+                    var grid = $('#technicians-grid').data('kendoGrid');
+                    grid.dataSource.page(1);
+                }
+            },
+            error: function (xhr, ajaxOptions, thrownError) {
+                showBSModal({ title: "Error", body: thrownError });
+            },
+            traditional: true
+        });
+    }
+</script>

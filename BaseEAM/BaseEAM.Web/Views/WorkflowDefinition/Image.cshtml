@@ -1,0 +1,12 @@
+﻿@{
+    Layout = "~/Views/Shared/_AdminPopupLayout.cshtml";
+}
+@model string
+@if (Model.Length > 0)
+{
+    <img src="@Model" />
+}
+else
+{
+    <h1>Image not found</h1>
+}

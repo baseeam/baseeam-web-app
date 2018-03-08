@@ -1,0 +1,165 @@
+﻿@using BaseEAM.Services.Security
+@model MeterLineItemModel
+@{
+    var defaultGridPageSize = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().DefaultGridPageSize;
+    var gridPageSizes = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().GridPageSizes;
+
+    var permissionService = EngineContext.Current.Resolve<BaseEAM.Services.IPermissionService>();
+    var allowCreate = permissionService.Authorize(StandardPermissionName.Asset_MeterGroup_Create);
+    var allowRead = permissionService.Authorize(StandardPermissionName.Asset_MeterGroup_Read);
+    var allowUpdate = permissionService.Authorize(StandardPermissionName.Asset_MeterGroup_Update);
+    var allowDelete = permissionService.Authorize(StandardPermissionName.Asset_MeterGroup_Delete);
+}
+<div class="validation-summary-errors none-display" id="meterLineItems-error">
+</div>
+<div id="group-meters" class="panel-group">
+    <div class="panel panel-default">
+        <div class="panel-body">
+            <div id="meterLineItems-grid"></div>
+            <script>
+                $(document).ready(function () {
+                    $("#meterLineItems-grid").kendoGrid({
+                        dataSource: {
+                            type: "json",
+                            transport: {
+                                read: {
+                                    url: "@Html.Raw(Url.Action("MeterLineItemList", "MeterGroup"))",
+                                    type: "POST",
+                                    dataType: "json",
+                                    data: additionalData
+                                }
+                            },
+                            schema: {
+                                data: "Data",
+                                total: "Total",
+                                errors: "Errors",
+                                model: {
+                                    id: "Id",
+                                    fields: {
+                                        DisplayOrder: { editable: true },
+                                        'Meter.Name': { editable: false },
+                                        'Meter.Description': { editable: false },
+                                        'Meter.MeterType.Name': { editable: false },
+                                        'Meter.UnitOfMeasure.Name': { editable: false }
+                                    }                                    
+                                }
+                            },
+                            batch: true,
+                            error: function(e) {
+                                display_kendoui_grid_error(e);
+                                // Cancel the changes
+                                this.cancelChanges();
+                            },
+                            pageSize: @(defaultGridPageSize),
+                            serverPaging: true,
+                            serverFiltering: true,
+                            serverSorting: true
+                        },
+                        pageable: {
+                            refresh: true,
+                            pageSizes: [@(gridPageSizes)],
+                            @Html.Partial("_GridPagerMessages")
+                        },
+                        toolbar: [{
+                            name: "selectMeters",
+                            text: "@T("Common.SelectItems")",
+                        },"save", "cancel"],
+                        saveChanges: function(e) {
+                            e.preventDefault();
+                            BaseEam.Grid.saveChanges('@Url.Action("SaveChanges","MeterGroup")', '#meterLineItems-grid', '#meterLineItems-error');
+                        },
+                        sortable: true,
+                        editable: true,
+                        scrollable: false,
+                        columns: [{
+                            field: "DisplayOrder",
+                            title: "@T("Meter.DisplayOrder")"
+                        }, {
+                            field: "Meter.Name",
+                            title: "@T("Meter.Name")",
+                            editable: false
+                        }, {
+                            field: "Meter.Description",
+                            title: "@T("Meter.Description")"
+                        }, {
+                            field: "Meter.MeterType.Name",
+                            title: "@T("Meter.MeterType.Name")"
+                        }, {
+                            field: "Meter.UnitOfMeasure.Name",
+                            title: "@T("Meter.UnitOfMeasure.Name")"
+                        },{
+                            command: { name: "destroy", text: "@T("Common.Delete")" },
+                            width: 100
+                        }]
+                    });
+                });
+            </script>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    function additionalData() {
+        var data = {
+            meterGroupId: $("#Id").val()
+        };
+        addAntiForgeryToken(data);
+        return data;
+    }
+
+    $(document).ready(function () {
+        //click Select Items button
+        $(".k-grid-selectMeters", "#meterLineItems-grid").bind("click", function (e) {
+            e.preventDefault();
+            $.get('@Url.Action("MLMeterView", "Lookup")', function (data) {
+                showBSModal({
+                    title: "@T("MeterLineItem.SelectMeters")",
+                    size: "large",
+                    body: data,
+                    actions: [{
+                        label: '@T("Common.Save")',
+                        cssClass: 'btn-success',
+                        onClick: selectMeterLineItems
+                    }, {
+                        label: '@T("Common.Cancel")',
+                        cssClass: 'btn-danger',
+                        onClick: function (e) {
+                            $(e.target).parents('.modal').modal('hide');
+                        }
+                    }]
+                });
+            });
+        });
+    });
+
+    function selectMeterLineItems(e) {
+        e.preventDefault();
+        var postData = {
+            meterGroupId: $("#Id").val(),
+            selectedIds: metersCheckboxHandler.selectedIds
+        };
+        addAntiForgeryToken(postData);
+        $.ajax({
+            cache: false,
+            type: "POST",
+            url: '@Url.Action("AddMeterLineItems", "MeterGroup")',
+            data: postData,
+            success: function (data) {
+                if (data && data.Errors) {
+                    showErrors(data.Errors, '#ml-meterLineItems-error');
+                } else {
+                    //hide modal popup
+                    $(e.target).parents('.modal').modal('hide');
+
+                    //refresh grid
+                    var grid = $('#meterLineItems-grid').data('kendoGrid');
+                    grid.dataSource.page(1);
+                }
+            },
+            error: function (xhr, ajaxOptions, thrownError) {
+                showBSModal({ title: "Error", body: thrownError });
+            },
+            traditional: true
+        });
+    }
+</script>

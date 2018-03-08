@@ -1,0 +1,61 @@
+﻿@using BaseEAM.Web.Framework.CustomField
+@model FieldModel
+
+@Html.TextBox(Model.Name, Model.Value == null ? "" : Model.Value, new { style = "display: none;" })
+<script>
+    $(document).ready(function () {
+        $('#@Model.Name').kendoComboBox({
+            autoBind: @Model.AutoBind.ToString().ToLower(),
+            dataTextField: 'Text',
+            dataValueField: 'Value',
+            filter: 'contains',
+            minLength: 2,
+            @if(!string.IsNullOrEmpty(Model.ParentFieldName))
+            {
+                <text>cascadeFrom: '@Model.ParentFieldName',</text>
+            }
+            change: function (e) {
+                //if not a valid value, clear and reset the filter
+                if (this.value() && this.selectedIndex == -1) {
+                    this.text('');
+                    this.dataSource.filter(null);
+                    this.dataSource.read();
+                }
+            },
+            dataSource: {
+                type: 'json',
+                serverFiltering: true,
+                transport: {
+                    read: {
+                        url: '/@Model.MvcController/@Model.MvcAction',
+                        type: 'POST',
+                        dataType: 'json',
+                        data: addAntiForgeryToken
+                    },
+                    parameterMap: function (data, action) {
+                        var param = '';
+                        var parentValue = '';
+                        if(data.filter != null) {
+                            $.each(data.filter.filters, function(index, filter) {
+                                if(filter.operator == 'eq') {
+                                    parentValue = filter.value;
+                                }
+                                if (filter.operator == 'contains') {
+                                    param = filter.value;
+                                }
+                            });
+                        }
+                        return addAntiForgeryToken({
+                            param: param,
+                            @(string.IsNullOrEmpty(Model.AdditionalField) ? "field" : Model.AdditionalField) : '@Model.AdditionalValue',
+                            @if(!string.IsNullOrEmpty(Model.ParentFieldName))
+                            {
+                                <text>parentValue: parentValue</text>
+                            }
+                        })
+                    }
+                }
+            }
+        });
+    });
+</script>

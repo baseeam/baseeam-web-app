@@ -1,0 +1,394 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{D05821A9-51C0-4D23-B97F-6630F2291D97}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>BaseEAM.Services</RootNamespace>
+    <AssemblyName>BaseEAM.Services</AssemblyName>
+    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Autofac, Version=4.6.1.0, Culture=neutral, PublicKeyToken=17863af14b0044da, processorArchitecture=MSIL">
+      <HintPath>..\packages\Autofac.4.6.1\lib\net45\Autofac.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Ciloci.Flee, Version=0.9.26.0, Culture=neutral, PublicKeyToken=c8526a021ef298ed, processorArchitecture=MSIL">
+      <HintPath>..\packages\Trove.FLEE.0.9.26.0\lib\net20\Ciloci.Flee.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Common.Logging, Version=3.3.1.0, Culture=neutral, PublicKeyToken=af08829b84f0328e, processorArchitecture=MSIL">
+      <HintPath>..\packages\Common.Logging.3.3.1\lib\net40\Common.Logging.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Common.Logging.Core, Version=3.3.1.0, Culture=neutral, PublicKeyToken=af08829b84f0328e, processorArchitecture=MSIL">
+      <HintPath>..\packages\Common.Logging.Core.3.3.1\lib\net40\Common.Logging.Core.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="CrystalDecisions.CrystalReports.Engine, Version=13.0.2000.0, Culture=neutral, PublicKeyToken=692fbea5521e1304, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>C:\Program Files (x86)\SAP BusinessObjects\Crystal Reports for .NET Framework 4.0\Common\SAP BusinessObjects Enterprise XI 4.0\win32_x86\dotnet\CrystalDecisions.CrystalReports.Engine.dll</HintPath>
+    </Reference>
+    <Reference Include="CrystalDecisions.ReportSource, Version=13.0.2000.0, Culture=neutral, PublicKeyToken=692fbea5521e1304, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>C:\Program Files (x86)\SAP BusinessObjects\Crystal Reports for .NET Framework 4.0\Common\SAP BusinessObjects Enterprise XI 4.0\win32_x86\dotnet\CrystalDecisions.ReportSource.dll</HintPath>
+    </Reference>
+    <Reference Include="CrystalDecisions.Shared, Version=13.0.2000.0, Culture=neutral, PublicKeyToken=692fbea5521e1304, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>C:\Program Files (x86)\SAP BusinessObjects\Crystal Reports for .NET Framework 4.0\Common\SAP BusinessObjects Enterprise XI 4.0\win32_x86\dotnet\CrystalDecisions.Shared.dll</HintPath>
+    </Reference>
+    <Reference Include="Dapper, Version=1.50.2.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Dapper.1.50.2\lib\net451\Dapper.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="EntityFramework, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
+      <HintPath>..\packages\EntityFramework.6.1.3\lib\net45\EntityFramework.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="EntityFramework.SqlServer, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
+      <HintPath>..\packages\EntityFramework.6.1.3\lib\net45\EntityFramework.SqlServer.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="EPPlus, Version=4.1.0.0, Culture=neutral, PublicKeyToken=ea159fdaa78159a1, processorArchitecture=MSIL">
+      <HintPath>..\packages\EPPlus.4.1.0\lib\net40\EPPlus.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Handlebars, Version=1.8.1.0, Culture=neutral, PublicKeyToken=22225d0bf33cd661, processorArchitecture=MSIL">
+      <HintPath>..\packages\Handlebars.Net.1.9.0\lib\net40\Handlebars.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="ICSharpCode.SharpZipLib, Version=0.86.0.518, Culture=neutral, PublicKeyToken=1b03e6acf1164f73, processorArchitecture=MSIL">
+      <HintPath>..\packages\SharpZipLib.0.86.0\lib\20\ICSharpCode.SharpZipLib.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="itextsharp, Version=5.5.12.0, Culture=neutral, PublicKeyToken=8354ae6d2174ddca, processorArchitecture=MSIL">
+      <HintPath>..\packages\iTextSharp.5.5.12\lib\itextsharp.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Microsoft.Web.Infrastructure, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Web.Infrastructure.1.0.0.0\lib\net40\Microsoft.Web.Infrastructure.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Newtonsoft.Json, Version=10.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\packages\Newtonsoft.Json.10.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="NPOI, Version=2.3.0.0, Culture=neutral, PublicKeyToken=0df73ec7942b34e1, processorArchitecture=MSIL">
+      <HintPath>..\packages\NPOI.2.3.0\lib\net40\NPOI.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="NPOI.OOXML, Version=2.3.0.0, Culture=neutral, PublicKeyToken=0df73ec7942b34e1, processorArchitecture=MSIL">
+      <HintPath>..\packages\NPOI.2.3.0\lib\net40\NPOI.OOXML.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="NPOI.OpenXml4Net, Version=2.3.0.0, Culture=neutral, PublicKeyToken=0df73ec7942b34e1, processorArchitecture=MSIL">
+      <HintPath>..\packages\NPOI.2.3.0\lib\net40\NPOI.OpenXml4Net.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="NPOI.OpenXmlFormats, Version=2.3.0.0, Culture=neutral, PublicKeyToken=0df73ec7942b34e1, processorArchitecture=MSIL">
+      <HintPath>..\packages\NPOI.2.3.0\lib\net40\NPOI.OpenXmlFormats.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="NReco.PdfGenerator, Version=1.1.15.0, Culture=neutral, PublicKeyToken=231663d50a41b451, processorArchitecture=MSIL">
+      <HintPath>..\packages\NReco.PdfGenerator.1.1.15\lib\net20\NReco.PdfGenerator.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="PushSharp.Amazon, Version=4.0.10.0, Culture=neutral, PublicKeyToken=cf74b75eab2c0170, processorArchitecture=MSIL">
+      <HintPath>..\packages\PushSharp.4.0.10\lib\net45\PushSharp.Amazon.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="PushSharp.Apple, Version=4.0.10.0, Culture=neutral, PublicKeyToken=cf74b75eab2c0170, processorArchitecture=MSIL">
+      <HintPath>..\packages\PushSharp.4.0.10\lib\net45\PushSharp.Apple.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="PushSharp.Blackberry, Version=4.0.10.0, Culture=neutral, PublicKeyToken=cf74b75eab2c0170, processorArchitecture=MSIL">
+      <HintPath>..\packages\PushSharp.4.0.10\lib\net45\PushSharp.Blackberry.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="PushSharp.Core, Version=4.0.10.0, Culture=neutral, PublicKeyToken=cf74b75eab2c0170, processorArchitecture=MSIL">
+      <HintPath>..\packages\PushSharp.4.0.10\lib\net45\PushSharp.Core.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="PushSharp.Firefox, Version=4.0.10.0, Culture=neutral, PublicKeyToken=cf74b75eab2c0170, processorArchitecture=MSIL">
+      <HintPath>..\packages\PushSharp.4.0.10\lib\net45\PushSharp.Firefox.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="PushSharp.Google, Version=4.0.10.0, Culture=neutral, PublicKeyToken=cf74b75eab2c0170, processorArchitecture=MSIL">
+      <HintPath>..\packages\PushSharp.4.0.10\lib\net45\PushSharp.Google.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="PushSharp.Windows, Version=4.0.10.0, Culture=neutral, PublicKeyToken=cf74b75eab2c0170, processorArchitecture=MSIL">
+      <HintPath>..\packages\PushSharp.4.0.10\lib\net45\PushSharp.Windows.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Quartz, Version=2.6.0.0, Culture=neutral, PublicKeyToken=f6b8c98a402cc8a4, processorArchitecture=MSIL">
+      <HintPath>..\packages\Quartz.2.6.0\lib\net40\Quartz.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.ComponentModel.Composition" />
+    <Reference Include="System.ComponentModel.DataAnnotations" />
+    <Reference Include="System.Configuration" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Net.Http.Formatting, Version=5.2.3.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.AspNet.WebApi.Client.5.2.3\lib\net45\System.Net.Http.Formatting.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System.Numerics" />
+    <Reference Include="System.Web" />
+    <Reference Include="System.Web.Helpers, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.AspNet.WebPages.3.2.3\lib\net45\System.Web.Helpers.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System.Web.Mvc, Version=5.2.3.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.AspNet.Mvc.5.2.3\lib\net45\System.Web.Mvc.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System.Web.Razor, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.AspNet.Razor.3.2.3\lib\net45\System.Web.Razor.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System.Web.WebPages, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.AspNet.WebPages.3.2.3\lib\net45\System.Web.WebPages.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System.Web.WebPages.Deployment, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.AspNet.WebPages.3.2.3\lib\net45\System.Web.WebPages.Deployment.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System.Web.WebPages.Razor, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.AspNet.WebPages.3.2.3\lib\net45\System.Web.WebPages.Razor.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Asset\AssetService.cs" />
+    <Compile Include="Asset\IAssetService.cs" />
+    <Compile Include="Asset\ILocationService.cs" />
+    <Compile Include="Asset\IMeterGroupService.cs" />
+    <Compile Include="Asset\IMeterService.cs" />
+    <Compile Include="Asset\LocationService.cs" />
+    <Compile Include="Asset\MeterGroupService.cs" />
+    <Compile Include="Asset\MeterService.cs" />
+    <Compile Include="Attachment\AttachmentService.cs" />
+    <Compile Include="Attachment\IAttachmentService.cs" />
+    <Compile Include="Attribute\AttributeService.cs" />
+    <Compile Include="Attribute\EntityAttributeService.cs" />
+    <Compile Include="Attribute\IAttributeService.cs" />
+    <Compile Include="Attribute\IEntityAttributeService.cs" />
+    <Compile Include="Audit\AuditEntityConfigurationService.cs" />
+    <Compile Include="Audit\AuditTrailService.cs" />
+    <Compile Include="Audit\IAuditEntityConfigurationService.cs" />
+    <Compile Include="Audit\IAuditTrailService.cs" />
+    <Compile Include="Authentication\FormsAuthenticationService.cs" />
+    <Compile Include="Authentication\IAuthenticationService.cs" />
+    <Compile Include="AutoNumber\AutoNumberService.cs" />
+    <Compile Include="AutoNumber\IAutoNumberService.cs" />
+    <Compile Include="BaseService.cs" />
+    <Compile Include="Communication\IMessageService.cs" />
+    <Compile Include="Communication\IMessageTemplateService.cs" />
+    <Compile Include="Communication\MessageService.cs" />
+    <Compile Include="Communication\MessageTemplateService.cs" />
+    <Compile Include="Configuration\ISettingService.cs" />
+    <Compile Include="Configuration\SettingExtensions.cs" />
+    <Compile Include="Configuration\SettingService.cs" />
+    <Compile Include="Contract\ContractService.cs" />
+    <Compile Include="Contract\IContractService.cs" />
+    <Compile Include="Dashboard\IVisualService.cs" />
+    <Compile Include="Dashboard\VisualService.cs" />
+    <Compile Include="DataExchange\Help\PropertyByName.cs" />
+    <Compile Include="DataExchange\Help\PropertyManager.cs" />
+    <Compile Include="DataExchange\IImportManager.cs" />
+    <Compile Include="DataExchange\IImportProfileService.cs" />
+    <Compile Include="DataExchange\ImportManager.cs" />
+    <Compile Include="DataExchange\ImportMessage.cs" />
+    <Compile Include="DataExchange\ImportProfileService.cs" />
+    <Compile Include="DataExchange\ImportResult.cs" />
+    <Compile Include="Events\EventPublisher.cs" />
+    <Compile Include="Events\EventPublisherExtensions.cs" />
+    <Compile Include="Events\IConsumer.cs" />
+    <Compile Include="Events\IEventPublisher.cs" />
+    <Compile Include="Events\ISubscriptionService.cs" />
+    <Compile Include="Events\SubscriptionService.cs" />
+    <Compile Include="Failure\CodeService.cs" />
+    <Compile Include="Failure\ICodeService.cs" />
+    <Compile Include="Feature\IModuleService.cs" />
+    <Compile Include="Feature\ModuleService.cs" />
+    <Compile Include="Finance\CurrencyService.cs" />
+    <Compile Include="Finance\EcbExchangeRateProvider.cs" />
+    <Compile Include="Finance\ICurrencyService.cs" />
+    <Compile Include="Finance\IExchangeRateProvider.cs" />
+    <Compile Include="Finance\McExchangeRateProvider.cs" />
+    <Compile Include="Helper\DateTimeHelper.cs" />
+    <Compile Include="Helper\DateTimeSettings.cs" />
+    <Compile Include="Helper\HtmlRemoval.cs" />
+    <Compile Include="Helper\IDateTimeHelper.cs" />
+    <Compile Include="IBaseService.cs" />
+    <Compile Include="Inventory\IItemService.cs" />
+    <Compile Include="Inventory\IServiceItemService.cs" />
+    <Compile Include="Inventory\ServiceItemService.cs" />
+    <Compile Include="Inventory\Transactions\AdjustService.cs" />
+    <Compile Include="Inventory\Transactions\IAdjustService.cs" />
+    <Compile Include="Inventory\Transactions\IIssueService.cs" />
+    <Compile Include="Inventory\Transactions\IPhysicalCountService.cs" />
+    <Compile Include="Inventory\Transactions\IReceiptService.cs" />
+    <Compile Include="Inventory\IStoreService.cs" />
+    <Compile Include="Inventory\ItemService.cs" />
+    <Compile Include="Inventory\IItemGroupService.cs" />
+    <Compile Include="Inventory\IUnitConversionService.cs" />
+    <Compile Include="Inventory\IUnitOfMeasureService.cs" />
+    <Compile Include="Inventory\ItemGroupService.cs" />
+    <Compile Include="Inventory\Transactions\IReturnService.cs" />
+    <Compile Include="Inventory\Transactions\IssueService.cs" />
+    <Compile Include="Inventory\Transactions\ITransferService.cs" />
+    <Compile Include="Inventory\Transactions\PhysicalCountService.cs" />
+    <Compile Include="Inventory\Transactions\ReceiptService.cs" />
+    <Compile Include="Inventory\StoreService.cs" />
+    <Compile Include="Inventory\Transactions\ReturnService.cs" />
+    <Compile Include="Inventory\Transactions\TransferService.cs" />
+    <Compile Include="Inventory\UnitConversionService.cs" />
+    <Compile Include="Inventory\UnitOfMeasureService.cs" />
+    <Compile Include="IWorkflowBaseService.cs" />
+    <Compile Include="Localization\ILanguageService.cs" />
+    <Compile Include="Localization\ILocalizationService.cs" />
+    <Compile Include="Localization\LanguageService.cs" />
+    <Compile Include="Localization\LocalizationExtensions.cs" />
+    <Compile Include="Localization\LocalizationService.cs" />
+    <Compile Include="Logging\DefaultLogger.cs" />
+    <Compile Include="Logging\ILogger.cs" />
+    <Compile Include="Logging\IUserActivityService.cs" />
+    <Compile Include="Logging\LoggingExtensions.cs" />
+    <Compile Include="Logging\NullLogger.cs" />
+    <Compile Include="Logging\UserActivityService.cs" />
+    <Compile Include="Organization\IOrganizationService.cs" />
+    <Compile Include="Organization\ISiteService.cs" />
+    <Compile Include="Organization\OrganizationService.cs" />
+    <Compile Include="Organization\SiteService.cs" />
+    <Compile Include="Pdf\Content\IPdfContent.cs" />
+    <Compile Include="Pdf\Content\PdfHtmlContent.cs" />
+    <Compile Include="Pdf\Content\PdfUrlContent.cs" />
+    <Compile Include="Pdf\IPdfConverter.cs" />
+    <Compile Include="Pdf\Options\IPdfOptions.cs" />
+    <Compile Include="Pdf\Options\PdfHeaderFooterOptions.cs" />
+    <Compile Include="Pdf\Options\PdfPageOptions.cs" />
+    <Compile Include="Pdf\Options\PdfTocOptions.cs" />
+    <Compile Include="Pdf\PdfConvertSettings.cs" />
+    <Compile Include="Pdf\PdfPageMargins.cs" />
+    <Compile Include="Pdf\PdfPagePrientation.cs" />
+    <Compile Include="Pdf\PdfPageSize.cs" />
+    <Compile Include="Pdf\WkHtmlToPdfConverter.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Purchasing\CompanyService.cs" />
+    <Compile Include="Purchasing\ICompanyService.cs" />
+    <Compile Include="Report\IReportService.cs" />
+    <Compile Include="Report\ReportService.cs" />
+    <Compile Include="ScheduledJob\Jobs\ClearUrlAccessedLogJob.cs" />
+    <Compile Include="ScheduledJob\Jobs\HeartbeatJob.cs" />
+    <Compile Include="ScheduledJob\Jobs\PMJob.cs" />
+    <Compile Include="ScheduledJob\Jobs\ImportJob.cs" />
+    <Compile Include="ScheduledJob\Jobs\ReorderItemsJob.cs" />
+    <Compile Include="ScheduledJob\Jobs\SendMessageJob.cs" />
+    <Compile Include="Report\FilterService.cs" />
+    <Compile Include="Report\IFilterService.cs" />
+    <Compile Include="Resource\CalendarService.cs" />
+    <Compile Include="Resource\CraftService.cs" />
+    <Compile Include="Resource\ICalendarService.cs" />
+    <Compile Include="Resource\ICraftService.cs" />
+    <Compile Include="Resource\IShiftService.cs" />
+    <Compile Include="Resource\ITeamService.cs" />
+    <Compile Include="Resource\ITechnicianService.cs" />
+    <Compile Include="Resource\ShiftService.cs" />
+    <Compile Include="Resource\TeamService.cs" />
+    <Compile Include="Resource\TechnicianService.cs" />
+    <Compile Include="Security\EncryptionService.cs" />
+    <Compile Include="Security\IEncryptionService.cs" />
+    <Compile Include="Security\IPermissionService.cs" />
+    <Compile Include="Security\ISecurityGroupService.cs" />
+    <Compile Include="Security\PermissionService.cs" />
+    <Compile Include="Security\SecurityGroupService.cs" />
+    <Compile Include="Security\StandardPermissionName.cs" />
+    <Compile Include="TaskGroup\ITaskGroupService.cs" />
+    <Compile Include="TaskGroup\TaskGroupService.cs" />
+    <Compile Include="Templating\Template.cs" />
+    <Compile Include="User\ChangePasswordRequest.cs" />
+    <Compile Include="User\ChangePasswordResult.cs" />
+    <Compile Include="User\IUserRegistrationService.cs" />
+    <Compile Include="User\IUserService.cs" />
+    <Compile Include="User\UserRegistrationService.cs" />
+    <Compile Include="User\UserService.cs" />
+    <Compile Include="ValueItem\IValueItemService.cs" />
+    <Compile Include="ValueItem\ValueItemService.cs" />
+    <Compile Include="WorkflowBaseService.cs" />
+    <Compile Include="Workflow\AssignmentGroupService.cs" />
+    <Compile Include="Workflow\AssignmentService.cs" />
+    <Compile Include="Workflow\IAssignmentGroupService.cs" />
+    <Compile Include="Workflow\IAssignmentService.cs" />
+    <Compile Include="Workflow\IWorkflowDefinitionService.cs" />
+    <Compile Include="Workflow\WorkflowDefinitionService.cs" />
+    <Compile Include="Workflow\WorkflowServiceClient.cs" />
+    <Compile Include="WorkOrder\IPreventiveMaintenanceService.cs" />
+    <Compile Include="WorkOrder\IServiceRequestService.cs" />
+    <Compile Include="WorkOrder\IWorkOrderService.cs" />
+    <Compile Include="WorkOrder\PreventiveMaintenanceService.cs" />
+    <Compile Include="WorkOrder\ServiceRequestService.cs" />
+    <Compile Include="WorkOrder\WorkOrderService.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="app.config" />
+    <None Include="BaseEAM.Services.licenseheader" />
+    <None Include="job_scheduling_data_2_0.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\BaseEAM.Core\BaseEAM.Core.csproj">
+      <Project>{dbc07eb8-38a4-41b5-bc1c-d88e98be8a49}</Project>
+      <Name>BaseEAM.Core</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\BaseEAM.Data\BaseEAM.Data.csproj">
+      <Project>{d9c12b1f-fbae-4cf4-bc42-b0c2356cdcb3}</Project>
+      <Name>BaseEAM.Data</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Clickatell.Services\Clickatell.Services.csproj">
+      <Project>{15da1369-a486-46d0-a175-d957f64d0ad1}</Project>
+      <Name>Clickatell.Services</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup />
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

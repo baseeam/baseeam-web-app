@@ -1,0 +1,117 @@
+﻿@using BaseEAM.Services.Security
+@model PMTaskModel
+@{
+    var permissionService = EngineContext.Current.Resolve<BaseEAM.Services.IPermissionService>();
+    var allowCreate = permissionService.Authorize(StandardPermissionName.Maintenance_PreventiveMaintenance_Create);
+    var allowRead = permissionService.Authorize(StandardPermissionName.Maintenance_PreventiveMaintenance_Read);
+    var allowUpdate = permissionService.Authorize(StandardPermissionName.Maintenance_PreventiveMaintenance_Update);
+    var allowDelete = permissionService.Authorize(StandardPermissionName.Maintenance_PreventiveMaintenance_Delete);
+
+}
+
+<div id="panel-pMTask" class="panel panel-default eam-panel">
+    <div class="panel-heading">
+        <button type="button" id="savePMTask" class="btn btn-primary@(allowCreate || allowUpdate ? "" : " none-display")" title="@T("Common.Save")">
+            <i class="fa fa-floppy-o"></i>
+        </button>
+        <button type="button" id="cancelPMTask" class="btn btn-primary" title="@T("Common.Cancel")">
+            <i class="fa fa-ban"></i>
+        </button>
+    </div>
+    <div class="panel-body">
+        @Html.Hidden("PreventiveMaintenanceId", Model.PreventiveMaintenanceId)
+        @Html.Hidden("PMTaskId", Model.Id)
+        <div id="pMTask-error" class="validation-summary-errors none-display">
+        </div>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.BaseEamLabelFor(model => model.Sequence, required: true)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.BaseEamEditorFor(model => model.Sequence)
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.BaseEamLabelFor(model => model.Description, required: true)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.BaseEamEditorFor(model => model.Description)
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.BaseEamLabelFor(model => model.AssignedUserId)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.BaseEamComboBoxFor(model => model.AssignedUserId, "TechnicianListFromPMLabor", "PreventiveMaintenance",
+                                            new RouteValueDictionary { { "additionalField", "preventiveMaintenanceId" }, { "additionalValue", Model.PreventiveMaintenanceId } }, true)
+                    </div>
+                </div>
+            </div>
+        </div>
+        <hr />
+        <h4>@T("Common.Attachments")</h4>
+        @Html.Partial("Attachment", new AttachmentModel { EntityId = Model.Id, EntityType = EntityType.PMTask })
+    </div>
+    <script type="text/javascript">
+        $("#savePMTask").click(function (e) {
+            e.preventDefault();
+            var $group = $("#panel-pMTask :input");
+            var postData = $group.serializeJSON({ checkboxUncheckedValue: "false" });
+            //change Id property name so it can map to MVC model
+            postData.Id = postData.PMTaskId;
+            addAntiForgeryToken(postData);
+
+            $.ajax({
+                cache: false,
+                type: "POST",
+                url: "@(Url.Action("SavePMTask", "PreventiveMaintenance"))",
+                data: postData,
+                success: function (data) {
+                    if (data && data.Errors) {
+                        showErrors(data.Errors, '#pMTask-error');
+                    } else {
+                        //then toggle the panel
+                        togglePanelPMTask(false);
+
+                        //refresh grid
+                        var grid = $('#pMTasks-grid').data('kendoGrid');
+                        grid.dataSource.page(1);
+                    }
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    showBSModal({ title: 'ERROR', body: thrownError });
+                },
+                traditional: true
+            });
+        });
+
+        $("#cancelPMTask").click(function (e) {
+            e.preventDefault();
+            var postData = {
+                id: $("#PMTaskId").val()
+            };
+            addAntiForgeryToken(postData);
+
+            $.ajax({
+                cache: false,
+                type: "POST",
+                url: "@(Url.Action("CancelPMTask", "PreventiveMaintenance"))",
+                data: postData,
+                success: function (data) {
+                    //toggle the panel
+                    togglePanelPMTask(false);
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    showBSModal({ title: 'ERROR', body: thrownError });
+                },
+                traditional: true
+            });
+        });
+    </script>
+</div>

@@ -1,0 +1,19 @@
+﻿
+----------------------------------------
+BaseEam:		v.1.0.0
+Import profile:		Profile15
+Entity:			ItemGroup
+File:			ItemGroup_1.xlsx
+Executed by:		bt@baseeam.com
+Started:		9/20/2017 10:26:05 AM
+Finished:		9/20/2017 10:26:06 AM
+Duration:		0:00:00.7391624
+
+Total rows:		29
+SkippedRecords:		0
+
+Warnings:		0
+
+Errors:			0
+
+

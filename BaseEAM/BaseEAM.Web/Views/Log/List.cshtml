@@ -1,0 +1,171 @@
+﻿@using BaseEAM.Services.Security
+@model SearchModel
+@{
+    //page title
+    ViewBag.Title = T("System.Log").Text;
+
+    var defaultGridPageSize = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().DefaultGridPageSize;
+    var gridPageSizes = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().GridPageSizes;
+
+    var permissionService = EngineContext.Current.Resolve<BaseEAM.Services.IPermissionService>();
+    var allowRead = permissionService.Authorize(StandardPermissionName.System_Log_Read);
+    var allowDelete = permissionService.Authorize(StandardPermissionName.System_Log_Delete);
+}
+
+@Html.AntiForgeryToken()
+<div class="content-header clearfix">
+    <h1 class="pull-left">
+        @T("System.Log")
+    </h1>
+    <div class="pull-right">
+        <button type="button" id="clearall" name="clearall" class="btn btn-primary" title="@T("Log.ClearLog")">
+            <i class="fa fa-trash-o"></i>            
+        </button>
+    </div>
+</div>
+<div id="validation-summary" class="validation-summary-errors" style="display:none">
+</div>
+<div class="content">
+    <div class="form-horizontal">
+        <div class="panel-group">
+            @Html.Partial("Filter", Model)
+            <div class="panel panel-default">
+                <div class="panel-body">
+                    <div id="logs-grid"></div>
+
+                    <script>
+                        $(document).ready(function () {
+                            $("#logs-grid").kendoGrid({
+                                dataSource: {
+                                    type: "json",
+                                    transport: {
+                                        read: {
+                                            url: "@Html.Raw(Url.Action("List", "Log"))",
+                                            type: "POST",
+                                            dataType: "json",
+                                            data: additionalData
+                                        }
+                                    },
+                                    schema: {
+                                        data: "Data",
+                                        total: "Total",
+                                        errors: "Errors",
+                                        model: {
+                                            fields: {
+                                            }
+                                        }
+                                    },
+                                    error: function (e) {
+                                        display_kendoui_grid_error(e);
+                                        // Cancel the changes
+                                        this.cancelChanges();
+                                    },
+                                    pageSize: @(defaultGridPageSize),
+                                    serverPaging: true,
+                                    serverFiltering: true,
+                                    serverSorting: true
+                                },
+                                pageable: {
+                                    refresh: true,
+                                    pageSizes: [@(gridPageSizes)],
+                                    @Html.Partial("_GridPagerMessages")
+                                },
+                                sortable: true,
+                                editable: false,
+                                scrollable: false,
+                                columns: [{
+                                    field: "LogLevel",
+                                    title: "@T("Log.LogLevel")",
+                                    sortable: true
+                                }, {
+                                    field: "ShortMessage",
+                                    title: "@T("Log.ShortMessage")",
+                                    sortable: true
+                                }, {
+                                    field: "CreatedOn",
+                                    width: 150,
+                                    title: "@T("Log.CreatedOn")",
+                                    template: '#= CreatedOn != null ? kendo.toString(kendo.parseDate(CreatedOn, "MM/dd/yyyy HH:mm:ss"), "MM/dd/yyyy HH:mm:ss") : "" #',
+                                    sortable: true
+                                }, {
+                                    field: "User.Email",
+                                    width: 150,
+                                    title: "@T("Log.User")",
+                                    sortable: true
+                                }, {
+                                    field: "Id",
+                                    width: 120,
+                                    template: '<a class="btn btn-primary@(allowRead ? "" : " none-display")" title="@T("Common.View")" href="View/#=Id#"></span><i class="fa fa-eye aria-hidden="true""></i></a>' +
+                                        '<button type="button" class="btn btn-primary@(allowDelete ? "" : " none-display")" title="@T("Common.Delete")" onclick="deleteLog(event, #=Id#);"></span><i class="fa fa-trash aria-hidden="true""></i></a>',
+                                    sortable: false
+                                }
+                                ]
+                            });
+                        });
+                    </script>
+                    <script type="text/javascript">
+
+                        function deleteLog(e, id){
+                            e.preventDefault();
+                            BaseEam.Grid.deleteRow(null, id, "@Url.Action("Delete", "Log")", "logs-grid", "", true);
+                        }
+
+                        $(document).ready(function () {
+                            //search button
+                            $('#search').click(function () {
+                                //search
+                                var grid = $('#logs-grid').data('kendoGrid');
+                                grid.dataSource.page(1); //new search. Set page size to 1
+                                //grid.dataSource.read(); we already loaded the grid above using "page" function
+                                return false;
+                            });
+
+                            $("div.panel-search").find(':input').keydown(function (event) {
+                                if (event.keyCode == 13) {
+                                    $("#search").click();
+                                    return false;
+                                }
+                            });
+
+                            $("#clearall").click(function (e) {
+                                e.preventDefault();
+                                $.when(kendo.ui.ExtOkCancelDialog.show({
+                                    title: "WARNING!",
+                                    message: '@T("Log.Warning.ClearAll")',
+                                    icon: 'k-ext-warning'
+                                }))
+                                .done(function (response) {
+                                    if (response.button == "OK") {
+                                        $.ajax({
+                                            cache: false,
+                                            type: "POST",
+                                            url: "@Url.Action("ClearAll", "Log")",
+                                            data: addAntiForgeryToken(),
+                                            success: function (data) {
+                                                //refresh grid
+                                                var grid = $('#logs-grid').data('kendoGrid');
+                                                grid.dataSource.page(1);
+                                            },
+                                            error: function (xhr, ajaxOptions, thrownError) {
+                                                showBSModal({ title: "Error", body: thrownError });
+                                            },
+                                            traditional: true
+                                        });
+                                    }
+                                });
+                            });
+                        });
+
+                        function additionalData() {
+                            var data = {
+                                searchValues: $("div.panel-search").find(':input').serialize()
+                            };
+                            addAntiForgeryToken(data);
+                            return data;
+                        }
+                    </script>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

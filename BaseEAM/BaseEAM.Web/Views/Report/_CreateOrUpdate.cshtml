@@ -1,0 +1,172 @@
+﻿@model ReportModel
+@Html.HiddenFor(model => model.Id)
+@Html.HiddenFor(model => model.IsNew)
+
+<script>
+    $(document).ready(function () {
+        bindBootstrapTabSelectEvent('report-edit');
+    });
+
+    function savedCallback(data) {
+        viewModel.isNew(false);
+    }
+</script>
+
+<div class="content">
+    <div class="form-horizontal">
+        <div id="report-edit" class="nav-tabs-custom">
+            <ul class="nav nav-tabs">
+                @Html.RenderBootstrapTabHeader("tab-info", @T("Report.Info"), true)
+                @Html.RenderBootstrapTabHeader("tab-reportFilters", @T("Report.ReportFilters"))
+                @Html.RenderBootstrapTabHeader("tab-reportQuery", @T("Report.ReportQuery"))
+                @Html.RenderBootstrapTabHeader("tab-reportColumns", @T("Report.ReportColumns"))
+                @Html.RenderBootstrapTabHeader("tab-securityGroups", @T("Report.SecurityGroups"))
+            </ul>
+            <div class="tab-content">
+                @Html.RenderBootstrapTabContent("tab-info", @TabInfo(), true)
+                @Html.RenderBootstrapTabContent("tab-reportFilters", @TabReportFilters(), dataBind: "visible: !isNew()")
+                @Html.RenderBootstrapTabContent("tab-reportQuery", @TabReportQuery(), dataBind: "visible: !isNew()")
+                @Html.RenderBootstrapTabContent("tab-reportColumns", @TabReportColumns(), dataBind: "visible: !isNew()")
+                @Html.RenderBootstrapTabContent("tab-securityGroups", @TabSecurityGroups(), dataBind: "visible: !isNew()")
+            </div>
+        </div>
+    </div>
+</div>
+
+@{
+    //custom tabs
+    var eventMessage = new AdminTabStripCreated(this.Html, "report-edit");
+    EngineContext.Current.Resolve<IEventPublisher>().Publish(eventMessage);
+    foreach (var eventBlock in eventMessage.BlocksToRender)
+    {
+        @eventBlock
+    }
+}
+
+@helper TabInfo()
+{
+    <div class="panel-group">
+        <div class="panel panel-default">
+            <div class="panel-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.Name, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamEditorFor(model => model.Name)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.Type, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamEditorFor(model => model.Type)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.Description)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamEditorFor(model => model.Description)
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.TemplateType, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.EnumDropDownListFor(model => model.TemplateType, new { @class = "form-control" })
+                            </div>
+                        </div>
+                        <div class="form-group"  data-bind="visible: templateType">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.TemplateFileBytes, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.EditorFor(model => Model.UploadFileId, "UploadFile", new { entityId = Model.Id, entityType = EntityType.Report })
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <hr />
+                @if (Model.Id > 0 && Model.IsNew == false)
+                {
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <div class="col-md-3">
+                                    @Html.BaseEamLabelFor(model => model.FirstCreatedBy)
+                                </div>
+                                <div class="col-md-9">
+                                    @Html.BaseEamDisplayFor(model => model.FirstCreatedBy)
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <div class="col-md-3">
+                                    @Html.BaseEamLabelFor(model => model.LastUpdatedBy)
+                                </div>
+                                <div class="col-md-9">
+                                    @Html.BaseEamDisplayFor(model => model.LastUpdatedBy)
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+    <script>
+        $(document).ready(function () {
+
+            $("#@Html.FieldIdFor(model => model.TemplateType)").change(function () {
+                //TemplateType: 1 is CrystalReport
+                if ($("#@Html.FieldIdFor(model => model.TemplateType)").val() == '1') {
+                    viewModel.templateType(true);
+                } else {
+                    viewModel.templateType(false);
+                }
+            });
+
+            $('#inputTemplateFile').change(function (e) {
+                var fileName = getFileNameFromPath(this.value);
+                $('#TemplateFileName').val(fileName);
+            });
+        });
+
+        function getFileNameFromPath(fullPath) {
+            var value = "";
+            if (fullPath) {
+                value = fullPath.split(/[\/\\]/).pop();
+            }
+            return value;
+        }
+    </script>
+
+}
+@helper TabReportFilters()
+{
+    @Html.Partial("_ReportFilters", new ReportFilterModel())
+}
+
+@helper TabReportQuery()
+{
+    @Html.Partial("_ReportQuery", Model)
+}
+
+@helper TabReportColumns()
+{
+    @Html.Partial("_ReportColumns", new ReportColumnModel())
+}
+
+@helper TabSecurityGroups()
+{
+    @Html.Partial("_SecurityGroups", new SecurityGroupModel())
+}
+
+

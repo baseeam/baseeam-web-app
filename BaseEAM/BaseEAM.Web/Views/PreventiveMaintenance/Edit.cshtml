@@ -1,0 +1,74 @@
+﻿@using BaseEAM.Services.Security
+@model PreventiveMaintenanceModel
+
+@{
+    //page title
+    ViewBag.Title = T("PreventiveMaintenance.EditPreventiveMaintenanceDetails").Text;
+    var permissionService = EngineContext.Current.Resolve<BaseEAM.Services.IPermissionService>();
+    var allowCreate = permissionService.Authorize(StandardPermissionName.Maintenance_PreventiveMaintenance_Create);
+    var allowRead = permissionService.Authorize(StandardPermissionName.Maintenance_PreventiveMaintenance_Read);
+    var allowUpdate = permissionService.Authorize(StandardPermissionName.Maintenance_PreventiveMaintenance_Update);
+    var allowDelete = permissionService.Authorize(StandardPermissionName.Maintenance_PreventiveMaintenance_Delete);
+}
+@using (Html.BeginForm("Edit", "PreventiveMaintenance", FormMethod.Post, new { id = "preventiveMaintenance-form" }))
+{
+    @Html.AntiForgeryToken()
+    <div class="content-header clearfix">
+        <h1 class="pull-left">
+            <small><i class="fa fa-arrow-circle-left fa-padding"></i>@Html.ActionLink(T("Common.BackToList").Text, "List")</small>
+        </h1>
+        <div class="pull-right">
+            <button type="button" id="save" name="save" class="btn btn-primary@(allowCreate || allowUpdate ? "" : " none-display")" title="@T("Common.Save")">
+                <i class="fa fa-floppy-o"></i>
+            </button>
+            <button type="button" id="cancel" name="cancel" class="btn btn-primary@(Model.IsNew == true ? "" : " none-display")" title="@T("Common.Cancel")">
+                <i class="fa fa-ban"></i>
+            </button>
+            <button type="button" id="preventiveMaintenance-delete" class="btn btn-primary@(allowDelete && Model.IsNew == false ? "" : " none-display")" title="@T("Common.Delete")">
+                <i class="fa fa-trash-o"></i>
+            </button>
+        </div>
+    </div>
+    <div id="validation-summary" class="validation-summary-errors" style="display:none">
+    </div>
+    @Html.Partial("_CreateOrUpdate", Model)
+    <script type="text/javascript">
+        var viewModel;
+        function initializeViewModel() {
+            viewModel = {
+                isNew: ko.observable($('#IsNew').val() == 'True' ? true : false),
+                number: ko.observable('@Model.Number'),
+                itemCategoryTool: ko.observable($('#ItemCategory').val() == 'Tool' ? true : false),
+                taskGroup: ko.observable('@Model.TaskGroupId'),
+                frequencyType: ko.observable($('#FrequencyType').val()),
+            };
+            ko.applyBindings(viewModel);
+        };
+
+        function refreshTasksTab(){
+            var grid = $('#pMTasks-grid').data('kendoGrid');
+            grid.dataSource.page(1);
+        }
+
+        $(document).ready(function () {
+            //initialize view model
+            initializeViewModel();
+
+            $("#save").click(function (e) {
+                e.preventDefault();
+                saveForm('preventiveMaintenance-form', '@(Url.Action("Edit", "PreventiveMaintenance"))', savedCallback);
+            });
+
+            $("#cancel").click(function (e) {
+                e.preventDefault();
+                $('#form').removeClass('dirty');
+                BaseEam.Grid.deleteRow(null, @Model.Id, "@Url.Action("Cancel", "PreventiveMaintenance")", "",  "@Url.Action("List", "PreventiveMaintenance")", false);
+            });
+
+            $("#preventiveMaintenance-delete").click(function (e) {
+                e.preventDefault();
+                BaseEam.Grid.deleteRow(null, @Model.Id, "@Url.Action("Delete", "PreventiveMaintenance")", "", "@Url.Action("List", "PreventiveMaintenance")", true);
+            });
+        });
+    </script>
+}

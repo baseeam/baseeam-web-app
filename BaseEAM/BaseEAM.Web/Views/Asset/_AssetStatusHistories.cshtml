@@ -1,0 +1,86 @@
+﻿@using BaseEAM.Services.Security
+@model AssetStatusHistoryModel
+@{
+    var defaultGridPageSize = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().DefaultGridPageSize;
+    var gridPageSizes = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().GridPageSizes;
+    var primarySystemCurrencySymbol = EngineContext.Current.Resolve<BaseEAM.Core.IWorkContext>().WorkingCurrency.CurrencySymbol;
+
+    var permissionService = EngineContext.Current.Resolve<BaseEAM.Services.IPermissionService>();
+    var allowCreate = permissionService.Authorize(StandardPermissionName.Asset_Asset_Create);
+    var allowRead = permissionService.Authorize(StandardPermissionName.Asset_Asset_Read);
+    var allowUpdate = permissionService.Authorize(StandardPermissionName.Asset_Asset_Update);
+    var allowDelete = permissionService.Authorize(StandardPermissionName.Asset_Asset_Delete);
+}
+<div id="group-assetStatusHistories" class="panel-group">
+    <div class="panel panel-default">
+        <div class="panel-body">
+            <div id="assetStatusHistories-grid"></div>
+            <script>
+                $(document).ready(function () {
+                    $("#assetStatusHistories-grid").kendoGrid({
+                        dataSource: {
+                            type: "json",
+                            transport: {
+                                read: {
+                                    url: "@Html.Raw(Url.Action("AssetStatusHistoryList", "Asset"))",
+                                    type: "POST",
+                                    dataType: "json",
+                                    data: additionalData2
+                                }
+                            },
+                            schema: {
+                                data: "Data",
+                                total: "Total",
+                                errors: "Errors",
+                                model: {
+                                    id: "Id"
+                                }
+                            },
+                            error: function(e) {
+                                display_kendoui_grid_error(e);
+                                // Cancel the changes
+                                this.cancelChanges();
+                            },
+                            pageSize: @(defaultGridPageSize),
+                            serverPaging: true,
+                            serverFiltering: true,
+                            serverSorting: true
+                        },
+                        pageable: {
+                            refresh: true,
+                            pageSizes: [@(gridPageSizes)],
+                            @Html.Partial("_GridPagerMessages")
+                        },
+                        sortable: true,
+                        editable: false,
+                        scrollable: false,
+                        columns: [{
+                            field: "FromStatus",
+                            title: "@T("AssetStatusHistory.FromStatus")"
+                        },{
+                            field: "ToStatus",
+                            title: "@T("AssetStatusHistory.ToStatus")"
+                        },{
+                            field: "ChangedUser.Name",
+                            title: "@T("ChangedUser")"
+                        },{
+                            field: "ChangedDateTime",
+                            title: "@T("AssetStatusHistory.ChangedDateTime")",
+                            template: '#= ChangedDateTime != null ? kendo.toString(kendo.parseDate(ChangedDateTime, "MM/dd/yyyy HH:mm:ss"), "MM/dd/yyyy HH:mm:ss") : "" #',
+                        }]
+                    });
+                });
+            </script>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    function additionalData2() {
+        var data = {
+            assetId: @Model.AssetId
+        };
+        addAntiForgeryToken(data);
+        return data;
+    }
+</script>

@@ -1,0 +1,171 @@
+﻿@model LocationModel
+@Html.HiddenFor(model => model.Id)
+@Html.HiddenFor(model => model.IsNew)
+
+<script>
+    $(document).ready(function() {
+        bindBootstrapTabSelectEvent('location-edit');
+    });
+
+    function savedCallback(data) {
+        viewModel.isNew(false);
+    }
+
+</script>
+
+<div class="content">
+    <div class="form-horizontal">
+        <div id="location-edit" class="nav-tabs-custom">
+            <ul class="nav nav-tabs">
+                @Html.RenderBootstrapTabHeader("tab-info", @T("Location.Info"), true)
+                @Html.RenderBootstrapTabHeader("tab-points", @T("Points"))
+                @Html.RenderBootstrapTabHeader("tab-assets", @T("Assets"))
+                @Html.RenderBootstrapTabHeader("tab-workOrderHistories", @T("WorkOrderHistories"))
+                @Html.RenderBootstrapTabHeader("tab-entityAttributes", @T("Common.EntityAttributes"))
+                @Html.RenderBootstrapTabHeader("tab-attachments", @T("Common.Attachments"))
+            </ul>
+            <div class="tab-content">
+                @Html.RenderBootstrapTabContent("tab-info", @TabInfo(), true)
+                @Html.RenderBootstrapTabContent("tab-points", @TabPoints(), dataBind: "visible: !isNew()")
+                @Html.RenderBootstrapTabContent("tab-assets", @TabAssets(), dataBind: "visible: !isNew()")
+                @Html.RenderBootstrapTabContent("tab-workOrderHistories", @TabWorkOrderHistories(), dataBind: "visible: !isNew()")
+                @Html.RenderBootstrapTabContent("tab-attachments", @TabAttachments(), dataBind: "visible: !isNew()")
+                @Html.RenderBootstrapTabContent("tab-entityAttributes", @TabEntityAttributes(), dataBind: "visible: !isNew()")
+            </div>
+        </div>
+    </div>
+</div>
+
+@{
+    //custom tabs
+    var eventMessage = new AdminTabStripCreated(this.Html, "location-edit");
+    EngineContext.Current.Resolve<IEventPublisher>().Publish(eventMessage);
+    foreach (var eventBlock in eventMessage.BlocksToRender)
+    {
+        @eventBlock
+    }
+}
+
+@helper TabInfo()
+{
+    <div class="panel-group">
+        <div class="panel panel-default">
+            <div class="panel-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.Name, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamEditorFor(model => model.Name)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.LocationTypeId, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamComboBoxFor(model => model.LocationTypeId, "ValueItems", "Common",
+                                            new RouteValueDictionary { { "additionalField", "category" }, { "additionalValue", "Location Type" } }, true)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.ParentName, required: true)
+                                @Html.HiddenFor(model => model.ParentId)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.TreeViewLookupFor(model => model.ParentName, "GetChoices", "Common",
+                                            new RouteValueDictionary { { "dbTable", "Location" }, { "dbTextColumn", "Name" }, { "dbValueColumn", "Id" }, { "treeType", "Location" }, { "valueFieldId", "ParentId" } }, true)
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.SiteId, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamComboBoxFor(model => model.SiteId, "SiteList", "Site", null, true)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.LocationStatusId, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamComboBoxFor(model => model.LocationStatusId, "ValueItems", "Common",
+                                            new RouteValueDictionary { { "additionalField", "category" }, { "additionalValue", "Location Status" } }, true)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.PictureId)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.EditorFor(model => Model.PictureId, "Picture", new { entityId = Model.Id, entityType = EntityType.Location })
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <hr />
+                <h4>@T("Location.Address")</h4>
+                @Html.HiddenFor(model => model.AddressId)
+                @Html.EditorFor(model => model.Address, "Address")
+                <hr />
+                @Html.Partial("Attribute", new ViewDataDictionary { { "entityId", Model.Id }, { "entityType", EntityType.Location } })
+                <hr />
+                @if (Model.Id > 0 && Model.IsNew == false)
+                {
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <div class="col-md-3">
+                                    @Html.BaseEamLabelFor(model => model.FirstCreatedBy)
+                                </div>
+                                <div class="col-md-9">
+                                    @Html.BaseEamDisplayFor(model => model.FirstCreatedBy)
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <div class="col-md-3">
+                                    @Html.BaseEamLabelFor(model => model.LastUpdatedBy)
+                                </div>
+                                <div class="col-md-9">
+                                    @Html.BaseEamDisplayFor(model => model.LastUpdatedBy)
+                                </div>
+                            </div>
+                        </div>
+                    </div>                    
+                }
+            </div>
+        </div>
+    </div>
+}
+
+@helper TabPoints()
+{
+    @Html.Partial("Points", new PointModel { LocationId = Model.Id, Id = Model.PointId, MeterGroupId = Model.MeterGroupId })
+}
+
+@helper TabAssets()
+{
+    @Html.Partial("_Assets", new AssetModel { LocationId = Model.Id })
+}
+
+@helper TabWorkOrderHistories()
+{
+    @Html.Partial("_WorkOrderHistories", Model)
+}
+
+@helper TabEntityAttributes()
+{
+    @Html.Partial("EntityAttribute", new EntityAttributeModel { EntityId = Model.Id, EntityType = EntityType.Location })
+}
+
+
+@helper TabAttachments()
+{
+    @Html.Partial("Attachment", new AttachmentModel { EntityId = Model.Id, EntityType = EntityType.Location })
+}

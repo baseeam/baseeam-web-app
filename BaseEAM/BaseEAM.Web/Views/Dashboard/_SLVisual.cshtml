@@ -1,0 +1,129 @@
+﻿@model SearchModel
+@{
+    var defaultGridPageSize = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().DefaultGridPageSize;
+    var gridPageSizes = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().GridPageSizes;
+
+    var cellId = ViewBag.CellId;
+}
+<div class="content" id="sl-visuals-popup">
+    <div class="validation-summary-errors none-display" id="sl-visuals-error">
+    </div>
+    <div class="form-horizontal">
+        <div class="panel-group">
+            @Html.Partial("Filter", Model)
+            <div class="panel panel-default">
+                <div class="panel-body">
+                    <div id="sl-visuals-grid"></div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        function additionalData() {
+            var data = {
+                searchValues: $("#sl-visuals-popup div.panel-search").find(':input').serialize()
+            };
+            addAntiForgeryToken(data);
+            return data;
+        }
+
+        $("#sl-visuals-grid").kendoGrid({
+            dataSource: {
+                type: "json",
+                transport: {
+                    read: {
+                        url: "@Html.Raw(Url.Action("VisualList", "Dashboard"))",
+                        type: "POST",
+                        dataType: "json",
+                        data: additionalData
+                    },
+                    parameterMap: function(data, operation) {
+                        return data;
+                    }
+                },
+                schema: {
+                    data: "Data",
+                    total: "Total",
+                    errors: "Errors",
+                    model: {
+                        fields: {
+                        }
+                    }
+                },
+                error: function (e) {
+                    display_kendoui_grid_error(e);
+                    // Cancel the changes
+                    this.cancelChanges();
+                },
+                pageSize: @(defaultGridPageSize),
+                serverPaging: true,
+                serverFiltering: true,
+                serverSorting: true
+            },
+            pageable: {
+                refresh: true,
+                pageSizes: [@(gridPageSizes)],
+                @Html.Partial("_GridPagerMessages")
+            },
+            sortable: true,
+            editable: false,
+            scrollable: false,
+            columns: [{
+                field: "Name",
+                title: "@T("Visual.Name")",
+                template: "<a href='' onclick='slVisualSelected(event, #=Id#, \"#=Name#\");'>#=Name#</a>"
+            }, {
+                field: "VisualTypeText",
+                title: "@T("Visual.VisualType")"
+            }, {
+                field: "Description",
+                title: "@T("Visual.Description")",
+            }
+            ]
+        });
+
+        //search button
+        $('#sl-visuals-popup').find('#search').click(function () {
+            //search
+            var grid = $('#sl-visuals-grid').data('kendoGrid');
+            grid.dataSource.page(1); //new search. Set page size to 1
+            //grid.dataSource.read(); we already loaded the grid above using "page" function
+            return false;
+        });
+
+        $("#sl-visuals-popup div.panel-search").find(':input').keydown(function (event) {
+            if (event.keyCode == 13) {
+                $('#sl-visuals-popup').find('#search').click();
+                return false;
+            }
+        });
+
+        function slVisualSelected(e, id, name){
+            e.preventDefault();
+
+            var postData = {
+                cellId: '@cellId',
+                visualId: id
+            };
+            addAntiForgeryToken(postData);
+            $.ajax({
+                cache: false,
+                type: "POST",
+                url: "/Dashboard/AddUserDashboardVisual",
+                data: postData,
+                success: function (data) {
+                    //fire selected event
+                    window.EventBroker.publish(BaseEam.Events.SLVisualSelected, { cellId: postData.cellId });
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    showBSModal({ title: 'ERROR', body: thrownError });
+                },
+                traditional: true
+            });            
+
+            //hide modal popup
+            $('.modal').modal('hide');
+        }
+    </script>
+</div>

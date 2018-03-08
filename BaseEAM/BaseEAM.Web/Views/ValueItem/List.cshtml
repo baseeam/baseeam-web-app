@@ -1,0 +1,148 @@
+﻿@using BaseEAM.Services.Security
+@model SearchModel
+@{
+    //page title
+    ViewBag.Title = T("System.ValueItem").Text;
+
+    var defaultGridPageSize = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().DefaultGridPageSize;
+    var gridPageSizes = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().GridPageSizes;
+
+    var permissionService = EngineContext.Current.Resolve<BaseEAM.Services.IPermissionService>();
+    var allowCreate = permissionService.Authorize(StandardPermissionName.System_ValueItem_Create);
+    var allowRead = permissionService.Authorize(StandardPermissionName.System_ValueItem_Read);
+    var allowUpdate = permissionService.Authorize(StandardPermissionName.System_ValueItem_Update);
+    var allowDelete = permissionService.Authorize(StandardPermissionName.System_ValueItem_Delete);
+}
+@Html.AntiForgeryToken()
+<div class="content-header clearfix">
+    <h1 class="pull-left">
+        @T("System.ValueItem")
+    </h1>
+    <div class="pull-right">
+    </div>
+</div>
+<div class="validation-summary-errors none-display" id="valueitem-error">
+</div>
+
+<div class="content">
+    <div class="form-horizontal">
+        <div class="panel-group">
+            @Html.Partial("Filter", Model)
+            <div class="panel panel-default">
+                <div class="panel-body">
+                    <div id="valueitems-grid"></div>
+                    <script>
+                        $(document).ready(function () {
+                            $("#valueitems-grid").kendoGrid({
+                                dataSource: {
+                                    type: "json",
+                                    transport: {
+                                        read: {
+                                            url: "@Html.Raw(Url.Action("List", "ValueItem"))",
+                                            type: "POST",
+                                            dataType: "json",
+                                            data: additionalData
+                                        },
+                                        //This is used to map field to format that the server can understand
+                                        //it runs after the data (additionalData) populated
+                                        parameterMap: function(data, operation) {
+                                            sortMapping = [{from: "Name", to: "ValueItem.Name"}];
+                                            BaseEam.Grid.mapSortColumns(data.sort, sortMapping);
+                                            return data;
+                                        }
+                                    },
+                                    schema: {
+                                        data: "Data",
+                                        total: "Total",
+                                        errors: "Errors",
+                                        model: {
+                                            id: "Id",
+                                            fields: {
+                                                Id: { hidden: true, editable: false, defaultValue: 0 },
+                                                Name: { editable: true, validation: { required: { message: '@T("ValueItem.Name.Required")'}} },
+                                                ValueItemCategory: { editable: true, defaultValue: {} },
+                                            }
+                                                
+
+                                        }
+                                    },
+                                    batch: true,
+                                    error: function (e) {
+                                        display_kendoui_grid_error(e);
+                                        // Cancel the changes
+                                        this.cancelChanges();
+                                    },
+                                    change: function (e) {
+                                        if (e.action == "itemchange") {
+                                            e.items[0].dirtyFields = e.items[0].dirtyFields || {};
+                                            e.items[0].dirtyFields[e.field] = true;
+                                        }
+                                    },
+                                    pageSize: @(defaultGridPageSize),
+                                    serverPaging: true,
+                                    serverFiltering: true,
+                                    serverSorting: true
+                                },
+                                pageable: {
+                                    refresh: true,
+                                    pageSizes: [@(gridPageSizes)],
+                                    @Html.Partial("_GridPagerMessages")
+                                },
+                                toolbar: ["create", "save", "cancel"],
+                                saveChanges: function(e) {
+                                    e.preventDefault();
+                                    BaseEam.Grid.saveChanges('@Url.Action("SaveChanges","ValueItem")', '#valueitems-grid', '#valueitem-error');
+                                },
+                                navigatable: true,
+                                sortable: true,
+                                editable: true,
+                                scrollable: false,
+                                columns: [{
+                                    field: "ValueItemCategory.Name",
+                                    title: "@T("ValueItemCategory.Name")",
+                                    headerAttributes: { "class": "column-header-editable" },
+                                    template: "#=BaseEam.Grid.dirtyHtml(data,'ValueItemCategory.Name')# #:ValueItemCategory.Name ? ValueItemCategory.Name : '' #"
+                                },{
+                                    field: "Name",
+                                    title: "@T("ValueItem.Name")",
+                                    headerAttributes: { "class": "column-header-editable" },
+                                    template: "#=BaseEam.Grid.dirtyHtml(data,'Name')# #:Name ? Name: '' #"
+                                },{
+                                    command: { name: "destroy", text: "@T("Common.Delete")" },
+                                    width: 100
+                                }]
+                            });
+                        });
+                    </script>
+
+                    <script type="text/javascript">
+                        $(document).ready(function () {
+                            //search button
+                            $('#search').click(function () {
+                                //search
+                                var grid = $('#valueitems-grid').data('kendoGrid');
+                                grid.dataSource.page(1); //new search. Set page size to 1
+                                //grid.dataSource.read(); we already loaded the grid above using "page" function
+                                return false;
+                            });
+                        });
+                        function additionalData() {
+                            var data = {
+                                searchValues: $("div.panel-search").find(':input').serialize()
+                            };
+                            addAntiForgeryToken(data);
+                            return data;
+                        }
+
+                        $("div.panel-search").find(':input').keydown(function (event) {
+                            if (event.keyCode == 13) {
+                                $("#search").click();
+                                return false;
+                            }
+                        });
+                    </script>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

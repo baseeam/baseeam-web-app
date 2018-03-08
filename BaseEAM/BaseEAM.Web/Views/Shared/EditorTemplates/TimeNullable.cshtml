@@ -1,0 +1,18 @@
+﻿@model DateTime?
+
+@{
+    var dataBind = "";
+    if (ViewData.ContainsKey("dataBind") && ViewData["dataBind"] != null)
+    {
+        dataBind = ViewData["dataBind"].ToString();
+    }
+}
+
+<input id="@ViewData.TemplateInfo.GetFullHtmlFieldId(string.Empty)" name="@ViewData.TemplateInfo.GetFullHtmlFieldName(string.Empty)" 
+       value="@(Model > DateTime.MinValue || Model.HasValue ? Model.Value.ToShortTimeString() : null)" 
+       data-bind="@dataBind" />
+<script>
+    $(document).ready(function () {
+        $("#@ViewData.TemplateInfo.GetFullHtmlFieldId(string.Empty)").kendoTimePicker();
+    });
+</script>

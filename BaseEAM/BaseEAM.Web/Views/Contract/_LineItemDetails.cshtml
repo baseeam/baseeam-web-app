@@ -1,0 +1,138 @@
+﻿@using BaseEAM.Services.Security
+@model ContractPriceItemModel
+@{
+    var permissionService = EngineContext.Current.Resolve<BaseEAM.Services.IPermissionService>();
+    var allowCreate = permissionService.Authorize(StandardPermissionName.Purchasing_Contract_Create);
+    var allowRead = permissionService.Authorize(StandardPermissionName.Purchasing_Contract_Read);
+    var allowUpdate = permissionService.Authorize(StandardPermissionName.Purchasing_Contract_Update);
+    var allowDelete = permissionService.Authorize(StandardPermissionName.Purchasing_Contract_Delete);
+
+    var primarySystemCurrencySymbol = EngineContext.Current.Resolve<BaseEAM.Core.IWorkContext>().WorkingCurrency.CurrencySymbol;
+}
+
+<div id="panel-contractPriceItem" class="panel panel-default eam-panel">
+    <div class="panel-heading">
+        <button type="button" id="saveContractPriceItemDetail" class="btn btn-primary@(allowCreate || allowUpdate ? "" : " none-display")" title="@T("Common.Save")">
+            <i class="fa fa-floppy-o"></i>
+        </button>
+        <button type="button" id="cancelContractPriceItemDetail" class="btn btn-primary" title="@T("Common.Cancel")">
+            <i class="fa fa-ban"></i>
+        </button>
+    </div>
+    <div class="panel-body">
+        @Html.Hidden("ContractId", Model.ContractId)
+        @Html.Hidden("ContractPriceItemId", Model.Id)
+        <div id="contractPriceItem-error" class="validation-summary-errors none-display">
+        </div>
+        <div class="col-md-6">
+            <div class="form-group">
+                <div class="col-md-3">
+                    @Html.BaseEamLabelFor(model => model.ItemId, required: true)
+                    @Html.HiddenFor(model => model.ItemId)
+                </div>
+                <div class="col-md-9">
+                    @Html.ItemLookupFor(model => model.ItemName)
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-md-3">
+                    @Html.BaseEamLabelFor(model => model.ItemUnitOfMeasureId)
+                </div>
+                <div class="col-md-9">
+                    <div class="form-text-row" id="uom">
+                        @(Model.ItemUnitOfMeasureId != null ? Model.ItemUnitOfMeasureName : "")
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-md-3">
+                    @Html.BaseEamLabelFor(model => model.ContractedPrice, required: true)
+                </div>
+                <div class="col-md-9">
+                    @Html.BaseEamEditorFor(model => model.ContractedPrice, postfix: primarySystemCurrencySymbol)
+                </div>
+            </div>
+        </div>
+    </div>
+    <script type="text/javascript">
+
+        $("#saveContractPriceItemDetail").click(function (e) {
+            e.preventDefault();
+            var $group = $("#panel-contractPriceItem :input");
+            var postData = $group.serializeJSON({ checkboxUncheckedValue: "false" });
+            //change Id property name so it can map to MVC model
+            postData.Id = postData.ContractPriceItemId;
+            addAntiForgeryToken(postData);
+
+            $.ajax({
+                cache: false,
+                type: "POST",
+                url: "@(Url.Action("SaveContractPriceItem", "Contract"))",
+                data: postData,
+                success: function (data) {
+                    if (data && data.Errors) {
+                        showErrors(data.Errors, '#contractPriceItem-error');
+                    } else {
+                        //then toggle the panel
+                        togglePanelContractPriceItem(false);
+
+                        //refresh grid
+                        var grid = $('#contractPriceItems-grid').data('kendoGrid');
+                        grid.dataSource.page(1);
+                    }
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    showBSModal({ title: 'ERROR', body: thrownError });
+                },
+                traditional: true
+            });
+        });
+
+        $("#cancelContractPriceItemDetail").click(function (e) {
+            e.preventDefault();
+            var postData = {
+                id: $("#ContractPriceItemId").val()
+            };
+            addAntiForgeryToken(postData);
+
+            $.ajax({
+                cache: false,
+                type: "POST",
+                url: "@(Url.Action("CancelContractPriceItem", "Contract"))",
+                data: postData,
+                success: function (data) {
+                    //toggle the panel
+                    togglePanelContractPriceItem(false);
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    showBSModal({ title: 'ERROR', body: thrownError });
+                },
+                traditional: true
+            });
+        });
+
+        window.EventBroker.subscribe(BaseEam.Events.SLItemSelected, function (message, data) {
+            var postData = {
+                itemId: $("#ItemId").val()
+            };
+            addAntiForgeryToken(postData);
+
+            $.ajax({
+                cache: false,
+                type: "POST",
+                url: "@(Url.Action("ItemInfo", "Item"))",
+                data: postData,
+                success: function (data) {
+                    if (data != null && data.itemInfo != null) {
+                        $("#panel-contractPriceItem").find("#uom").html(data.itemInfo.UnitOfMeasure.Name);
+                    }
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    showBSModal({ title: 'ERROR', body: thrownError });
+                },
+                traditional: true
+            });
+        });
+
+    </script>
+</div>

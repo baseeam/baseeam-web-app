@@ -1,0 +1,54 @@
+﻿@{
+    //success messages
+    var successMessages = new List<string>();
+    if (TempData[string.Format("baseeam.notifications.{0}", NotifyType.Success)] != null)
+    {
+        successMessages.AddRange(TempData[string.Format("baseeam.notifications.{0}", NotifyType.Success)] as IList<string>);
+    }
+    if (ViewData[string.Format("baseeam.notifications.{0}", NotifyType.Success)] != null)
+    {
+        successMessages.AddRange(ViewData[string.Format("baseeam.notifications.{0}", NotifyType.Success)] as IList<string>);
+    }
+
+
+    //error messages
+    var errorMessages = new List<string>();
+    if (TempData[string.Format("baseeam.notifications.{0}", NotifyType.Error)] != null)
+    {
+        errorMessages.AddRange(TempData[string.Format("baseeam.notifications.{0}", NotifyType.Error)] as IList<string>);
+    }
+    if (ViewData[string.Format("baseeam.notifications.{0}", NotifyType.Error)] != null)
+    {
+        errorMessages.AddRange(ViewData[string.Format("baseeam.notifications.{0}", NotifyType.Error)] as IList<string>);
+    }
+}
+
+@if (successMessages.Count > 0 || errorMessages.Count > 0)
+{
+    <script type="text/javascript">
+        $(function () {
+            @foreach(var success in successMessages)
+            {
+                <text>
+                    new PNotify({
+                        title: '',
+                        text: '@success',
+                        width: '350px',
+                        type: 'success'
+                    });
+                </text>
+            }
+            @foreach(var error in errorMessages)
+            {
+                <text>
+                    new PNotify({
+                        title: '',
+                        text: '@error',
+                        width: '350px',
+                        type: 'error'
+                    });
+                </text>
+            }
+        })
+    </script>
+}

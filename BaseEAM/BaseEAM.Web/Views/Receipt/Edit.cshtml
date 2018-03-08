@@ -1,0 +1,111 @@
+﻿@using BaseEAM.Services.Security
+@model ReceiptModel
+
+@{
+    //page title
+    ViewBag.Title = T("Receipt.EditReceiptDetails").Text;
+    var permissionService = EngineContext.Current.Resolve<BaseEAM.Services.IPermissionService>();
+    var allowCreate = permissionService.Authorize(StandardPermissionName.Inventory_Receipt_Create);
+    var allowRead = permissionService.Authorize(StandardPermissionName.Inventory_Receipt_Read);
+    var allowUpdate = permissionService.Authorize(StandardPermissionName.Inventory_Receipt_Update);
+    var allowDelete = permissionService.Authorize(StandardPermissionName.Inventory_Receipt_Delete);
+    var allowApprove = permissionService.Authorize(StandardPermissionName.Inventory_Receipt_Approve);
+}
+@using (Html.BeginForm("Edit", "Receipt", FormMethod.Post, new { id = "receipt-form" }))
+{
+    @Html.AntiForgeryToken()
+    <div class="content-header clearfix">
+        <h1 class="pull-left">
+            <small><i class="fa fa-arrow-circle-left fa-padding"></i>@Html.ActionLink(T("Common.BackToList").Text, "List")</small>
+        </h1>
+        <div class="pull-right" data-bind="visible: !isApproved()">
+            <button type="button" id="save" name="save" class="btn btn-primary@(allowCreate || allowUpdate ? "" : " none-display")" title="@T("Common.Save")">
+                <i class="fa fa-floppy-o"></i>
+            </button>
+            <button type="button" id="cancel" name="cancel" class="btn btn-primary@(Model.IsNew == true ? "" : " none-display")" title="@T("Common.Cancel")">
+                <i class="fa fa-ban"></i>
+            </button>
+            <button type="button" id="receipt-delete" class="btn btn-primary@(allowDelete && Model.IsNew == false ? "" : " none-display")" title="@T("Common.Delete")">
+                <i class="fa fa-trash-o"></i>
+            </button>
+            <div class="btn-group@(allowApprove == true ? "" : " none-display")">
+                <button type="button" class="btn btn-primary" title="@T("Common.Actions")">
+                    <i class="fa fa-bolt"></i>
+                </button>
+                <button type="button" class="btn btn-success dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
+                    <span class="caret"></span>
+                    <span class="sr-only">&nbsp;</span>
+                </button>
+                <ul class="dropdown-menu" role="menu">
+                    <li>
+                        <button type="button" id="approve" name="approve">
+                            @T("Common.Approve")
+                        </button>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div id="validation-summary" class="validation-summary-errors" style="display:none">
+    </div>
+    @Html.Partial("_CreateOrUpdate", Model)
+    <script type="text/javascript">
+        var viewModel;
+        function initializeViewModel() {
+            viewModel = {
+                isNew: ko.observable($('#IsNew').val() == 'True' ? true : false),
+                isApproved: ko.observable('@Model.IsApproved' == 'True' ? true : false),
+                number: ko.observable('@Model.Number')
+            };
+            ko.applyBindings(viewModel);
+        };
+
+        $(document).ready(function () {
+            //initialize view model
+            initializeViewModel();
+
+            $("#save").click(function (e) {
+                e.preventDefault();
+                saveForm('receipt-form', '@(Url.Action("Edit", "Receipt"))', savedCallback);
+            });
+
+            $("#cancel").click(function (e) {
+                e.preventDefault();
+                $('#form').removeClass('dirty');
+                BaseEam.Grid.deleteRow(null, @Model.Id, "@Url.Action("Cancel", "Receipt")", "",  "@Url.Action("List", "Receipt")", false);
+            });
+
+            $("#receipt-delete").click(function (e) {
+                e.preventDefault();
+                BaseEam.Grid.deleteRow(null, @Model.Id, "@Url.Action("Delete", "Receipt")", "", "@Url.Action("List", "Receipt")", true);
+            });
+
+            $("#approve").click(function (e) {
+                e.preventDefault();
+                var $form = $("#receipt-form");
+                var postData = $form.serializeJSON({ checkboxUncheckedValue: "false" });
+                addAntiForgeryToken(postData);
+
+                $.ajax({
+                    cache: false,
+                    type: "POST",
+                    url: "@(Url.Action("Approve", "Receipt"))",
+                    data: postData,
+                    success: function (data) {
+                        if (data && data.Errors) {
+                            showErrors(data.Errors);
+                        } else {
+                            viewModel.isApproved(true);
+                            $('#IsApproved').attr('checked', true);
+                            refreshDirtyTracking();
+                        }
+                    },
+                    error: function (xhr, ajaxOptions, thrownError) {
+                        showBSModal({ title: 'ERROR', body: thrownError });
+                    },
+                    traditional: true
+                });
+            });
+        });
+    </script>
+}

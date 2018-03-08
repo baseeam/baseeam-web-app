@@ -1,0 +1,122 @@
+﻿@model SearchModel
+@{
+    var defaultGridPageSize = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().DefaultGridPageSize;
+    var gridPageSizes = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().GridPageSizes;
+}
+<div class="content" id="ml-items-popup">
+    <div class="validation-summary-errors none-display" id="ml-items-error">
+    </div>
+    <div class="form-horizontal">
+        <div class="panel-group">
+            @Html.Partial("Filter", Model)
+            <div class="panel panel-default">
+                <div class="panel-body">
+                    <div id="ml-items-grid"></div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        var itemsCheckboxHandler = new BaseEam.CheckBoxHandler('ml-items-grid');
+        itemsCheckboxHandler.init();
+
+        function additionalData() {
+            var data = {
+                searchValues: $("#ml-items-popup div.panel-search").find(':input').serialize()
+            };
+            addAntiForgeryToken(data);
+            return data;
+        }
+
+        $("#ml-items-grid").kendoGrid({
+            dataSource: {
+                type: "json",
+                transport: {
+                    read: {
+                        url: "@Html.Raw(Url.Action("ItemList", "Lookup"))",
+                        type: "POST",
+                        dataType: "json",
+                        data: additionalData
+                    },
+                    parameterMap: function(data, operation) {
+                        sortMapping = [
+                            { from: "Name", to: "Item.Name" },
+                            { from: "ItemCategoryText", to: "ItemCategory" }
+                        ];
+                        BaseEam.Grid.mapSortColumns(data.sort, sortMapping);
+                        return data;
+                    }
+                },
+                schema: {
+                    data: "Data",
+                    total: "Total",
+                    errors: "Errors",
+                    model: {
+                        fields: {
+                        }
+                    }
+                },
+                error: function (e) {
+                    display_kendoui_grid_error(e);
+                    // Cancel the changes
+                    this.cancelChanges();
+                },
+                pageSize: @(defaultGridPageSize),
+                serverPaging: true,
+                serverFiltering: true,
+                serverSorting: true
+            },
+            pageable: {
+                refresh: true,
+                pageSizes: [@(gridPageSizes)],
+                @Html.Partial("_GridPagerMessages")
+            },
+            sortable: true,
+            editable: false,
+            scrollable: false,
+            dataBound: itemsCheckboxHandler.onDataBound,
+            columns: [{
+                field: "Id",
+                headerTemplate: "<input id='ml-items-grid-mastercheckbox' type='checkbox'/>",
+                headerAttributes: { style: "text-align:center" },
+                attributes: { style: "text-align:center" },
+                template: "<input type='checkbox' value='#=Id#' class='checkboxGroups'/>",
+                width: 50,
+                sortable: false
+            }, {
+                field: "Name",
+                title: "@T("Item.Name")"
+            }, {
+                field: "ItemGroup.Name",
+                title: "@T("Item.ItemGroup")"
+            }, {
+                field: "ItemCategoryText",
+                title: "@T("Item.ItemCategory")"
+            }, {
+                field: "Barcode",
+                title: "@T("Item.Barcode")"
+            }, {
+                field: "UnitOfMeasure.Name",
+                title: "@T("Item.UnitOfMeasure")"
+            }
+            ]
+        });
+
+        //search button
+        $('#ml-items-popup').find('#search').click(function () {
+            //search
+            var grid = $('#ml-items-grid').data('kendoGrid');
+            grid.dataSource.page(1); //new search. Set page size to 1
+            //grid.dataSource.read(); we already loaded the grid above using "page" function
+            return false;
+        });
+
+        $("#ml-items-popup div.panel-search").find(':input').keydown(function (event) {
+            if (event.keyCode == 13) {
+                $('#ml-items-popup').find('#search').click();
+                return false;
+            }
+        });
+    </script>
+</div>

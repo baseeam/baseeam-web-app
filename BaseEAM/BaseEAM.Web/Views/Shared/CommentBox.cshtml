@@ -1,0 +1,16 @@
+﻿@using BaseEAM.Core.Data;
+@using BaseEAM.Core.Domain;
+@model Comment
+
+<div class="box-comment">
+    <div class="comment-text">
+        <span class="username">
+            @Model.CreatedUser
+            <span class="text-muted pull-right">
+                @Model.CreatedDateTime.Value.ToString("F")
+            </span>
+        </span>
+        @Model.Message
+    </div>
+</div>
+

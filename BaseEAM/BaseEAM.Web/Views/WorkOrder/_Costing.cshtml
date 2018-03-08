@@ -1,0 +1,66 @@
+﻿@model WorkOrderModel
+
+<div class="panel-group">
+    <div class="panel panel-default">
+        <div class="panel-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <div class="col-md-3">
+                            @Html.BaseEamLabelFor(model => model.Number, required: true)
+                            @Html.HiddenFor(model => model.Number)
+                        </div>
+                        <div class="col-md-9">
+                            <div class="form-text-row" data-bind="html: number"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <div class="col-md-3">
+                            @Html.BaseEamLabelFor(model => model.Status, required: true)
+                        </div>
+                        <div class="col-md-9">
+                            <div class="form-text-row" data-bind="html: status"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <hr />
+            <div id="workOrder-edit" class="nav-tabs-custom">
+                <ul class="nav nav-tabs">
+                    @Html.RenderBootstrapTabHeader("tab-workOrderLabor", @T("WorkOrderLabor"), true)             
+                    @Html.RenderBootstrapTabHeader("tab-workOrderItems", @T("WorkOrderItems"))       
+                    @Html.RenderBootstrapTabHeader("tab-workOrderServiceItems", @T("WorkOrderServiceItems"))                    
+                    @Html.RenderBootstrapTabHeader("tab-workOrderMiscCosts", @T("WorkOrderMiscCosts"))
+                </ul>
+                <div class="tab-content">
+                    @Html.RenderBootstrapTabContent("tab-workOrderLabor", @TabWorkOrderLabor(), true)           
+                    @Html.RenderBootstrapTabContent("tab-workOrderItems", @TabWorkOrderItems())         
+                    @Html.RenderBootstrapTabContent("tab-workOrderServiceItems", @TabWorkOrderServiceItems())                    
+                    @Html.RenderBootstrapTabContent("tab-workOrderMiscCosts", @TabWorkOrderMiscCosts())
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@helper TabWorkOrderLabor()
+{
+    @Html.Partial("_WorkOrderLabors", new WorkOrderLaborModel { WorkOrderId = Model.Id })
+}
+
+@helper TabWorkOrderItems()
+{
+    @Html.Partial("_WorkOrderItems", new WorkOrderItemModel { WorkOrderId = Model.Id })
+}
+
+@helper TabWorkOrderServiceItems()
+{
+    @Html.Partial("_WorkOrderServiceItems", new WorkOrderServiceItemModel { WorkOrderId = Model.Id })
+}
+
+@helper TabWorkOrderMiscCosts()
+{
+    @Html.Partial("_WorkOrderMiscCosts", new WorkOrderMiscCostModel { WorkOrderId = Model.Id })
+}

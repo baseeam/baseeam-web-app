@@ -1,0 +1,15 @@
+﻿@using BaseEAM.Web.Framework.CustomField
+@model FieldModel
+
+@Html.TextBox(Model.Name, Model.Value == null ? "" : Model.Value)
+<script>
+    $(document).ready(function() {
+        $("#@Model.Name").TouchSpin({
+            min: @(int.MinValue),
+            max: @(int.MaxValue),
+            decimals: 0,
+            verticalbuttons: true,
+            postfix: ""
+        });
+    });
+</script>

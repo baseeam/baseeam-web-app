@@ -1,0 +1,35 @@
+﻿@using BaseEAM.Web.Framework.CustomField
+@model FieldModel
+
+<select id="@Model.Name" name="@Model.Name" multiple="multiple" style="display:none"></select>
+<script>
+    $(document).ready(function () {
+        $('#@Model.Name').kendoMultiSelect({
+            autoBind: @Model.AutoBind.ToString().ToLower(),
+            dataTextField: 'Text',
+            dataValueField: 'Value',
+            filter: 'contains',
+            minLength: 2,
+            dataSource: {
+                type: 'json',
+                serverFiltering: true,
+                transport: {
+                    read: {
+                        url: '/Common/GetChoices',
+                        type: 'POST',
+                        dataType: 'json',
+                        data: addAntiForgeryToken
+                    },
+                    parameterMap: function (data, action) {
+                        return addAntiForgeryToken({
+                            dbTable: '@Model.DbTable',
+                            dbTextColumn: '@Model.DbTextColumn',
+                            dbValueColumn: '@Model.DbValueColumn',
+                            param: data.filter != null ? data.filter.filters[0].value : ''
+                        })
+                    }
+                }
+            }
+        });
+    });
+</script>

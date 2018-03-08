@@ -1,0 +1,174 @@
+﻿@using BaseEAM.Services.Security
+@model SearchModel
+@{
+    //page title
+    ViewBag.Title = T("Inventory.UnitConversion").Text;
+
+    var defaultGridPageSize = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().DefaultGridPageSize;
+    var gridPageSizes = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().GridPageSizes;
+
+    var permissionService = EngineContext.Current.Resolve<BaseEAM.Services.IPermissionService>();
+    var allowCreate = permissionService.Authorize(StandardPermissionName.Inventory_UnitConversion_Create);
+    var allowRead = permissionService.Authorize(StandardPermissionName.Inventory_UnitConversion_Read);
+    var allowUpdate = permissionService.Authorize(StandardPermissionName.Inventory_UnitConversion_Update);
+    var allowDelete = permissionService.Authorize(StandardPermissionName.Inventory_UnitConversion_Delete);
+}
+@Html.AntiForgeryToken()
+<div class="content-header clearfix">
+    <h1 class="pull-left">
+        @T("Inventory.UnitConversion")
+    </h1>
+</div>
+<div class="validation-summary-errors none-display" id="unitconversion-error">
+</div>
+<div class="content">
+    <div class="form-horizontal">
+        <div class="panel-group">
+            @Html.Partial("Filter", Model)
+            <div class="panel panel-default">
+                <div class="panel-body">
+                    <div id="unitconversions-grid"></div>
+                    <script>
+
+                        $(document).ready(function () {
+                            var grid = $("#unitconversions-grid").kendoGrid({
+                                dataSource: {
+                                    type: "json",
+                                    transport: {
+                                        read: {
+                                            url: "@Html.Raw(Url.Action("List", "UnitConversion"))",
+                                            type: "POST",
+                                            dataType: "json",
+                                            data: additionalData
+                                        }
+                                    },
+                                    schema: {
+                                        data: "Data",
+                                        total: "Total",
+                                        errors: "Errors",
+                                        model: {
+                                            id: "Id",
+                                            fields: {
+                                                Id: { hidden: true, editable: false, defaultValue: 0 },
+                                                FromUnitOfMeasure: { editable: true, defaultValue: {} },
+                                                ToUnitOfMeasure: { editable: true, defaultValue: {} },
+                                                ConversionFactor: { editable: true , type: 'number'}
+                                            }
+                                        }
+                                    },
+                                    batch: true,
+                                    requestEnd: function (e) {
+                                        if (e.type == "update" || e.type == "create") {
+                                            this.read();
+                                        }
+                                    },
+                                    error: function (e) {
+                                        display_kendoui_grid_error(e);
+                                        // Cancel the changes
+                                        this.cancelChanges();
+                                    },
+                                    change: function (e) {
+                                        if (e.action == "itemchange") {
+                                            e.items[0].dirtyFields = e.items[0].dirtyFields || {};
+                                            e.items[0].dirtyFields[e.field] = true;
+                                        }
+                                    },
+                                    pageSize: @(defaultGridPageSize),
+                                    serverPaging: true,
+                                    serverFiltering: true,
+                                    serverSorting: true
+                                },
+                                pageable: {
+                                    refresh: true,
+                                    pageSizes: [@(gridPageSizes)],
+                                    @Html.Partial("_GridPagerMessages")
+                                },
+                                toolbar: ["create", "save", "cancel"],
+                                saveChanges: function (e) {
+                                    e.preventDefault();
+                                    BaseEam.Grid.saveChanges('@Url.Action("SaveChanges","UnitConversion")', '#unitconversions-grid', '#unitconversion-error');
+                                },
+                                edit: function (e) {
+                                    if (e.model.isNew() == false) {
+                                        $("#unitconversions-grid").find('input[name="FromUnitOfMeasure"]').attr("readonly", true);
+                                    }
+                                },
+                                navigatable: true,
+                                sortable: true,
+                                editable: true,
+                                scrollable: false,
+                                columns: [{
+                                    field: "FromUnitOfMeasure",
+                                    title: "@T("UnitConversion.FromUnitOfMeasure")",
+                                    headerAttributes: { "class": "column-header-editable" },
+                                    editor: unitOfMeasureEditor,
+                                    template: "#=BaseEam.Grid.dirtyHtml(data,'FromUnitOfMeasure.Name')# #:FromUnitOfMeasure.Name ? FromUnitOfMeasure.Name : '' #",
+                                },{
+                                    field: "ToUnitOfMeasure",
+                                    title: "@T("UnitConversion.ToUnitOfMeasure")",
+                                    editor: unitOfMeasureEditor,
+                                    template: "#=BaseEam.Grid.dirtyHtml(data,'ToUnitOfMeasure.Name')# #:ToUnitOfMeasure.Name ? ToUnitOfMeasure.Name : '' #",
+                                },{
+                                    field: "ConversionFactor",
+                                    title: "@T("UnitConversion.ConversionFactor")",
+                                    template: "#=BaseEam.Grid.dirtyHtml(data,'ConversionFactor')# #:ConversionFactor ? ConversionFactor : '' #",
+
+                                },
+                                @if (allowDelete)
+                                {
+                                    <text>
+                                        {
+                                            command: { name: "destroy", text: "@T("Common.Delete")" },
+                                            width: 100
+                                        }
+                                    </text>
+                                }]
+                            });
+
+                            function unitOfMeasureEditor(container, options) {
+                                var model = {
+                                    field: options.field,
+                                    required_msg: '@T("UnitOfMeasure.Name.Required")',
+                                    url: '@Url.Action("GetDefaultChoices", "Common")',
+                                    dbTable: 'UnitOfMeasure'
+                                };
+                                BaseEam.Grid.comboBoxEditor(container, model);
+                            }
+                        });
+                    </script>
+
+                    <script type="text/javascript">
+                        $(document).ready(function () {
+                            //search button
+                            $('#search').click(function () {
+                                //search
+                                var grid = $('#unitconversions-grid').data('kendoGrid');
+                                grid.dataSource.page(1); //new search. Set page size to 1
+                                //grid.dataSource.read(); we already loaded the grid above using "page" function
+                                return false;
+
+                            });
+                            BaseEam.Grid.showHideToolbar("#unitconversions-grid", '@allowCreate', '@allowUpdate', '@allowDelete');
+
+                        });
+
+                        function additionalData() {
+                            var data = {
+                                searchValues: $("div.panel-search").find(':input').serialize()
+                            };
+                            addAntiForgeryToken(data);
+                            return data;
+                        }
+
+                        $("div.panel-search").find(':input').keydown(function (event) {
+                            if (event.keyCode == 13) {
+                                $("#search").click();
+                                return false;
+                            }
+                        });
+                    </script>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

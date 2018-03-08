@@ -1,0 +1,32 @@
+﻿@model UserDashboardModel
+<form id="dashboard-setting-popup" class="eam-popup">
+    <div class="content">
+        <div class="validation-summary-errors none-display" id="dashboard-setting-error">
+        </div>
+        <div class="form-horizontal">
+            <div class="panel-group">
+                <div class="panel panel-default">
+                    <div class="panel-body">
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.DashboardLayoutType, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.EnumDropDownListFor(model => model.DashboardLayoutType, new { @class = "form-control" })
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.RegionCount, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamEditorFor(model => model.RegionCount)
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+

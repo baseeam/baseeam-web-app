@@ -1,0 +1,173 @@
+﻿@using BaseEAM.Services.Security
+@model WorkOrderTaskModel
+@{
+    var permissionService = EngineContext.Current.Resolve<BaseEAM.Services.IPermissionService>();
+    var allowCreate = permissionService.Authorize(StandardPermissionName.Maintenance_WorkOrder_Create);
+    var allowRead = permissionService.Authorize(StandardPermissionName.Maintenance_WorkOrder_Read);
+    var allowUpdate = permissionService.Authorize(StandardPermissionName.Maintenance_WorkOrder_Update);
+    var allowDelete = permissionService.Authorize(StandardPermissionName.Maintenance_WorkOrder_Delete);
+
+}
+
+<div id="panel-workOrderTask" class="panel panel-default eam-panel">
+    <div class="panel-heading">
+        <button type="button" id="saveWorkOrderTask" class="btn btn-primary@(allowCreate || allowUpdate ? "" : " none-display")" title="@T("Common.Save")">
+            <i class="fa fa-floppy-o"></i>
+        </button>
+        <button type="button" id="cancelWorkOrderTask" class="btn btn-primary" title="@T("Common.Cancel")">
+            <i class="fa fa-ban"></i>
+        </button>
+    </div>
+    <div class="panel-body">
+        @Html.Hidden("WorkOrderId", Model.WorkOrderId)
+        @Html.Hidden("WorkOrderTaskId", Model.Id)
+        <div id="workOrderTask-error" class="validation-summary-errors none-display">
+        </div>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.BaseEamLabelFor(model => model.Sequence, required: true)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.BaseEamEditorFor(model => model.Sequence)
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.BaseEamLabelFor(model => model.Description, required: true)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.BaseEamEditorFor(model => model.Description)
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.BaseEamLabelFor(model => model.AssignedUserId)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.BaseEamComboBoxFor(model => model.AssignedUserId, "AssignedUserListFromWOLabor", "WorkOrder",
+                                            new RouteValueDictionary { { "additionalField", "workOrderId" }, { "additionalValue", Model.WorkOrderId } }, true)
+                    </div>
+                </div>
+            </div>
+        </div>
+        <hr />
+        <h4>@T("WorkOrderTask.TaskCompletion")</h4>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.BaseEamLabelFor(model => model.Completed)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.BaseEamCheckBoxFor(model => model.Completed)
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.BaseEamLabelFor(model => model.CompletedUserId)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.BaseEamComboBoxFor(model => model.CompletedUserId, "CompletedUserListFromWOLabor", "WorkOrder",
+                                            new RouteValueDictionary { { "additionalField", "workOrderId" }, { "additionalValue", Model.WorkOrderId } }, true)
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.BaseEamLabelFor(model => model.CompletedDate)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.BaseEamEditorFor(model => model.CompletedDate)
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.BaseEamLabelFor(model => model.HoursSpent)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.BaseEamEditorFor(model => model.HoursSpent)
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.BaseEamLabelFor(model => model.Result)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.EnumDropDownListFor(model => model.Result, new { @class = "form-control" })
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.BaseEamLabelFor(model => model.CompletionNotes)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.BaseEamTextAreaFor(model => model.CompletionNotes)
+                    </div>
+                </div>
+            </div>
+        </div>
+        <h4>@T("Common.Attachments")</h4>
+        @Html.Partial("Attachment", new AttachmentModel { EntityId = Model.Id, EntityType = EntityType.WorkOrderTask })
+    </div>
+    <script type="text/javascript">
+        $("#saveWorkOrderTask").click(function (e) {
+            e.preventDefault();
+            var $group = $("#panel-workOrderTask :input");
+            var postData = $group.serializeJSON({ checkboxUncheckedValue: "false" });
+            //change Id property name so it can map to MVC model
+            postData.Id = postData.WorkOrderTaskId;
+            addAntiForgeryToken(postData);
+
+            $.ajax({
+                cache: false,
+                type: "POST",
+                url: "@(Url.Action("SaveWorkOrderTask", "WorkOrder"))",
+                data: postData,
+                success: function (data) {
+                    if (data && data.Errors) {
+                        showErrors(data.Errors, '#workOrderTask-error');
+                    } else {
+                        //then toggle the panel
+                        togglePanelWorkOrderTask(false);
+
+                        //refresh grid
+                        var grid = $('#workOrderTasks-grid').data('kendoGrid');
+                        grid.dataSource.page(1);
+                    }
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    showBSModal({ title: 'ERROR', body: thrownError });
+                },
+                traditional: true
+            });
+        });
+
+        $("#cancelWorkOrderTask").click(function (e) {
+            e.preventDefault();
+            var postData = {
+                id: $("#WorkOrderTaskId").val()
+            };
+            addAntiForgeryToken(postData);
+
+            $.ajax({
+                cache: false,
+                type: "POST",
+                url: "@(Url.Action("CancelWorkOrderTask", "WorkOrder"))",
+                data: postData,
+                success: function (data) {
+                    //toggle the panel
+                    togglePanelWorkOrderTask(false);
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    showBSModal({ title: 'ERROR', body: thrownError });
+                },
+                traditional: true
+            });
+        });
+    </script>
+</div>

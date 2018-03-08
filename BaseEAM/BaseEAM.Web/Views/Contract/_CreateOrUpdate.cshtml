@@ -1,0 +1,257 @@
+﻿@model ContractModel
+@Html.HiddenFor(model => model.Id)
+@Html.HiddenFor(model => model.IsNew)
+@Html.HiddenFor(model => model.Status)
+@Html.HiddenFor(model => model.AvailableActions)
+
+<script>
+    $(document).ready(function () {
+        bindBootstrapTabSelectEvent('contract-edit');
+    });
+
+    function savedCallback(data) {
+        viewModel.isNew(false);
+        viewModel.number(data.number);
+    }
+</script>
+
+@functions
+{
+    string primarySystemCurrencySymbol = EngineContext.Current.Resolve<BaseEAM.Core.IWorkContext>().WorkingCurrency.CurrencySymbol;
+}
+
+<div class="content">
+    <div class="form-horizontal">
+        <div id="contract-edit" class="nav-tabs-custom">
+            <ul class="nav nav-tabs">
+                @Html.RenderBootstrapTabHeader("tab-info", @T("Contract.Info"), true)
+                @Html.RenderBootstrapTabHeader("tab-contacts", @T("Contacts"))
+                @Html.RenderBootstrapTabHeader("tab-terms", @T("Terms"))
+                @Html.RenderBootstrapTabHeader("tab-lineItems", @T("Common.LineItems"))
+                @Html.RenderBootstrapTabHeader("tab-workOrderHistories", @T("WorkOrderHistories"))
+                @Html.RenderBootstrapTabHeader("tab-pmHistories", @T("PMHistories"))
+                @Html.RenderBootstrapTabHeader("tab-assignmentHistories", @T("AssignmentHistories"))
+                @Html.RenderBootstrapTabHeader("tab-attachments", @T("Common.Attachments"))
+                @Html.RenderBootstrapTabHeader("tab-comments", @T("Common.Comments"))
+            </ul>
+            <div class="tab-content">
+                @Html.RenderBootstrapTabContent("tab-info", @TabInfo(), true)
+                @Html.RenderBootstrapTabContent("tab-contacts", @TabContacts(), dataBind: "visible: !isNew()")
+                @Html.RenderBootstrapTabContent("tab-terms", @TabTerms(), dataBind: "visible: !isNew()")
+                @Html.RenderBootstrapTabContent("tab-lineItems", @TabLineItems(), dataBind: "visible: !isNew()")
+                @Html.RenderBootstrapTabContent("tab-workOrderHistories", @TabWorkOrderHistories(), dataBind: "visible: !isNew()")
+                @Html.RenderBootstrapTabContent("tab-pmHistories", @TabPMHistories(), dataBind: "visible: !isNew()")
+                @Html.RenderBootstrapTabContent("tab-assignmentHistories", @TabAssignmentHistories(), dataBind: "visible: !isNew()")
+                @Html.RenderBootstrapTabContent("tab-attachments", @TabAttachments(), dataBind: "visible: !isNew()")
+                @Html.RenderBootstrapTabContent("tab-comments", @TabComments(), dataBind: "visible: !isNew()")
+            </div>
+        </div>
+    </div>
+</div>
+
+@{
+    //custom tabs
+    var eventMessage = new AdminTabStripCreated(this.Html, "contract-edit");
+    EngineContext.Current.Resolve<IEventPublisher>().Publish(eventMessage);
+    foreach (var eventBlock in eventMessage.BlocksToRender)
+    {
+        @eventBlock
+    }
+}
+
+@helper TabInfo()
+{
+    <div class="panel-group">
+        <div class="panel panel-default">
+            <div class="panel-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.Number, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                <div class="form-text-row" data-bind="html: number">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.Description)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamEditorFor(model => model.Description)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.Priority, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.EnumDropDownListFor(model => model.Priority, new { @class = "form-control" })
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.SiteId, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamComboBoxFor(model => model.SiteId, "SiteList", "Site", null, true)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.SupervisorId)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamComboBoxFor(model => model.SupervisorId, "UserList", "Site",
+                                            new RouteValueDictionary { { "parentFieldName", "SiteId" } }, true)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.WorkCategoryId)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamComboBoxFor(model => model.WorkCategoryId, "ValueItems", "Common",
+                                            new RouteValueDictionary { { "additionalField", "category" }, { "additionalValue", "Work Category" } }, true)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.WorkTypeId)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamComboBoxFor(model => model.WorkTypeId, "ValueItems", "Common",
+                                            new RouteValueDictionary { { "additionalField", "category" }, { "additionalValue", "Work Type" } }, true)
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.Status, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                <div class="form-text-row" data-bind="html: status">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.AssignedUsers, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                <div class="form-text-row" id="assignedUsers" data-bind="html: assignedUsers"></div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.ContractType, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.EnumDropDownListFor(model => model.ContractType, new { @class = "form-control" })
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.StartDate, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamEditorFor(model => model.StartDate)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.EndDate, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamEditorFor(model => model.EndDate)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.Total, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamEditorFor(model => model.Total, postfix: primarySystemCurrencySymbol)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.VendorId, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamComboBoxFor(model => model.VendorId, "VendorList", "Company", null, true)
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <hr />
+                @if (Model.Id > 0 && Model.IsNew == false)
+                {
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <div class="col-md-3">
+                                    @Html.BaseEamLabelFor(model => model.FirstCreatedBy)
+                                </div>
+                                <div class="col-md-9">
+                                    @Html.BaseEamDisplayFor(model => model.FirstCreatedBy)
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <div class="col-md-3">
+                                    @Html.BaseEamLabelFor(model => model.LastUpdatedBy)
+                                </div>
+                                <div class="col-md-9">
+                                    @Html.BaseEamDisplayFor(model => model.LastUpdatedBy)
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+@helper TabContacts()
+{
+    @Html.Partial("_Contacts", new ContactModel())
+}
+
+@helper TabTerms()
+{
+    @Html.Partial("_Terms", new ContractTermModel { ContractId = Model.Id })
+}
+
+@helper TabLineItems()
+{
+    @Html.Partial("_LineItems", new ContractPriceItemModel { ContractId = Model.Id })
+}
+
+@helper TabWorkOrderHistories()
+{
+    @Html.Partial("_WorkOrderHistories", Model)
+}
+
+@helper TabPMHistories()
+{
+    @Html.Partial("_PMHistories", Model)
+}
+
+@helper TabAssignmentHistories()
+{
+    @Html.Partial("AssignmentHistory", new AssignmentHistoryModel { EntityId = Model.Id, EntityType = EntityType.Contract })
+}
+
+@helper TabAttachments()
+{
+    @Html.Partial("Attachment", new AttachmentModel { EntityId = Model.Id, EntityType = EntityType.Contract })
+}
+
+@helper TabComments()
+{
+    @Html.Partial("Comment", new CommentModel { EntityId = Model.Id, EntityType = EntityType.Contract })
+}

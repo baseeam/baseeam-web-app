@@ -1,0 +1,255 @@
+﻿@using BaseEAM.Services.Security
+@model ReceiptItemModel
+@{
+    var permissionService = EngineContext.Current.Resolve<BaseEAM.Services.IPermissionService>();
+    var allowCreate = permissionService.Authorize(StandardPermissionName.Inventory_Receipt_Create);
+    var allowRead = permissionService.Authorize(StandardPermissionName.Inventory_Receipt_Read);
+    var allowUpdate = permissionService.Authorize(StandardPermissionName.Inventory_Receipt_Update);
+    var allowDelete = permissionService.Authorize(StandardPermissionName.Inventory_Receipt_Delete);
+
+    var primarySystemCurrencySymbol = EngineContext.Current.Resolve<BaseEAM.Core.IWorkContext>().WorkingCurrency.CurrencySymbol;
+}
+
+<div id="panel-receiptItem" class="panel panel-default eam-panel">
+    <div class="panel-heading">
+        <button type="button" id="saveReceiptItemDetail" data-bind="visible: !isApproved()" class="btn btn-primary@(allowCreate || allowUpdate ? "" : " none-display")" title="@T("Common.Save")">
+            <i class="fa fa-floppy-o"></i>
+        </button>
+        <button type="button" id="cancelReceiptItemDetail" class="btn btn-primary" title="@T("Common.Cancel")">
+            <i class="fa fa-ban"></i>
+        </button>
+    </div>
+    <div class="panel-body">
+        @Html.Hidden("ReceiptId", Model.ReceiptId)
+        @Html.Hidden("ReceiptItemId", Model.Id)
+        <div id="receiptItem-error" class="validation-summary-errors none-display">
+        </div>
+        <div class="col-md-6">
+            <div class="form-group">
+                <div class="col-md-3">
+                    @Html.BaseEamLabelFor(model => model.ItemId, required: true)
+                    @Html.HiddenFor(model => model.ItemId)
+                </div>
+                <div class="col-md-9">
+                    @Html.ItemLookupFor(model => model.ItemName)
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-md-3">
+                    @Html.BaseEamLabelFor(model => model.ReceiptUnitOfMeasureId, required: true)
+                </div>
+                <div class="col-md-9">
+                    @Html.BaseEamDropDownListFor(model => model.ReceiptUnitOfMeasureId, Model.AvailableUnitOfMeasures)
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-md-3">
+                    @Html.BaseEamLabelFor(model => model.StoreLocatorId, required: true)
+                </div>
+                <div class="col-md-9">
+                    @Html.BaseEamComboBoxFor(model => model.StoreLocatorId, "GetStoreLocators", "Common",
+                                            new RouteValueDictionary { { "parentFieldName", "StoreId" }, { "additionalField", "ItemId" }, { "additionalValue", "" } }, true)
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-md-3">
+                    @Html.BaseEamLabelFor(model => model.LotNumber)
+                </div>
+                <div class="col-md-9">
+                    @Html.BaseEamEditorFor(model => model.LotNumber, dataBind: "enable: !isApproved()")
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-md-3">
+                    @Html.BaseEamLabelFor(model => model.CurrentQuantity)
+                </div>
+                <div class="col-md-9">
+                    <div class="form-text-row" id="currentQuantity">
+                        @(Model.CurrentQuantity)
+                    </div>                    
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="form-group">
+                <div class="col-md-3">
+                    @Html.BaseEamLabelFor(model => model.ReceiptUnitPrice, required: true)
+                </div>
+                <div class="col-md-9">
+                    @Html.BaseEamEditorFor(model => model.ReceiptUnitPrice, postfix: primarySystemCurrencySymbol, dataBind: "enable: !isApproved()")
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-md-3">
+                    @Html.BaseEamLabelFor(model => model.ReceiptQuantity, required: true)
+                </div>
+                <div class="col-md-9">
+                    @Html.BaseEamEditorFor(model => model.ReceiptQuantity, dataBind: "enable: !isApproved()")
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-md-3">
+                    @Html.BaseEamLabelFor(model => model.Cost)
+                    @Html.HiddenFor(model => model.Cost)
+                </div>
+                <div class="col-md-9">
+                    <div class="form-text-row" id="itemCost">
+                        @Html.DisplayFor(model => model.Cost) @(primarySystemCurrencySymbol)
+                    </div>                    
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-md-3">
+                    @Html.BaseEamLabelFor(model => model.ExpiryDate)
+                </div>
+                <div class="col-md-9">
+                    @Html.BaseEamEditorFor(model => model.ExpiryDate, dataBind: "dateTimeEnabled: !isApproved()")
+                </div>
+            </div>
+        </div>
+    </div>
+    <script type="text/javascript">
+        function calculateCost() {
+            var quantity = parseFloat($("#ReceiptQuantity").val());
+            if (!isNaN(quantity)) {
+                var unitPrice = parseFloat($("#ReceiptUnitPrice").val());
+                if (!isNaN(unitPrice)) {
+                    $("#Cost").val(unitPrice * quantity);
+                    $("#itemCost").html(unitPrice * quantity);
+                }
+            }
+        }
+
+        //Update Current Quantity Of StoreLocator, Item
+        function updateCurrentQuantity() {
+            var storeLocatorId = $("#StoreLocatorId").val();
+            var itemId = $("#ItemId").val();
+            if (storeLocatorId == "" || itemId == "") {
+                $("#panel-receiptItem").find("#currentQuantity").html("");
+                return false;
+            }
+            var postData = {
+                storeLocatorId,
+                itemId
+            };
+
+            addAntiForgeryToken(postData);
+            $.ajax({
+                cache: false,
+                type: "POST",
+                url: "@(Url.Action("GetCurrentQuantity", "Store"))",
+                data: postData,
+                success: function (data) {
+                    if (data != null) {
+                        $("#panel-receiptItem").find("#currentQuantity").html(data.currentQuantity);
+                    }
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    showBSModal({ title: 'ERROR', body: thrownError });
+                },
+                traditional: true
+            });
+        }
+
+        $("#saveReceiptItemDetail").click(function (e) {
+            e.preventDefault();
+            var $group = $("#panel-receiptItem :input");
+            var postData = $group.serializeJSON({ checkboxUncheckedValue: "false" });
+            //change Id property name so it can map to MVC model
+            postData.Id = postData.ReceiptItemId;
+            addAntiForgeryToken(postData);
+
+            $.ajax({
+                cache: false,
+                type: "POST",
+                url: "@(Url.Action("SaveReceiptItem", "Receipt"))",
+                data: postData,
+                success: function (data) {
+                    if (data && data.Errors) {
+                        showErrors(data.Errors, '#receiptItem-error');
+                    } else {
+                        //then toggle the panel
+                        togglePanelReceiptItem(false);
+
+                        //refresh grid
+                        var grid = $('#receiptItems-grid').data('kendoGrid');
+                        grid.dataSource.page(1);
+                    }
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    showBSModal({ title: 'ERROR', body: thrownError });
+                },
+                traditional: true
+            });
+        });
+
+        $("#cancelReceiptItemDetail").click(function (e) {
+            e.preventDefault();
+            var postData = {
+                id: $("#ReceiptItemId").val()
+            };
+            addAntiForgeryToken(postData);
+
+            $.ajax({
+                cache: false,
+                type: "POST",
+                url: "@(Url.Action("CancelReceiptItem", "Receipt"))",
+                data: postData,
+                success: function (data) {
+                    //toggle the panel
+                    togglePanelReceiptItem(false);
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    showBSModal({ title: 'ERROR', body: thrownError });
+                },
+                traditional: true
+            });
+        });
+
+        window.EventBroker.subscribe(BaseEam.Events.SLItemSelected, function (message, data) {
+            var ddlUOMs = $("#@Html.FieldIdFor(model => model.ReceiptUnitOfMeasureId)");
+            var postData = {
+                itemId: $("#ItemId").val()
+            };
+            addAntiForgeryToken(postData);
+
+            $.ajax({
+                cache: false,
+                type: "POST",
+                url: "@(Url.Action("ItemInfo", "Item"))",
+                data: postData,
+                success: function (data) {
+                    if (data != null && data.itemInfo != null) {
+                        $("#panel-receiptItem").find("#ReceiptUnitPrice").val(data.itemInfo.UnitPrice);
+
+                        ddlUOMs.html('');
+                        if (data.uoms != null) {
+                            $.each(data.uoms, function (id, option) {
+                                ddlUOMs.append($('<option></option>').val(option.id).html(option.name));
+                            });
+                        }
+                    }
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    showBSModal({ title: 'ERROR', body: thrownError });
+                },
+                traditional: true
+            });
+            updateCurrentQuantity();
+        });
+
+        $("#StoreLocatorId").change(function (e) {
+            e.preventDefault();
+            updateCurrentQuantity();
+        });
+
+        $("#ReceiptQuantity").blur(function () {
+            calculateCost();
+        });
+
+        $("#ReceiptUnitPrice").blur(function () {
+            calculateCost();
+        });
+
+    </script>
+</div>

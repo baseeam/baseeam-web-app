@@ -1,0 +1,209 @@
+﻿@using BaseEAM.Services.Security
+@model WorkOrderLaborModel
+@{
+    var permissionService = EngineContext.Current.Resolve<BaseEAM.Services.IPermissionService>();
+    var allowCreate = permissionService.Authorize(StandardPermissionName.Maintenance_WorkOrder_Create);
+    var allowRead = permissionService.Authorize(StandardPermissionName.Maintenance_WorkOrder_Read);
+    var allowUpdate = permissionService.Authorize(StandardPermissionName.Maintenance_WorkOrder_Update);
+    var allowDelete = permissionService.Authorize(StandardPermissionName.Maintenance_WorkOrder_Delete);
+
+    var primarySystemCurrencySymbol = EngineContext.Current.Resolve<BaseEAM.Core.IWorkContext>().WorkingCurrency.CurrencySymbol;
+}
+
+<div id="panel-workOrderLabor" class="panel panel-default eam-panel">
+    <div class="panel-heading">
+        <button type="button" id="saveWorkOrderLaborDetail" class="btn btn-primary@(allowCreate || allowUpdate ? "" : " none-display")" title="@T("Common.Save")">
+            <i class="fa fa-floppy-o"></i>
+        </button>
+        <button type="button" id="cancelWorkOrderLaborDetail" class="btn btn-primary" title="@T("Common.Cancel")">
+            <i class="fa fa-ban"></i>
+        </button>
+    </div>
+    <div class="panel-body">
+        @Html.Hidden("WorkOrderId", Model.WorkOrderId)
+        @Html.Hidden("WorkOrderLaborId", Model.Id)
+        <div id="workOrderLabor-error" class="validation-summary-errors none-display">
+        </div>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.BaseEamLabelFor(model => model.TeamId, required: true)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.BaseEamComboBoxFor(model => model.TeamId, "TeamList", "Site",
+                                            new RouteValueDictionary { { "parentFieldName", "SiteId" } }, true)
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.BaseEamLabelFor(model => model.TechnicianMatching, required: true)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.EnumDropDownListFor(model => model.TechnicianMatching, new { @class = "form-control" })
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.BaseEamLabelFor(model => model.TechnicianId, required: true)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.BaseEamComboBoxFor(model => model.TechnicianId, "Technicians", "Team",
+                                            new RouteValueDictionary {
+                                                { "parentFieldName", "TeamId" },
+                                                { "additionalField", "TechnicianMatching" }, { "additionalValue", "" },
+                                                { "optionalField", "ExpectedStartDateTime" } }, true)
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.BaseEamLabelFor(model => model.CraftId, required: true)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.BaseEamComboBoxFor(model => model.CraftId, "GetChoices", "Common",
+                                            new RouteValueDictionary { { "dbTable", "Craft" }, { "dbTextColumn", "Name" }, { "dbValueColumn", "Id" } }, true)
+                    </div>
+                </div>
+            </div>
+        </div>
+        <hr />
+        <h4>@T("WorkOrderLabor.Plan")</h4>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.BaseEamLabelFor(model => model.PlanHours)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.BaseEamEditorFor(model => model.PlanHours)
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.BaseEamLabelFor(model => model.StandardRate)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.BaseEamEditorFor(model => model.StandardRate, postfix: primarySystemCurrencySymbol)
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.BaseEamLabelFor(model => model.OTRate)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.BaseEamEditorFor(model => model.OTRate, postfix: primarySystemCurrencySymbol)
+                    </div>
+                </div>
+            </div>
+        </div>
+        <hr />
+        <h4>@T("WorkOrderLabor.Actual")</h4>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.BaseEamLabelFor(model => model.ActualNormalHours)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.BaseEamEditorFor(model => model.ActualNormalHours)
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.BaseEamLabelFor(model => model.ActualOTHours)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.BaseEamEditorFor(model => model.ActualOTHours)
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script type="text/javascript">
+
+        $("#saveWorkOrderLaborDetail").click(function (e) {
+            e.preventDefault();
+            var $group = $("#panel-workOrderLabor :input");
+            var postData = $group.serializeJSON({ checkboxUncheckedValue: "false" });
+            //change Id property name so it can map to MVC model
+            postData.Id = postData.WorkOrderLaborId;
+            addAntiForgeryToken(postData);
+
+            $.ajax({
+                cache: false,
+                type: "POST",
+                url: "@(Url.Action("SaveWorkOrderLabor", "WorkOrder"))",
+                data: postData,
+                success: function (data) {
+                    if (data && data.Errors) {
+                        showErrors(data.Errors, '#workOrderLabor-error');
+                    } else {
+                        //then toggle the panel
+                        togglePanelWorkOrderLabor(false);
+
+                        //refresh grid
+                        var grid = $('#workOrderLabors-grid').data('kendoGrid');
+                        grid.dataSource.page(1);
+                    }
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    showBSModal({ title: 'ERROR', body: thrownError });
+                },
+                traditional: true
+            });
+        });
+
+        $("#cancelWorkOrderLaborDetail").click(function (e) {
+            e.preventDefault();
+            var postData = {
+                id: $("#WorkOrderLaborId").val()
+            };
+            addAntiForgeryToken(postData);
+
+            $.ajax({
+                cache: false,
+                type: "POST",
+                url: "@(Url.Action("CancelWorkOrderLabor", "WorkOrder"))",
+                data: postData,
+                success: function (data) {
+                    //toggle the panel
+                    togglePanelWorkOrderLabor(false);
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    showBSModal({ title: 'ERROR', body: thrownError });
+                },
+                traditional: true
+            });
+        });
+
+        $("#CraftId").change(function (e) {
+            var postData = {
+                craftId: $("#CraftId").val()
+            };
+            addAntiForgeryToken(postData);
+            $.ajax({
+                cache: false,
+                type: "POST",
+                url: "@(Url.Action("CraftInfo", "Craft"))",
+                data: postData,
+                success: function (data) {
+                    if (data != null && data.craftInfo != null) {
+                        $("#panel-workOrderLabor").find("#StandardRate").val(data.craftInfo.StandardRate)
+                        $("#panel-workOrderLabor").find("#OTRate").val(data.craftInfo.OvertimeRate)
+                    }
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    showBSModal({ title: 'ERROR', body: thrownError });
+                },
+                traditional: true
+            });
+        });
+
+        $('#TechnicianMatching').change(function (e) {
+            $("#TechnicianId").data("kendoComboBox").dataSource.read();
+        });
+
+    </script>
+</div>

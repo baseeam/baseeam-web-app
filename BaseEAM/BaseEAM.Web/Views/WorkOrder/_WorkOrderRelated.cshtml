@@ -1,0 +1,45 @@
+﻿@model WorkOrderModel
+
+<div class="panel-group">
+    <div class="panel panel-default">
+        <div class="panel-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <div class="col-md-3">
+                            @Html.BaseEamLabelFor(model => model.Number, required: true)
+                            @Html.HiddenFor(model => model.Number)
+                        </div>
+                        <div class="col-md-9">
+                            <div class="form-text-row" data-bind="html: number"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <div class="col-md-3">
+                            @Html.BaseEamLabelFor(model => model.Status, required: true)
+                        </div>
+                        <div class="col-md-9">
+                            <div class="form-text-row" data-bind="html: status"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <hr />
+            <div id="workOrderRelated-edit" class="nav-tabs-custom">
+                <ul class="nav nav-tabs">
+                    @Html.RenderBootstrapTabHeader("tab-childWorkOrders", @T("ChildWorkOrders"), true)
+                </ul>
+                <div class="tab-content">
+                    @Html.RenderBootstrapTabContent("tab-childWorkOrders", @TabChildWorkOrders(), true)
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@helper TabChildWorkOrders()
+{
+    @Html.Partial("_ChildWorkOrders", Model)
+}

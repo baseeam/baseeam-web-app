@@ -1,0 +1,105 @@
+﻿@using BaseEAM.Web.Framework.Mvc
+@model Lookup
+
+<script>
+    $(document).ready(function () {
+        @if(!string.IsNullOrEmpty(Model.ParentFieldName))
+        {
+            <text>setupCascadeLookup('@Model.ParentFieldName', '@Model.ValueFieldId', '@Model.TextFieldId');</text>
+        }
+
+        //kendoAutoComplete doesn't support dataValueField, only dataTextField
+        $('#@Model.TextFieldId').kendoAutoComplete({
+            dataTextField: 'Text',
+            dataValueField: 'Value',
+            filter: 'contains',
+            template: "<span data-id='${data.Value}'>${data.Text}</span>",
+            minLength: 2,
+            select: function (e) {
+                var id = e.item.find("span").attr("data-id");
+                $('#@Model.ValueFieldId').val(id);
+                //fire selected event
+                window.EventBroker.publish('@Model.SelectedEvent', null);
+            },
+            change: function (e) {
+                //if not a valid value, clear and reset the filter
+                if (this.value() && this.selectedIndex == -1) {
+                    this.text('');
+                    this.dataSource.filter(null);
+                    this.dataSource.read();
+                }
+            },
+            dataSource: {
+                type: 'json',
+                serverFiltering: true,
+                transport: {
+                    read: {
+                        url: '@Url.Action(Model.Action, Model.Controller)',
+                        type: 'POST',
+                        dataType: 'json',
+                        data: addAntiForgeryToken
+                    },
+                    parameterMap: function (data, action) {
+                        var param = '';
+                        var parentValue = '';
+                        if(data.filter != null) {
+                            $.each(data.filter.filters, function(index, filter) {
+                                if (filter.operator == 'contains') {
+                                    param = filter.value;
+                                }
+                            });
+                        }
+                        return addAntiForgeryToken({
+                            param: param,
+                            dbTable: '@Model.DbTable',
+                            dbTextColumn: '@Model.DbTextColumn',
+                            dbValueColumn: '@Model.DbValueColumn',
+                            @(string.IsNullOrEmpty(Model.AdditionalField) ? "field" : Model.AdditionalField) : '@Model.AdditionalValue',
+                            @if(!string.IsNullOrEmpty(Model.ParentFieldName))
+                            {
+                                <text>parentValue: $('#@Model.ParentFieldName').val()</text>
+                            }
+                        })
+                    }
+                }
+            }
+        });
+
+        //Details
+        $("#" + "@Model.LookupType" + "-" + "@Model.TextFieldId" + "-Details").click(function(e){
+            e.preventDefault();
+            var id = $("#@Model.ValueFieldId").val();
+            if(id > 0)
+            {
+                window.location.href = '/@Model.LookupType/Edit/' + id;
+            }
+        });
+
+        //Lookup modal
+        $("#" + "@Model.LookupType" + "-" + "@Model.TextFieldId" + "-Lookup").click(function(e){
+            e.preventDefault();
+            var url = '@Html.Raw(Url.Action(Model.ViewType, "Lookup"))';
+            url = url + '?valueFieldId=' + '@Model.ValueFieldId' +
+                    '&textFieldId=' + '@Model.TextFieldId';
+            @if(!string.IsNullOrEmpty(Model.ParentFieldName))
+            {
+                <text>url = url + '&parentValue=' + $('#' + '@Model.ParentFieldName').val();</text>
+            }
+
+            $.get(url, function(data) {
+                showBSModal({
+                    title: "@T("Common.Lookup")",
+                    size: "large",
+                    body: data,
+                    actions: [{
+                        label: '@T("Common.Cancel")',
+                        cssClass: 'btn-danger',
+                        onClick: function(e){
+                            $(e.target).parents('.modal').modal('hide');
+                        }
+                    }]
+                });
+            });
+        });
+    });
+</script>

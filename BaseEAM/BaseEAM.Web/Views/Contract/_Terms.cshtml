@@ -1,0 +1,111 @@
+﻿@using BaseEAM.Services.Security
+@model ContractTermModel
+@{
+    var defaultGridPageSize = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().DefaultGridPageSize;
+    var gridPageSizes = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().GridPageSizes;
+    var primarySystemCurrencySymbol = EngineContext.Current.Resolve<BaseEAM.Core.IWorkContext>().WorkingCurrency.CurrencySymbol;
+
+    var permissionService = EngineContext.Current.Resolve<BaseEAM.Services.IPermissionService>();
+    var allowCreate = permissionService.Authorize(StandardPermissionName.Purchasing_Contract_Create);
+    var allowRead = permissionService.Authorize(StandardPermissionName.Purchasing_Contract_Read);
+    var allowUpdate = permissionService.Authorize(StandardPermissionName.Purchasing_Contract_Update);
+    var allowDelete = permissionService.Authorize(StandardPermissionName.Purchasing_Contract_Delete);
+}
+<div class="validation-summary-errors none-display" id="contractTerms-error">
+</div>
+<div id="group-contractTerms" class="panel-group">
+    <div class="panel panel-default">
+        <div class="panel-body">
+            <div id="contractTerms-grid"></div>
+            <script>
+                function additionalData1() {
+                    var data = {
+                        contractId: '@Model.ContractId'
+                    };
+                    addAntiForgeryToken(data);
+                    return data;
+                }
+                $(document).ready(function () {
+                    $("#contractTerms-grid").kendoGrid({
+                        dataSource: {
+                            type: "json",
+                            transport: {
+                                read: {
+                                    url: "@Html.Raw(Url.Action("ContractTermList", "Contract"))",
+                                    type: "POST",
+                                    dataType: "json",
+                                    data: additionalData1
+                                },
+                                parameterMap: function(data, operation) {
+                                    return data;
+                                }
+                            },
+                            schema: {
+                                data: "Data",
+                                total: "Total",
+                                errors: "Errors",
+                                model: {
+                                    id: "Id",
+                                    fields: {
+                                        Id: { hidden: true, editable: false, defaultValue: 0 },
+                                        Sequence: { editable: true, type: 'number' },
+                                        Name: { editable: true, type: 'string', validation: { required: { message: '@T("Common.Name.Required")'}} },
+                                        Description: { editable: true, type: 'string', validation: { required: { message: '@T("Common.Description.Required")'}} }
+                                    }
+                                }
+                            },
+                            batch: true,
+                            error: function(e) {
+                                display_kendoui_grid_error(e);
+                                // Cancel the changes
+                                this.cancelChanges();
+                            },
+                            change: function (e) {
+                                if (e.action == "itemchange") {
+                                    e.items[0].dirtyFields = e.items[0].dirtyFields || {};
+                                    e.items[0].dirtyFields[e.field] = true;
+                                }
+                            },
+                            pageSize: @(defaultGridPageSize),
+                            serverPaging: true,
+                            serverFiltering: true,
+                            serverSorting: true
+                        },
+                        pageable: {
+                            refresh: true,
+                            pageSizes: [@(gridPageSizes)],
+                            @Html.Partial("_GridPagerMessages")
+                        },
+                        toolbar: ["create", "save", "cancel"],
+                        saveChanges: function(e) {
+                            e.preventDefault();
+                            var url = '@Url.Action("SaveChanges", "Contract")?contractId=@Model.ContractId';
+                            BaseEam.Grid.saveChanges(url, '#contractTerms-grid', '#contractTerms-error');
+                        },
+                        sortable: true,
+                        editable: true,
+                        save: function (data) {
+                        },
+                        scrollable: false,
+                        columns: [{
+                            field: "Sequence",
+                            title: "@T("Common.Sequence")",
+                            template: "#=BaseEam.Grid.dirtyHtml(data,'Sequence')# #:Sequence ? Sequence: '' #"
+                        },{
+                            field: "Name",
+                            title: "@T("Common.Name")",
+                            template: "#=BaseEam.Grid.dirtyHtml(data,'Name')# #:Name ? Name: '' #"
+                        },{
+                            field: "Description",
+                            title: "@T("Common.Description")",
+                            template: "#=BaseEam.Grid.dirtyHtml(data,'Description')# #:Description ? Description: '' #"
+                        },{
+                            command: { name: "destroy", text: "@T("Common.Delete")" },
+                            width: 100
+                        }]
+                    });
+                });
+            </script>
+        </div>
+    </div>
+</div>

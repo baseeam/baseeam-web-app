@@ -1,0 +1,38 @@
+﻿@using BaseEAM.Services.Security
+@model MessageModel
+
+@{
+    //page title
+    ViewBag.Title = T("Message.EditMessageDetails").Text;
+    var permissionService = EngineContext.Current.Resolve<BaseEAM.Services.IPermissionService>();
+    var allowCreate = permissionService.Authorize(StandardPermissionName.System_Message_Create);
+    var allowRead = permissionService.Authorize(StandardPermissionName.System_Message_Read);
+    var allowUpdate = permissionService.Authorize(StandardPermissionName.System_Message_Update);
+    var allowDelete = permissionService.Authorize(StandardPermissionName.System_Message_Delete);
+}
+@using (Html.BeginForm("Edit", "Message", FormMethod.Post, new { id = "message-form" }))
+{
+    @Html.AntiForgeryToken()
+    <div class="content-header clearfix">
+        <h1 class="pull-left">
+            <small><i class="fa fa-arrow-circle-left fa-padding"></i>@Html.ActionLink(T("Common.BackToList").Text, "List")</small>
+        </h1>
+        <div class="pull-right">
+            <button type="button" id="message-delete" class="btn btn-primary@(allowDelete && Model.IsNew == false ? "" : " none-display")" title="@T("Common.Delete")">
+                <i class="fa fa-trash-o"></i>
+            </button>
+        </div>
+    </div>
+    <div id="validation-summary" class="validation-summary-errors" style="display:none">
+    </div>
+    @Html.Partial("_CreateOrUpdate", Model)
+    <script type="text/javascript">
+        $(document).ready(function () {
+
+            $("#message-delete").click(function (e) {
+                e.preventDefault();
+                BaseEam.Grid.deleteRow(null, @Model.Id, "@Url.Action("Delete", "Message")", "", "@Url.Action("List", "Message")", true);
+            });
+        });
+    </script>
+}

@@ -1,0 +1,208 @@
+﻿﻿@using BaseEAM.Services.Security
+@model PMMiscCostModel
+@{
+    var defaultGridPageSize = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().DefaultGridPageSize;
+    var gridPageSizes = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().GridPageSizes;
+    var primarySystemCurrencySymbol = EngineContext.Current.Resolve<BaseEAM.Core.IWorkContext>().WorkingCurrency.CurrencySymbol;
+
+    var permissionService = EngineContext.Current.Resolve<BaseEAM.Services.IPermissionService>();
+    var allowCreate = permissionService.Authorize(StandardPermissionName.Maintenance_PreventiveMaintenance_Create);
+    var allowRead = permissionService.Authorize(StandardPermissionName.Maintenance_PreventiveMaintenance_Read);
+    var allowUpdate = permissionService.Authorize(StandardPermissionName.Maintenance_PreventiveMaintenance_Update);
+    var allowDelete = permissionService.Authorize(StandardPermissionName.Maintenance_PreventiveMaintenance_Delete);
+}
+<div id="group-pMMiscCosts" class="panel-group">
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <button type="button" id="createPMMiscCost" class="btn btn-primary@(allowCreate || allowUpdate ? "" : " none-display")" title="@T("Common.AddNew")">
+                <i class="fa fa-plus-square"></i>
+            </button>
+            <button type="button" id="deleteSelectedPMMiscCosts" class="btn btn-primary@(allowCreate || allowUpdate ? "" : " none-display")" title="@T("Common.Delete.Selected")">
+                <i class="fa fa-trash-o"></i>
+            </button>
+        </div>
+        <div class="panel-body">
+            <div id="pMMiscCosts-grid"></div>
+            <script>
+                var gridCheckboxHandler2_3 = new BaseEam.CheckBoxHandler('pMMiscCosts-grid');
+                gridCheckboxHandler2_3.init();
+
+                $(document).ready(function () {
+                    $("#pMMiscCosts-grid").kendoGrid({
+                        dataSource: {
+                            type: "json",
+                            transport: {
+                                read: {
+                                    url: "@Html.Raw(Url.Action("PMMiscCostList", "PreventiveMaintenance"))",
+                                    type: "POST",
+                                    dataType: "json",
+                                    data: additionalData2_3
+                                }
+                            },
+                            schema: {
+                                data: "Data",
+                                total: "Total",
+                                errors: "Errors",
+                                model: {
+                                    id: "Id"
+                                }
+                            },
+                            aggregate: [
+                                { field: "PlanTotal", aggregate: "sum" },
+                            ],
+                            error: function(e) {
+                                display_kendoui_grid_error(e);
+                                // Cancel the changes
+                                this.cancelChanges();
+                            },
+                            pageSize: @(defaultGridPageSize),
+                            serverPaging: true,
+                            serverFiltering: true,
+                            serverSorting: true
+                        },
+                        pageable: {
+                            refresh: true,
+                            pageSizes: [@(gridPageSizes)],
+                            @Html.Partial("_GridPagerMessages")
+                        },
+                        sortable: true,
+                        editable: false,
+                        scrollable: false,
+                        dataBound: gridCheckboxHandler2_3.onDataBound,
+                        columns: [{
+                            field: "Id",
+                            headerTemplate: "<input id='pMMiscCosts-grid-mastercheckbox' type='checkbox'/>",
+                            headerAttributes: { style: "text-align:center" },
+                            attributes: { style: "text-align:center" },
+                            template: "<input type='checkbox' value='#=Id#' class='checkboxGroups'/>",
+                            width: 50,
+                            sortable: false
+                        },{
+                            field: "Sequence",
+                            title: "@T("PMMiscCost.Sequence")"
+                        }, {
+                            field: "Description",
+                            title: "@T("PMMiscCost.Description")"
+                        }, {
+                            field: "PlanQuantity",
+                            title: "@T("PMMiscCost.PlanQuantity")",
+                            template: '#= PlanQuantity != null ? kendo.toString(PlanQuantity, "n") : "" #'
+                        }, {
+                            field: "PlanUnitPrice",
+                            title: "@T("PMMiscCost.PlanUnitPrice") [@(primarySystemCurrencySymbol)]",
+                            template: '#= PlanUnitPrice != null ? kendo.toString(PlanUnitPrice, "n") : "" #'
+                        }, {
+                            field: "PlanTotal",
+                            title: "@T("PMMiscCost.PlanTotal") [@(primarySystemCurrencySymbol)]",
+                            template: '#= PlanTotal != null ? kendo.toString(PlanTotal, "n") : "" #',
+                            footerTemplate: '#= sum != null ? kendo.toString(sum, "n") : "" #'
+                        }, {
+                            field: "Id",
+                            headerTemplate: "",
+                            width: 100,
+                            template: '<button type="button" class="btn btn-primary@(allowRead || allowUpdate ? "" : " none-display")" onclick="editPMMiscCost(event, #=Id#);"></span><i class="fa fa-pencil aria-hidden="true""></i></a>' +
+                                    '<button type="button" class="btn btn-primary@(allowDelete ? "" : " none-display")" title="@T("Common.Delete")" onclick="deletePMMiscCost(event, #=Id#);"></span><i class="fa fa-trash aria-hidden="true""></i></a>',
+                            sortable: false
+                        }]
+                    });
+                });
+            </script>
+        </div>
+    </div>
+</div>
+<script type="text/javascript">
+    function editPMMiscCost(e, id){
+        e.preventDefault();
+        if($('#panel-pMMiscCost').is(":visible")){
+            togglePanelPMMiscCost(false);
+        }
+        var postData = {
+            id : id
+        };
+        addAntiForgeryToken(postData);
+
+        $.ajax({
+            cache: false,
+            type: "POST",
+            url: "@(Url.Action("PMMiscCost", "PreventiveMaintenance"))",
+            data: postData,
+            success: function(data) {
+                //append html
+                $("#group-pMMiscCosts").append(data.Html);
+
+                //then toggle the panel
+                togglePanelPMMiscCost(true);
+            },
+            error: function(xhr, ajaxOptions, thrownError) {
+                showBSModal({title: 'ERROR', body: thrownError});
+            },
+            traditional: true
+        });
+    };
+
+    function deletePMMiscCost(e, id){
+        e.preventDefault();
+        //check if panel-pMMiscCost is open => close it before delete
+        if($('#panel-pMMiscCost').is(":visible")){
+            togglePanelPMMiscCost(false);
+        }
+
+        BaseEam.Grid.deleteRow($("#Id").val(), id, "@Url.Action("DeletePMMiscCost", "PreventiveMaintenance")", "pMMiscCosts-grid", "", true);
+    };
+
+    function additionalData2_3() {
+        var data = {
+            preventiveMaintenanceId: $("#Id").val()
+        };
+        addAntiForgeryToken(data);
+        return data;
+    }
+
+    function togglePanelPMMiscCost(editmode) {
+        if (editmode) {
+            $('#panel-pMMiscCost').show();
+            $('#createPMMiscCost').hide();
+            $('#deleteSelectedPMMiscCosts').hide();
+        }
+        else {
+            ////remove the panel html so we won't care
+            //about dirty change tracking for newly added input tag
+            $('#panel-pMMiscCost').remove();
+            $('#createPMMiscCost').show();
+            $('#deleteSelectedPMMiscCosts').show();
+        }
+    }
+
+    $(document).ready(function () {
+        $("#createPMMiscCost").click(function(e){
+            e.preventDefault();
+            var postData = {
+                preventiveMaintenanceId : $("#Id").val()
+            };
+            addAntiForgeryToken(postData);
+
+            $.ajax({
+                cache: false,
+                type: "POST",
+                url: "@(Url.Action("CreatePMMiscCost", "PreventiveMaintenance"))",
+                data: postData,
+                success: function(data) {
+                    //append html
+                    $("#group-pMMiscCosts").append(data.Html);
+
+                    //then toggle the panel
+                    togglePanelPMMiscCost(true);
+                },
+                error: function(xhr, ajaxOptions, thrownError) {
+                    showBSModal({title: 'ERROR', body: thrownError});
+                },
+                traditional: true
+            });
+        });
+
+        $("#deleteSelectedPMMiscCosts").click(function(e){
+            e.preventDefault();
+            BaseEam.Grid.deleteSelectedRows($("#Id").val(), gridCheckboxHandler2_3.selectedIds, "@Url.Action("DeleteSelectedPMMiscCosts", "PreventiveMaintenance")", "pMMiscCosts-grid", "", true);
+        });
+    });
+</script>

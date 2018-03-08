@@ -1,0 +1,28 @@
+﻿@model TaskGroupModel
+
+<div class="panel-group">
+    <div class="panel panel-default">
+        <div class="panel-body">
+            <div id="whereUsed-edit" class="nav-tabs-custom">
+                <ul class="nav nav-tabs">
+                    @Html.RenderBootstrapTabHeader("tab-preventiveMaintenance", @T("TaskGroup.PreventiveMaintenance"), true)
+                    @Html.RenderBootstrapTabHeader("tab-assetTypes", @T("TaskGroup.AssetTypes"))
+                </ul>
+                <div class="tab-content">
+                    @Html.RenderBootstrapTabContent("tab-preventiveMaintenance", @TabPreventiveMaintenance(), true)
+                    @Html.RenderBootstrapTabContent("tab-assetTypes", @TabAssetTypes())
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@helper TabPreventiveMaintenance()
+{
+    @Html.Partial("_PreventiveMaintenance", Model)
+}
+
+@helper TabAssetTypes()
+{
+    @Html.Partial("_AssetTypes", Model)
+}

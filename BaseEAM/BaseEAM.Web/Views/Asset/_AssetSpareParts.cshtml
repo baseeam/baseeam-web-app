@@ -1,0 +1,153 @@
+﻿@using BaseEAM.Services.Security
+@model AssetSparePartModel
+@{
+    var defaultGridPageSize = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().DefaultGridPageSize;
+    var gridPageSizes = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().GridPageSizes;
+
+    var permissionService = EngineContext.Current.Resolve<BaseEAM.Services.IPermissionService>();
+    var allowCreate = permissionService.Authorize(StandardPermissionName.Asset_Asset_Create);
+    var allowRead = permissionService.Authorize(StandardPermissionName.Asset_Asset_Read);
+    var allowUpdate = permissionService.Authorize(StandardPermissionName.Asset_Asset_Update);
+    var allowDelete = permissionService.Authorize(StandardPermissionName.Asset_Asset_Delete);
+}
+<div class="validation-summary-errors none-display" id="assetSparePart-error">
+</div>
+<div id="group-assetSpareParts" class="panel-group">
+    <div class="panel panel-default">
+        <div class="panel-body">
+
+            <div id="assetSpareParts-grid"></div>
+            <script>
+                $(document).ready(function () {
+                    $("#assetSpareParts-grid").kendoGrid({
+                        dataSource: {
+                            type: "json",
+                            transport: {
+                                read: {
+                                    url: "@Html.Raw(Url.Action("AssetSparePartList", "Asset"))",
+                                    type: "POST",
+                                    dataType: "json",
+                                    data: additionalData
+                                },
+                                //This is used to map field to format that the server can understand
+                                //it runs after the data (additionalData) populated
+                                parameterMap: function (data, operation) {
+                                    if (operation != "read") {
+                                        for (var index in data.updated) {
+                                            var itemId = data.updated[index].Item.Id;
+                                            data.updated[index].ItemId = itemId;
+                                        }
+                                        for (var index in data.created) {
+                                            var itemId = data.created[index].Item.Id;
+                                            data.created[index].ItemId = itemId;
+                                        }
+                                    }
+                                    sortMapping = [{ from: "Item", to: "Item.Name" }];
+                                    BaseEam.Grid.mapSortColumns(data.sort, sortMapping);
+                                    return data;
+                                }
+                            },
+                            schema: {
+                                data: "Data",
+                                total: "Total",
+                                errors: "Errors",
+                                model: {
+                                    id: "Id",
+                                    fields: {
+                                        Id: { hidden: true, editable: false, defaultValue: 0 },
+                                        ItemId: { hidden: true, editable: false },
+                                        AssetId: { hidden: true, defaultValue: $('#Id').val() },
+                                        Item: { editable: true, defaultValue: {} },
+                                        Quantity: { editable: true, type: 'number', validation: { required: { message: '@T("AssetSparePart.Quantity.Required")' } }}
+
+                                    }
+                                }
+                            },
+                            batch: true,
+                            error: function (e) {
+                                display_kendoui_grid_error(e);
+                                // Cancel the changes
+                                this.cancelChanges();
+                            },
+                            change: function (e) {
+                                if (e.action == "itemchange") {
+                                    e.items[0].dirtyFields = e.items[0].dirtyFields || {};
+                                    e.items[0].dirtyFields[e.field] = true;
+                                }
+                            },
+                            pageSize: @(defaultGridPageSize),
+                            serverPaging: true,
+                            serverFiltering: true,
+                            serverSorting: true
+                        },
+                        pageable: {
+                            refresh: true,
+                            pageSizes: [@(gridPageSizes)],
+                            @Html.Partial("_GridPagerMessages")
+                        },
+                        toolbar: ["create", "save", "cancel"],
+                        saveChanges: function(e) {
+                            e.preventDefault();
+                            BaseEam.Grid.saveChanges('@Url.Action("SaveChanges","Asset")', '#assetSpareParts-grid', '#assetSparePart-error');
+                        },
+                        navigatable: true,
+                        sortable: true,
+                        editable: true,
+                        scrollable: false,
+                        columns: [{
+                            field: "Item",
+                            title: "@T("Item")",
+                            editor: itemEditor,
+                            template: "#=BaseEam.Grid.dirtyHtml(data,'Item.Name')# #:Item ? Item.Name : ItemName #"
+                        },{
+                            field: "Quantity",
+                            title: "@T("AssetSparePart.Quantity")",
+                            template: "#=BaseEam.Grid.dirtyHtml(data,'Quantity')# #:Quantity ? Quantity : '' #"
+                        },{
+                            command: { name: "destroy", text: "@T("Common.Delete")" },
+                            width: 100
+                        }]
+                    });
+                });
+
+                function itemEditor(container, options) {
+                    var model = {
+                        field: options.field,
+                        required_msg: '@T("Item.Name.Required")',
+                        url: '@Url.Action("GetDefaultChoices", "Common")',
+                        dbTable: 'Item'
+                    };
+                    BaseEam.Grid.comboBoxEditor(container, model);
+                }
+            </script>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    $(document).ready(function () {
+        //search button
+        $('#search').click(function () {
+            //search
+            var grid = $('#assetSpareParts-grid').data('kendoGrid');
+            grid.dataSource.page(1); //new search. Set page size to 1
+            //grid.dataSource.read(); we already loaded the grid above using "page" function
+            return false;
+        });
+    });
+
+    function additionalData() {
+        var data = {
+            assetId: @Model.AssetId
+        };
+        addAntiForgeryToken(data);
+        return data;
+    }
+
+    $("div.panel-search").find(':input').keydown(function (event) {
+        if (event.keyCode == 13) {
+            $("#search").click();
+            return false;
+        }
+    });
+</script>

@@ -1,0 +1,92 @@
+﻿@using BaseEAM.Web.Framework.Mvc
+@model BaseEamComboBox
+
+<script>
+    $(document).ready(function () {
+        $('#@Model.HtmlId').kendoComboBox({
+            dataTextField: 'Text',
+            dataValueField: 'Value',
+            filter: 'contains',
+            minLength: 2,
+            @if(!string.IsNullOrEmpty(Model.ParentFieldName))
+            {
+                <text>cascadeFrom: '@Model.ParentFieldName',</text>
+            }
+            change: function (e) {
+                //if not a valid value, clear and reset the filter
+                if (this.value() && this.selectedIndex == -1) {
+                    this.text('');
+                    this.dataSource.filter(null);
+                    this.dataSource.read();
+                }
+            },
+            dataSource: {
+                type: 'json',
+                serverFiltering: true,
+                transport: {
+                    read: {
+                        url: '@Url.Action(Model.Action, Model.Controller)',
+                        type: 'POST',
+                        dataType: 'json',
+                        data: addAntiForgeryToken
+                    },
+                    parameterMap: function (data, action) {
+                        var param = '';
+                        var parentValue = '';
+                        if (data.filter != null) {
+                            $.each(data.filter.filters, function (index, filter) {
+                                if (filter.operator == 'eq') {
+                                    parentValue = filter.value;
+                                }
+                                if (filter.operator == 'contains') {
+                                    param = filter.value;
+                                }
+                            });
+                        }
+                        @if (!string.IsNullOrEmpty(Model.ParentFieldName))
+                        {
+                            <text>
+                        if (!parentValue) {
+                            parentValue = $('#@Model.ParentFieldName').val();
+                        }
+                        </text>
+                        }
+
+                        return addAntiForgeryToken({
+                            param: param,
+                            dbTable: '@Model.DbTable',
+                            dbTextColumn: '@Model.DbTextColumn',
+                            dbValueColumn: '@Model.DbValueColumn',
+                            @if (string.IsNullOrEmpty(Model.AdditionalField) && string.IsNullOrEmpty(Model.AdditionalValue))
+                            {
+                                //do nothing
+                            }
+                            else if (string.IsNullOrEmpty(Model.AdditionalField) && !string.IsNullOrEmpty(Model.AdditionalValue))
+                            {
+                                //not happen
+                            }
+                            else if (!string.IsNullOrEmpty(Model.AdditionalField) && string.IsNullOrEmpty(Model.AdditionalValue))
+                            {
+                                <text>additionalValue: $('#@Model.AdditionalField').val(),</text>
+                            }
+                            else
+                            {
+                                <text>@Model.AdditionalField: '@Model.AdditionalValue',</text>
+                            }
+
+                            @if (!string.IsNullOrEmpty(Model.OptionalField))
+                            {
+                                <text>optionalValue: $('#@Model.OptionalField').val(),</text>
+                            }
+
+                            @if (!string.IsNullOrEmpty(Model.ParentFieldName))
+                            {
+                                <text>parentValue: parentValue</text>
+                            }
+                        })
+                    }
+                }
+            }
+        });
+    });
+</script>

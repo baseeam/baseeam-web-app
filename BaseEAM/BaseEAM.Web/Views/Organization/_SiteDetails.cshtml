@@ -1,0 +1,101 @@
+﻿@using BaseEAM.Services.Security
+@model SiteModel
+@{
+    var permissionService = EngineContext.Current.Resolve<BaseEAM.Services.IPermissionService>();
+    var allowCreate = permissionService.Authorize(StandardPermissionName.Administration_Site_Create);
+    var allowRead = permissionService.Authorize(StandardPermissionName.Administration_Site_Read);
+    var allowUpdate = permissionService.Authorize(StandardPermissionName.Administration_Site_Update);
+    var allowDelete = permissionService.Authorize(StandardPermissionName.Administration_Site_Delete);
+}
+
+<div id="panel-site" class="panel panel-default eam-panel">
+    <div class="panel-heading">
+        <button type="button" id="saveSite" class="btn btn-primary@(allowCreate || allowUpdate ? "" : " none-display")" title="@T("Common.Save")">
+            <i class="fa fa-floppy-o"></i>
+        </button>
+        <button type="button" id="cancelSite" class="btn btn-primary" title="@T("Common.Cancel")">
+            <i class="fa fa-ban"></i>
+        </button>
+    </div>
+    <div class="panel-body">
+        @Html.Hidden("SiteId", Model.Id)
+        <div id="site-error" class="validation-summary-errors none-display">
+        </div>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.BaseEamLabelFor(model => model.Name, required: true)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.BaseEamEditorFor(model => model.Name)
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.BaseEamLabelFor(model => model.Description)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.BaseEamEditorFor(model => model.Description)
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script type="text/javascript">
+        $("#saveSite").click(function (e) {
+            e.preventDefault();
+            var $group = $("#panel-site :input");
+            var postData = $group.serializeJSON({ checkboxUncheckedValue: "false" });
+            //change Id property name so it can map to MVC model
+            postData.Id = postData.SiteId;
+            addAntiForgeryToken(postData);
+
+            $.ajax({
+                cache: false,
+                type: "POST",
+                url: "@(Url.Action("SaveSite", "Organization"))",
+                data: postData,
+                success: function (data) {
+                    if (data && data.Errors) {
+                        showErrors(data.Errors, '#site-error');
+                    } else {
+                        //then toggle the panel
+                        togglePanelSite(false);
+
+                        //refresh grid
+                        var grid = $('#sites-grid').data('kendoGrid');
+                        grid.dataSource.page(1);
+                    }
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    showBSModal({ title: 'ERROR', body: thrownError });
+                },
+                traditional: true
+            });
+        });
+
+        $("#cancelSite").click(function (e) {
+            e.preventDefault();
+            var postData = {
+                id: $("#SiteId").val()
+            };
+            addAntiForgeryToken(postData);
+
+            $.ajax({
+                cache: false,
+                type: "POST",
+                url: "@(Url.Action("CancelSite", "Organization"))",
+                data: postData,
+                success: function (data) {
+                    //toggle the panel
+                    togglePanelSite(false);
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    showBSModal({ title: 'ERROR', body: thrownError });
+                },
+                traditional: true
+            });
+        });
+    </script>
+</div>

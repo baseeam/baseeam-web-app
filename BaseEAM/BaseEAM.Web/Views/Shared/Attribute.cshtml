@@ -1,0 +1,142 @@
+﻿@using BaseEAM.Web.Framework.CustomField
+@using BaseEAM.Core.Data;
+@using BaseEAM.Core;
+@using BaseEAM.Web.Extensions;
+
+@functions {
+    string _entityType = null;
+    long? _entityId = null;
+
+    private string EntityType
+    {
+        get
+        {
+            if (_entityType == null)
+            {
+                _entityType = ViewData.ContainsKey("entityType") ? Convert.ToString(ViewData["entityType"]) : ViewData.TemplateInfo.GetFullHtmlFieldName(string.Empty);
+            }
+            return _entityType;
+        }
+    }
+
+    private long EntityId
+    {
+        get
+        {
+            if (!_entityId.HasValue)
+            {
+                _entityId = ViewData.ContainsKey("entityId") ? Convert.ToInt64(ViewData["entityId"]) : 0;
+            }
+            return _entityId.Value;
+        }
+    }
+
+    object ConvertValue(string value, FieldDataType dataType)
+    {
+        var dateTimeHelper = EngineContext.Current.Resolve<IDateTimeHelper>();
+        object result = null;
+        if (!string.IsNullOrEmpty(value))
+        {
+            if (dataType == FieldDataType.String)
+                result = value;
+
+            if (dataType == FieldDataType.Int32)
+                result = Convert.ToInt32(value);
+
+            else if (dataType == FieldDataType.Int32Nullable)
+                result = (Int32?)Convert.ToInt32(value);
+
+            else if (dataType == FieldDataType.Int64)
+                result = Convert.ToInt64(value);
+
+            else if (dataType == FieldDataType.Int64Nullable)
+                result = (Int64?)Convert.ToInt64(value);
+
+            else if (dataType == FieldDataType.Decimal)
+                result = Convert.ToDecimal(value);
+
+            else if (dataType == FieldDataType.DecimalNullable)
+                result = (Decimal?)Convert.ToDecimal(value);
+
+            else if (dataType == FieldDataType.DateTime)
+                result = dateTimeHelper.ConvertToUtcTime(Convert.ToDateTime(value), dateTimeHelper.CurrentTimeZone);
+
+            else if (dataType == FieldDataType.DateTimeNullable)
+                result = (DateTime?)dateTimeHelper.ConvertToUtcTime(Convert.ToDateTime(value), dateTimeHelper.CurrentTimeZone);
+
+            else if (dataType == FieldDataType.Boolean)
+                result = Convert.ToBoolean(value);
+        }
+
+        return result;
+    }
+
+    FieldModel Map(EntityAttributeModel model)
+    {
+        var result = new FieldModel();
+        result.DisplayOrder = model.DisplayOrder;
+        result.Name = model.Attribute.Name;
+        result.ResourceKey = model.Attribute.ResourceKey;
+        result.ControlType = (FieldControlType)((int)model.Attribute.ControlType);
+        result.DataType = (FieldDataType)((int)model.Attribute.DataType);
+        result.DataSource = (FieldDataSource)((int)model.Attribute.DataSource);
+        result.Value = ConvertValue(model.Value, result.DataType);
+        result.CsvTextList = model.Attribute.CsvTextList;
+        result.CsvValueList = model.Attribute.CsvValueList;
+        result.IsRequiredField = model.IsRequiredField;
+        return result;
+    }
+}
+
+@{
+    var field = new FieldModel();
+    var entityAttributeRepository = EngineContext.Current.Resolve<IRepository<EntityAttribute>>();
+    var entityAttributes = entityAttributeRepository.GetAll()
+        .Where(e => e.EntityId == EntityId && e.EntityType == EntityType).ToList()
+        .Select(e => e.ToModel())
+        .ToList();
+}
+
+<h4>@T("Common.Attributes")</h4>
+<div class="row">
+    @*Left side*@
+    <div class="col-md-6">
+        @foreach (var attribute in entityAttributes)
+            {
+                field = Map(attribute);
+                if (attribute.DisplayOrder % 2 == 1)
+                {
+                    <div class="form-group">
+                        @*Label*@
+                        <div class="col-md-3">
+                            @Html.BaseEamFieldLabel(field)
+                        </div>
+                        @*Value*@
+                        <div class="col-md-9">
+                            @Html.BaseEamFieldValue(field)
+                        </div>
+                    </div>
+                }
+        }
+    </div>
+    @*Right side fields*@
+    <div class="col-md-6">
+        @foreach (var attribute in entityAttributes)
+            {
+                field = Map(attribute);
+                if (attribute.DisplayOrder % 2 == 0)
+                {
+                    <div class="form-group">
+                        @*Label*@
+                        <div class="col-md-3">
+                            @Html.BaseEamFieldLabel(field)
+                        </div>
+                        @*Value*@
+                        <div class="col-md-9">
+                            @Html.BaseEamFieldValue(field)
+                        </div>
+                    </div>
+                }
+        }
+    </div>
+</div>

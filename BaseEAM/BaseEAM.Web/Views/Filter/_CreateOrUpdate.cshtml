@@ -1,0 +1,286 @@
+﻿@model FilterModel
+@Html.HiddenFor(model => model.Id)
+@Html.HiddenFor(model => model.IsNew)
+
+<script>
+    function toggleGroups() {
+        var controlType = $("#@Html.FieldIdFor(model => model.ControlType) option:selected").text();
+        var dataSource = $("#@Html.FieldIdFor(model => model.DataSource) option:selected").text();
+        $('.group-csv').hide();
+        $('.group-db').hide();
+        $('.group-sql').hide();
+        $('.group-mvc').hide();
+        $('.group-lookup').hide();
+        if (controlType == "DropDownList" || controlType == "MultiSelectList") {
+            if(dataSource == "CSV") {
+                $('.group-csv').show();
+            } else if (dataSource == "DB") {
+                $('.group-db').show();
+            } else if (dataSource == "SQL") {
+                $('.group-sql').show();
+            } else if (dataSource == "MVC") {
+                $('.group-mvc').show();
+            }
+        } else if (controlType == "Lookup") {
+            $('.group-lookup').show();
+        }
+    }
+
+    $(document).ready(function () {
+        toggleGroups();
+
+        $("#@Html.FieldIdFor(model => model.ControlType)").change(function () {
+            toggleGroups();
+        });
+
+        $("#@Html.FieldIdFor(model => model.DataSource)").change(function () {
+            toggleGroups();
+        });
+    });
+</script>
+
+<div class="content">
+    <div class="form-horizontal">
+        <div id="filter-edit" class="nav-tabs-custom">
+            <ul class="nav nav-tabs">
+                @Html.RenderBootstrapTabHeader("tab-info", @T("Filter.Info"), true)
+            </ul>
+            <div class="tab-content">
+                @Html.RenderBootstrapTabContent("tab-info", @TabInfo(), true)
+            </div>
+        </div>
+    </div>
+</div>
+
+@{
+    //custom tabs
+    var eventMessage = new AdminTabStripCreated(this.Html, "filter-edit");
+    EngineContext.Current.Resolve<IEventPublisher>().Publish(eventMessage);
+    foreach (var eventBlock in eventMessage.BlocksToRender)
+    {
+        @eventBlock
+    }
+}
+
+@helper TabInfo()
+{
+    <div class="panel-group">
+        <div class="panel panel-default">
+            <div class="panel-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.Name, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamEditorFor(model => model.Name)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.ResourceKey, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamEditorFor(model => model.ResourceKey)
+                            </div>
+                        </div>                        
+                        @*<div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.AutoBind)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamCheckBoxFor(model => model.AutoBind)
+                            </div>
+                        </div>*@
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.ControlType, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.EnumDropDownListFor(model => model.ControlType, new { @class = "form-control" })
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.DataType, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.EnumDropDownListFor(model => model.DataType, new { @class = "form-control" })
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.DataSource, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.EnumDropDownListFor(model => model.DataSource, new { @class = "form-control" })
+                            </div>
+                        </div>
+                        @*CSV*@
+                        <div class="form-group group-csv">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.CsvTextList, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamEditorFor(model => model.CsvTextList)
+                            </div>
+                        </div>
+                        <div class="form-group group-csv">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.CsvValueList, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamEditorFor(model => model.CsvValueList)
+                            </div>
+                        </div>
+                        @*DB*@
+                        <div class="form-group group-db">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.DbTable, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamEditorFor(model => model.DbTable)
+                            </div>
+                        </div>
+                        <div class="form-group group-db">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.DbTextColumn, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamEditorFor(model => model.DbTextColumn)
+                            </div>
+                        </div>
+                        <div class="form-group group-db">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.DbValueColumn, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamEditorFor(model => model.DbValueColumn)
+                            </div>
+                        </div>
+                        @*SQL*@
+                        <div class="form-group group-sql">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.SqlQuery, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamTextAreaFor(model => model.SqlQuery, rows: 8)
+                            </div>
+                        </div>
+                        <div class="form-group group-sql">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.SqlTextField, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamEditorFor(model => model.SqlTextField)
+                            </div>
+                        </div>
+                        <div class="form-group group-sql">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.SqlValueField, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamEditorFor(model => model.SqlValueField)
+                            </div>
+                        </div>
+                        @*MVC*@
+                        <div class="form-group group-mvc">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.MvcController, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamEditorFor(model => model.MvcController)
+                            </div>
+                        </div>
+                        <div class="form-group group-mvc">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.MvcAction, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamEditorFor(model => model.MvcAction)
+                            </div>
+                        </div>
+                        <div class="form-group group-mvc">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.AdditionalField)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamEditorFor(model => model.AdditionalField)
+                            </div>
+                        </div>
+                        <div class="form-group group-mvc">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.AdditionalValue)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamEditorFor(model => model.AdditionalValue)
+                            </div>
+                        </div>
+                        @*Lookup*@
+                        <div class="form-group group-lookup">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.LookupType, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                @{
+                                    var lookupTypes = new List<SelectListItem>
+                                    {
+                                        new SelectListItem { Text = "", Value = "" },
+                                        new SelectListItem { Text = EntityType.Item, Value = EntityType.Item },
+                                        new SelectListItem { Text = EntityType.Asset, Value = EntityType.Asset },
+                                        new SelectListItem { Text = EntityType.Location, Value = EntityType.Location },
+                                        new SelectListItem { Text = EntityType.Store, Value = EntityType.Store },
+                                    };
+                                }
+                                @Html.BaseEamDropDownListFor(model => model.LookupType, lookupTypes)
+                            </div>
+                        </div>
+                        <div class="form-group group-lookup">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.LookupTextField, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamEditorFor(model => model.LookupTextField)
+                            </div>
+                        </div>
+                        <div class="form-group group-lookup">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.LookupValueField, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamEditorFor(model => model.LookupValueField)
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <hr />
+                @if (Model.Id > 0 && Model.IsNew == false)
+                {
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <div class="col-md-3">
+                                    @Html.BaseEamLabelFor(model => model.FirstCreatedBy)
+                                </div>
+                                <div class="col-md-9">
+                                    @Html.BaseEamDisplayFor(model => model.FirstCreatedBy)
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <div class="col-md-3">
+                                    @Html.BaseEamLabelFor(model => model.LastUpdatedBy)
+                                </div>
+                                <div class="col-md-9">
+                                    @Html.BaseEamDisplayFor(model => model.LastUpdatedBy)
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}

@@ -1,0 +1,221 @@
+﻿@using BaseEAM.Services.Security
+@model PointMeterLineItemModel
+@{
+    var defaultGridPageSize = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().DefaultGridPageSize;
+    var gridPageSizes = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().GridPageSizes;
+
+    var permissionService = EngineContext.Current.Resolve<BaseEAM.Services.IPermissionService>();
+    var allowCreate = permissionService.Authorize(StandardPermissionName.Asset_Asset_Create)
+         || permissionService.Authorize(StandardPermissionName.Asset_Location_Create);
+    var allowRead = permissionService.Authorize(StandardPermissionName.Asset_Asset_Read)
+        || permissionService.Authorize(StandardPermissionName.Asset_Location_Read);
+    var allowUpdate = permissionService.Authorize(StandardPermissionName.Asset_Asset_Update)
+        || permissionService.Authorize(StandardPermissionName.Asset_Location_Update);
+    var allowDelete = permissionService.Authorize(StandardPermissionName.Asset_Asset_Delete)
+        || permissionService.Authorize(StandardPermissionName.Asset_Location_Delete);
+
+    var primarySystemCurrencySymbol = EngineContext.Current.Resolve<BaseEAM.Core.IWorkContext>().WorkingCurrency.CurrencySymbol;
+}
+
+<div id="panel-meterEvent" class="panel panel-default eam-panel" data-bind="visible: hasMeter()">
+    <div class="panel-heading">
+        <button type="button" id="createMeterEvent" class="btn btn-primary@(allowCreate || allowUpdate ? "" : " none-display")" title="@T("Common.AddNew")">
+            <i class="fa fa-plus-square"></i>
+        </button>
+        <button type="button" id="deleteSelectedMeterEvents" class="btn btn-primary@(allowCreate || allowUpdate ? "" : " none-display")" title="@T("Common.Delete.Selected")">
+            <i class="fa fa-trash-o"></i>
+        </button>
+    </div>
+    <div class="panel-body">
+        <div id="meterEvents-error" class="validation-summary-errors none-display"></div>
+        <div id="meterEvents-grid"></div>
+        <script>
+                        var gridCheckboxHandlerForMeterEvent = new BaseEam.CheckBoxHandler('meterEvents-grid');
+                        gridCheckboxHandlerForMeterEvent.init();
+
+                        $(document).ready(function () {
+                            $("#meterEvents-grid").kendoGrid({
+                                dataSource: {
+                                    type: "json",
+                                    transport: {
+                                        read: {
+                                            url: "@Html.Raw(Url.Action("MeterEventList", "Point"))",
+                                            type: "POST",
+                                            dataType: "json",
+                                            data: additionalDataForMeterEvent
+                                        },
+                                        //This is used to map field to format that the server can understand
+                                        //it runs after the data (additionalData) populated
+                                        parameterMap: function (data, operation) {
+                                            sortMapping = [{ from: "MeterName", to: "Meter.Name" }];
+                                            BaseEam.Grid.mapSortColumns(data.sort, sortMapping);
+                                            return data;
+                                        }
+                                    },
+                                    schema: {
+                                        data: "Data",
+                                        total: "Total",
+                                        errors: "Errors",
+                                        model: {
+                                            id: "Id",
+                                            fields: {
+                                                Id: { hidden: true, editable: false },
+                                                MeterId: { hidden: true,}
+                                            }
+                                        }
+                                    },
+                                    error: function(e) {
+                                        display_kendoui_grid_error(e);
+                                        // Cancel the changes
+                                        this.cancelChanges();
+                                    },
+                                    pageSize: @(defaultGridPageSize),
+                                    serverPaging: true,
+                                    serverFiltering: true,
+                                    serverSorting: true
+                                },
+                                pageable: {
+                                    refresh: true,
+                                    pageSizes: [@(gridPageSizes)],
+                                    @Html.Partial("_GridPagerMessages")
+                                },
+                                sortable: true,
+                                editable: false,
+                                scrollable: false,
+                                dataBound: gridCheckboxHandlerForMeterEvent.onDataBound,
+                                columns: [{
+                                    field: "Id",
+                                    headerTemplate: "<input id='meterEvents-grid-mastercheckbox' type='checkbox'/>",
+                                    headerAttributes: { style: "text-align:center" },
+                                    attributes: { style: "text-align:center" },
+                                    template: "<input type='checkbox' value='#=Id#' class='checkboxGroups'/>",
+                                    width: 50,
+                                    sortable: false
+                                },{
+                                    field: "DisplayOrder",
+                                    title: "@T("MeterEvent.DisplayOrder")"
+                                },{
+                                    field: "Description",
+                                    title: "@T("MeterEvent.Description")"
+                                },{
+                                    field: "MeterName",
+                                    title: "@T("Meter")",
+                                },{
+                                    field: "LowerLimit",
+                                    title: "@T("MeterEvent.LowerLimit")",
+                                    template: '#= LowerLimit != null ? kendo.toString(LowerLimit, "n") : "" #'
+                                },{
+                                    field: "UpperLimit",
+                                    title: "@T("MeterEvent.UpperLimit")",
+                                    template: '#= UpperLimit != null ? kendo.toString(UpperLimit, "n") : "" #'
+                                }, {
+                                    field: "Id",
+                                    headerTemplate: "",
+                                    width: 100,
+                                    template: '<button type="button" class="btn btn-primary@(allowRead || allowUpdate ? "" : " none-display")" onclick="editMeterEvent(event, #=Id#);"></span><i class="fa fa-pencil aria-hidden="true""></i></a>' +
+                                    '<button type="button" class="deleteRow btn btn-primary@(allowDelete ? "" : " none-display")" onclick="deleteMeterEvent(event, #=Id#);"></span><i class="fa fa-trash aria-hidden="true""></i></a>',
+                                    sortable: false
+                                }]
+                            });
+                        });
+
+                        //For meter event
+                        function additionalDataForMeterEvent() {
+                            var data = {
+                                pointMeterLineItemId: "@Model.Id"
+                            };
+                            addAntiForgeryToken(data);
+                            return data;
+                        }
+
+                        function togglePanelMeterEvent(editmode) {
+                            if (editmode) {
+                                $('#row-meterEventDetails').show();
+                                $('#deleteSelectedMeterEvents').hide();
+                                $('#createMeterEvent').hide();
+                            }
+                            else {
+                                ////remove the panel html so we won't care
+                                //about dirty change tracking for newly added input tag
+                                $('#row-meterEventDetails').remove();
+                                $('#deleteSelectedMeterEvents').show();
+                                $('#createMeterEvent').show();
+                            }
+                        }
+
+                        function editMeterEvent(e, id) {
+                            e.preventDefault();
+                            //check if panel-meterEvent is open => close it before edit
+                            if ($('#panel-meterEvent').is(":visible")) {
+                                togglePanelMeterEvent(false);
+                            }
+                            var postData = {
+                                pointMeterLineItemId: id
+                            };
+                            addAntiForgeryToken(postData);
+
+                            $.ajax({
+                                cache: false,
+                                type: "POST",
+                                url: "@(Url.Action("MeterEvent", "Point"))",
+                                data: postData,
+                                success: function (data) {
+                                    //append html
+                                    $("#panel-meterEvent").append(data.Html);
+                                    //then toggle the panel
+                                    togglePanelMeterEvent(true);
+                                },
+                                error: function (xhr, ajaxOptions, thrownError) {
+                                    showBSModal({ title: 'ERROR', body: thrownError });
+                                },
+                                traditional: true
+                            });
+                        };
+
+                        function deleteMeterEvent(e, id) {
+                            e.preventDefault();
+                            //check if panel-meterEvents is open => close it before delete
+                            if ($('#panel-meterEvent').is(":visible")) {
+                                togglePanelMeterEvent(false);
+                            }
+
+                            BaseEam.Grid.deleteRow(null, id, "@Url.Action("DeleteMeterEvent", "Point")", "meterEvents-grid", "", true);
+                        };
+
+                        $(document).ready(function () {
+
+                            $("#createMeterEvent").click(function (e) {
+                                e.preventDefault();
+                                var postData = {
+                                    pointMeterLineItemId: "@Model.Id",
+                                };
+                                addAntiForgeryToken(postData);
+
+                                $.ajax({
+                                    cache: false,
+                                    type: "POST",
+                                    url: "@(Url.Action("CreateMeterEvent", "Point"))",
+                                    data: postData,
+                                    success: function (data) {
+                                        //append html
+                                        $("#panel-meterEvent").append(data.Html);
+
+                                        //then toggle the panel
+                                        togglePanelMeterEvent(true);
+                                    },
+                                    error: function (xhr, ajaxOptions, thrownError) {
+                                        showBSModal({ title: 'ERROR', body: thrownError });
+                                    },
+                                    traditional: true
+                                });
+                            });
+
+                            $("#deleteSelectedMeterEvents").click(function (e) {
+                                e.preventDefault();
+                                BaseEam.Grid.deleteSelectedRows(null, gridCheckboxHandlerForMeterEvent.selectedIds, "@Url.Action("DeleteSelectedMeterEvents", "Point")", "meterEvents-grid", "", true);
+                            });
+                        });
+
+        </script>
+    </div>
+</div>

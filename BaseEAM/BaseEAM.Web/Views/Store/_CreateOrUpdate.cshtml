@@ -1,0 +1,152 @@
+﻿@model StoreModel
+@Html.HiddenFor(model => model.Id)
+@Html.HiddenFor(model => model.IsNew)
+
+<script>
+    $(document).ready(function () {
+        bindBootstrapTabSelectEvent('store-edit');
+        if ($('#IsNew').val() == 'True') {
+            toggleTabs(false);
+        } else {
+            toggleTabs(true);
+        }
+    });
+
+    function toggleTabs(show) {
+        if (show) {
+            $('#group-storeLocators').show();
+            //Refesh the storeLocators grid to get the DEF store locator.
+            var grid = $("#storeLocators-grid").data('kendoGrid');
+            if (grid !== undefined) {
+                grid.dataSource.read();
+            }
+
+            $('#tab-items-header').show();
+        } else {
+            $('#group-storeLocators').hide();
+            $('#tab-items-header').hide();
+        }
+    }
+</script>
+
+<div class="content">
+    <div class="form-horizontal">
+        <div id="store-edit" class="nav-tabs-custom">
+            <ul class="nav nav-tabs">
+                @Html.RenderBootstrapTabHeader("tab-info", @T("Store.Info"), true)
+                @Html.RenderBootstrapTabHeader("tab-items", @T("Store.Items"))
+            </ul>
+            <div class="tab-content">
+                @Html.RenderBootstrapTabContent("tab-info", @TabInfo(), true)
+                @Html.RenderBootstrapTabContent("tab-items", @TabItems())
+            </div>
+        </div>
+    </div>
+</div>
+
+@{
+    //custom tabs
+    var eventMessage = new AdminTabStripCreated(this.Html, "store-edit");
+    EngineContext.Current.Resolve<IEventPublisher>().Publish(eventMessage);
+    foreach (var eventBlock in eventMessage.BlocksToRender)
+    {
+        @eventBlock
+    }
+}
+
+@helper TabInfo()
+{
+    <div class="panel-group">
+        <div class="panel panel-default">
+            <div class="panel-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.Name, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamEditorFor(model => model.Name)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.Description)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamEditorFor(model => model.Description)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.StoreTypeId, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamComboBoxFor(model => model.StoreTypeId, "ValueItems", "Common",
+                                            new RouteValueDictionary { { "additionalField", "category" }, { "additionalValue", "Store Type" } }, true)
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.SiteId, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamComboBoxFor(model => model.SiteId, "SiteList", "Site", null, true)
+                            </div>
+                        </div>                        
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.LocationId)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamComboBoxFor(model => model.LocationId, "LocationList", "Site",
+                                            new RouteValueDictionary { { "parentFieldName", "SiteId" } }, true)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.IsActive)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamCheckBoxFor(model => model.IsActive)
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <hr />
+                <h4>@T("Store.StoreLocators")</h4>
+                @Html.Partial("_StoreLocators", new StoreLocatorModel { StoreId = Model.Id })
+                @if (Model.Id > 0 && Model.IsNew == false)
+                {
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <div class="col-md-3">
+                                    @Html.BaseEamLabelFor(model => model.FirstCreatedBy)
+                                </div>
+                                <div class="col-md-9">
+                                    @Html.BaseEamDisplayFor(model => model.FirstCreatedBy)
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <div class="col-md-3">
+                                    @Html.BaseEamLabelFor(model => model.LastUpdatedBy)
+                                </div>
+                                <div class="col-md-9">
+                                    @Html.BaseEamDisplayFor(model => model.LastUpdatedBy)
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+@helper TabItems()
+{
+    @Html.Partial("_Items", new SearchModel())
+}

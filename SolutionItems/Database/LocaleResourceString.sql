@@ -1,0 +1,25 @@
+
+Call InsertLocaleStringResource('Property.Name.Required','Please provide a name');
+Call InsertLocaleStringResource('Property.Name.Unique','Property must be unique');
+Call InsertLocaleStringResource('Property.Property','Property');
+Call InsertLocaleStringResource('Property.EditPropertyDetails','Edit Property Details');
+Call InsertLocaleStringResource('Property.Info','Property');
+Call InsertLocaleStringResource('Location.Required','Please provide a location');
+Call InsertLocaleStringResource('TenantPaymentCollection.ReceivedDate','Received Date');
+Call InsertLocaleStringResource('TenantPaymentCollection.ReceivedAmount','Received Amount');
+Call InsertLocaleStringResource('TenantPaymentCollection.CheckNum','Check Num');
+Call InsertLocaleStringResource('TenantPaymentCollection.PaymentMethod','Payment Method');
+Call InsertLocaleStringResource('Property.TenantPayment','Tenant Payment');
+Call InsertLocaleStringResource('TenantPaymentCollection.ReceivedDate.Required','Please provide a received date');
+Call InsertLocaleStringResource('TenantPaymentCollection.ReceivedAmount.Required','Please provide a received amount');
+Call InsertLocaleStringResource('TenantPaymentCollection.PaymentMethod.Required','Please provide a payment method');
+Call InsertLocaleStringResource('TenantLease.CannotGeneratePayment','Cannot generate tenant payment. Please check again');
+call InsertLocaleStringResource('TenantLeaseCharge.ValidToDate.Invalid', 'Valid to date is not valid.');
+Call InsertLocaleStringResource('TenantLease.CannotCreateNewLease','Cannot create a new lease for this property and tenant because we have another lease which is leasing. Please check again.');
+Call InsertLocaleStringResource('TenantLease.Charges','Charges');
+Call InsertLocaleStringResource('Tenant.RentPayments','Rent Payments');
+Call InsertLocaleStringResource('Tenant.RecurringCharges','Recurring Charges');
+Call InsertLocaleStringResource('Tenant.FixedCharges','Fixed Charges');
+Call InsertLocaleStringResource('Tenant.ManualDateCharges','Manual Date Charges');
+Call InsertLocaleStringResource('Tenant.OtherMonthlyCharges','Other Monthly Charges');
+Call InsertLocaleStringResource('TenantLeaseCharge.ChargeType.Unique','Charge type must be unique.');

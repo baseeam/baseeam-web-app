@@ -1,0 +1,26 @@
+﻿@using BaseEAM.Core.Extensions
+@model Enum
+
+@{
+    var localizationService = EngineContext.Current.Resolve<BaseEAM.Services.ILocalizationService>();
+    var listItems = Enum.GetValues(Model.GetType()).OfType<Enum>().Select(e =>
+    new SelectListItem()
+    {
+        Text = localizationService.GetResource(EnumExtensions.GetDescription(e)),
+        Value = e.ToString(),
+        Selected = e.Equals(Model)
+    });
+    string prefix = ViewData.TemplateInfo.HtmlFieldPrefix;
+    int index = 0;
+    ViewData.TemplateInfo.HtmlFieldPrefix = string.Empty;
+
+    foreach (var li in listItems)
+    {
+        string fieldName = string.Format(System.Globalization.CultureInfo.InvariantCulture, "{0}_{1}", prefix, index++);
+        <div class="editor-radio">
+            @Html.RadioButton(prefix, li.Value, li.Selected, new { @id = fieldName })
+            @Html.Label(fieldName, li.Text)
+        </div>
+    }
+    ViewData.TemplateInfo.HtmlFieldPrefix = prefix;
+}

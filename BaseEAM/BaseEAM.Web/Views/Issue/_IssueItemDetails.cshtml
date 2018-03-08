@@ -1,0 +1,200 @@
+﻿@using BaseEAM.Services.Security
+@model IssueItemModel
+@{
+    var permissionService = EngineContext.Current.Resolve<BaseEAM.Services.IPermissionService>();
+    var allowCreate = permissionService.Authorize(StandardPermissionName.Inventory_Issue_Create);
+    var allowRead = permissionService.Authorize(StandardPermissionName.Inventory_Issue_Read);
+    var allowUpdate = permissionService.Authorize(StandardPermissionName.Inventory_Issue_Update);
+    var allowDelete = permissionService.Authorize(StandardPermissionName.Inventory_Issue_Delete);
+
+    var primarySystemCurrencySymbol = EngineContext.Current.Resolve<BaseEAM.Core.IWorkContext>().WorkingCurrency.CurrencySymbol;
+}
+
+<div id="panel-issueItem" class="panel panel-default eam-panel">
+    <div class="panel-heading">
+        <button type="button" id="saveIssueItemDetail" class="btn btn-primary@(allowCreate || allowUpdate ? "" : " none-display")" title="@T("Common.Save")">
+            <i class="fa fa-floppy-o"></i>
+        </button>
+        <button type="button" id="cancelIssueItemDetail" class="btn btn-primary" title="@T("Common.Cancel")">
+            <i class="fa fa-ban"></i>
+        </button>
+    </div>
+    <div class="panel-body">
+        @Html.Hidden("IssueId", Model.IssueId)
+        @Html.Hidden("IssueItemId", Model.Id)
+        <div id="issueItem-error" class="validation-summary-errors none-display">
+        </div>
+        <div class="col-md-6">
+            <div class="form-group">
+                <div class="col-md-3">
+                    @Html.BaseEamLabelFor(model => model.ItemId, required: true)
+                    @Html.HiddenFor(model => model.ItemId)
+                </div>
+                <div class="col-md-9">
+                    @Html.ItemLookupFor(model => model.ItemName)
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-md-3">
+                    @Html.BaseEamLabelFor(model => model.IssueUnitOfMeasureId, required: true)
+                </div>
+                <div class="col-md-9">
+                    @Html.BaseEamDropDownListFor(model => model.IssueUnitOfMeasureId, Model.AvailableUnitOfMeasures)
+                </div>
+            </div>            
+            <div class="form-group">
+                <div class="col-md-3">
+                    @Html.BaseEamLabelFor(model => model.CurrentQuantity)
+                </div>
+                <div class="col-md-9">
+                    <div class="form-text-row" id="currentQuantity">
+                        @(Model.CurrentQuantity)
+                    </div>                    
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="form-group">
+                <div class="col-md-3">
+                    @Html.BaseEamLabelFor(model => model.StoreLocatorId, required: true)
+                </div>
+                <div class="col-md-9">
+                    @Html.BaseEamComboBoxFor(model => model.StoreLocatorId, "GetStoreLocators", "Common",
+                                            new RouteValueDictionary { { "parentFieldName", "StoreId" }, { "additionalField", "ItemId" }, { "additionalValue", "" } }, true)
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-md-3">
+                    @Html.BaseEamLabelFor(model => model.IssueQuantity, required: true)
+                </div>
+                <div class="col-md-9">
+                    @Html.BaseEamEditorFor(model => model.IssueQuantity, dataBind: "enable: !isApproved()")
+                </div>
+            </div>
+        </div>
+    </div>
+    <script type="text/javascript">
+        $("#saveIssueItemDetail").click(function (e) {
+            e.preventDefault();
+            var $group = $("#panel-issueItem :input");
+            var postData = $group.serializeJSON({ checkboxUncheckedValue: "false" });
+            //change Id property name so it can map to MVC model
+            postData.Id = postData.IssueItemId;
+            addAntiForgeryToken(postData);
+
+            $.ajax({
+                cache: false,
+                type: "POST",
+                url: "@(Url.Action("SaveIssueItem", "Issue"))",
+                data: postData,
+                success: function (data) {
+                    if (data && data.Errors) {
+                        showErrors(data.Errors, '#issueItem-error');
+                    } else {
+                        //then toggle the panel
+                        togglePanelIssueItem(false);
+
+                        //refresh grid
+                        var grid = $('#issueItems-grid').data('kendoGrid');
+                        grid.dataSource.page(1);
+                    }
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    showBSModal({ title: 'ERROR', body: thrownError });
+                },
+                traditional: true
+            });
+        });
+
+        //Update Current Quantity Of StoreLocator, Item
+        function updateCurrentQuantity() {
+            var storeLocatorId = $("#StoreLocatorId").val();
+            var itemId = $("#ItemId").val();
+            if (storeLocatorId == "" || itemId == "") {
+                $("#panel-issueItem").find("#currentQuantity").html("");
+                return false;
+            }
+            var postData = {
+                storeLocatorId,
+                itemId
+            };
+
+            addAntiForgeryToken(postData);
+            $.ajax({
+                cache: false,
+                type: "POST",
+                url: "@(Url.Action("GetCurrentQuantity", "Store"))",
+                data: postData,
+                success: function (data) {
+                    if (data != null) {
+                        $("#panel-issueItem").find("#currentQuantity").html(data.currentQuantity);
+                    }
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    showBSModal({ title: 'ERROR', body: thrownError });
+                },
+                traditional: true
+            });
+        }
+
+        $("#cancelIssueItemDetail").click(function (e) {
+            e.preventDefault();
+            var postData = {
+                id: $("#IssueItemId").val()
+            };
+            addAntiForgeryToken(postData);
+
+            $.ajax({
+                cache: false,
+                type: "POST",
+                url: "@(Url.Action("CancelIssueItem", "Issue"))",
+                data: postData,
+                success: function (data) {
+                    //toggle the panel
+                    togglePanelIssueItem(false);
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    showBSModal({ title: 'ERROR', body: thrownError });
+                },
+                traditional: true
+            });
+        });
+
+        window.EventBroker.subscribe(BaseEam.Events.SLItemSelected, function (message, data) {
+            var ddlUOMs = $("#@Html.FieldIdFor(model => model.IssueUnitOfMeasureId)");
+            var postData = {
+                itemId: $("#ItemId").val()
+            };
+            addAntiForgeryToken(postData);
+
+            $.ajax({
+                cache: false,
+                type: "POST",
+                url: "@(Url.Action("ItemInfo", "Item"))",
+                data: postData,
+                success: function (data) {
+                    if (data != null && data.itemInfo != null) {
+                        ddlUOMs.html('');
+                        if (data.uoms != null) {
+                            $.each(data.uoms, function (id, option) {
+                                ddlUOMs.append($('<option></option>').val(option.id).html(option.name));
+                            });
+                        }
+                    }
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    showBSModal({ title: 'ERROR', body: thrownError });
+                },
+                traditional: true
+            });
+
+            updateCurrentQuantity();
+        });
+
+        $("#StoreLocatorId").change(function (e) {
+            e.preventDefault();
+            updateCurrentQuantity();
+        });
+
+    </script>
+</div>

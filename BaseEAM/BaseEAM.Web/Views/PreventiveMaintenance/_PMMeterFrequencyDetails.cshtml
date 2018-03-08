@@ -1,0 +1,161 @@
+﻿@using BaseEAM.Services.Security
+@model PMMeterFrequencyModel
+@{
+    var permissionService = EngineContext.Current.Resolve<BaseEAM.Services.IPermissionService>();
+    var allowCreate = permissionService.Authorize(StandardPermissionName.Maintenance_PreventiveMaintenance_Create);
+    var allowRead = permissionService.Authorize(StandardPermissionName.Maintenance_PreventiveMaintenance_Read);
+    var allowUpdate = permissionService.Authorize(StandardPermissionName.Maintenance_PreventiveMaintenance_Update);
+    var allowDelete = permissionService.Authorize(StandardPermissionName.Maintenance_PreventiveMaintenance_Delete);
+
+    var primarySystemCurrencySymbol = EngineContext.Current.Resolve<BaseEAM.Core.IWorkContext>().WorkingCurrency.CurrencySymbol;
+}
+
+<div id="panel-pMMeterFrequency" class="panel panel-default eam-panel">
+    <div class="panel-heading">
+        <button type="button" id="savePMMeterFrequencyDetail" class="btn btn-primary@(allowCreate || allowUpdate ? "" : " none-display")" title="@T("Common.Save")">
+            <i class="fa fa-floppy-o"></i>
+        </button>
+        <button type="button" id="cancelPMMeterFrequencyDetail" class="btn btn-primary" title="@T("Common.Cancel")">
+            <i class="fa fa-ban"></i>
+        </button>
+    </div>
+    <div class="panel-body">
+        @Html.Hidden("PreventiveMaintenanceId", Model.PreventiveMaintenanceId)
+        @Html.Hidden("PMMeterFrequencyId", Model.Id)
+        <div id="pMMeterFrequency-error" class="validation-summary-errors none-display">
+        </div>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.BaseEamLabelFor(model => model.Frequency, required: true)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.BaseEamEditorFor(model => model.Frequency)
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.BaseEamLabelFor(model => model.MeterId, required: true)
+                    </div>
+                    <div class="col-md-9" id="itemUOM">
+                        @Html.BaseEamComboBoxFor(model => model.MeterId, "MeterLineItemList", "Common",
+                                            new RouteValueDictionary {
+                                                { "parentFieldName", "SiteId" },
+                                                { "additionalField", "AssetId" }, { "additionalValue", "" },
+                                                { "optionalField", "LocationId" } }, true)
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.BaseEamLabelFor(model => model.MeterUnitOfMeasureName)
+                    </div>
+                    <div class="col-md-9">
+                        <div class="form-text-row" id="UOM">
+                            @Model.MeterUnitOfMeasureName
+                        </div>
+                    </div>
+                </div>                
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.BaseEamLabelFor(model => model.EndReading)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.BaseEamEditorFor(model => model.EndReading)
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.BaseEamLabelFor(model => model.GeneratedReading)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.BaseEamDisplayFor(model => model.GeneratedReading)
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script type="text/javascript">
+
+        $("#savePMMeterFrequencyDetail").click(function (e) {
+            e.preventDefault();
+            var $group = $("#panel-pMMeterFrequency :input");
+            var postData = $group.serializeJSON({ checkboxUncheckedValue: "false" });
+            //change Id property name so it can map to MVC model
+            postData.Id = postData.PMMeterFrequencyId;
+            addAntiForgeryToken(postData);
+
+            $.ajax({
+                cache: false,
+                type: "POST",
+                url: "@(Url.Action("SavePMMeterFrequency", "PreventiveMaintenance"))",
+                data: postData,
+                success: function (data) {
+                    if (data && data.Errors) {
+                        showErrors(data.Errors, '#pMMeterFrequency-error');
+                    } else {
+                        //then toggle the panel
+                        togglePanelPMMeterFrequency(false);
+
+                        //refresh grid
+                        var grid = $('#pMMeterFrequencies-grid').data('kendoGrid');
+                        grid.dataSource.page(1);
+                    }
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    showBSModal({ title: 'ERROR', body: thrownError });
+                },
+                traditional: true
+            });
+        });
+
+        $("#cancelPMMeterFrequencyDetail").click(function (e) {
+            e.preventDefault();
+            var postData = {
+                id: $("#PMMeterFrequencyId").val()
+            };
+            addAntiForgeryToken(postData);
+
+            $.ajax({
+                cache: false,
+                type: "POST",
+                url: "@(Url.Action("CancelPMMeterFrequency", "PreventiveMaintenance"))",
+                data: postData,
+                success: function (data) {
+                    //toggle the panel
+                    togglePanelPMMeterFrequency(false);
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    showBSModal({ title: 'ERROR', body: thrownError });
+                },
+                traditional: true
+            });
+        });
+
+         $("#@Html.FieldIdFor(model => model.MeterId)").change(function (e) {
+            e.preventDefault();
+            var postData = {
+                meterId: $("#@Html.FieldIdFor(model => model.MeterId)").val()
+            };
+            addAntiForgeryToken(postData);
+
+            $.ajax({
+                cache: false,
+                type: "POST",
+                url: "@(Url.Action("MeterInfo", "Meter"))",
+                data: postData,
+                success: function (data) {
+                    if (data != null && data.meterInfo != null) {
+                        $("#panel-pMMeterFrequency").find("#UOM").html(data.meterInfo.UnitOfMeasure.Name)
+                    }
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    showBSModal({ title: 'ERROR', body: thrownError });
+                },
+                traditional: true
+            });
+        });
+    </script>
+</div>

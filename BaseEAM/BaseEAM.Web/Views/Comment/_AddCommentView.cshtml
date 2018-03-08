@@ -1,0 +1,15 @@
+﻿@model CommentModel
+<div class="content" id="add-comment-popup">
+    <div class="validation-summary-errors none-display" id="add-comment-error">
+    </div>
+    <div class="form-horizontal">
+        <div class="form-group">
+            <div class="col-md-3">
+                @Html.BaseEamLabelFor(model => model.Message)
+            </div>
+            <div class="col-md-9">
+                @Html.BaseEamTextAreaFor(model => model.Message, rows: 8)
+            </div>
+        </div>
+    </div>    
+</div>

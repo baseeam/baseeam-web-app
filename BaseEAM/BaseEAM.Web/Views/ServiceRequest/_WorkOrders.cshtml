@@ -1,0 +1,130 @@
+﻿﻿@using BaseEAM.Services.Security
+@model WorkOrderModel
+@{
+    var defaultGridPageSize = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().DefaultGridPageSize;
+    var gridPageSizes = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().GridPageSizes;
+
+    var permissionService = EngineContext.Current.Resolve<BaseEAM.Services.IPermissionService>();
+    var allowCreate = permissionService.Authorize(StandardPermissionName.Maintenance_ServiceRequest_Create);
+    var allowRead = permissionService.Authorize(StandardPermissionName.Maintenance_ServiceRequest_Read);
+    var allowUpdate = permissionService.Authorize(StandardPermissionName.Maintenance_ServiceRequest_Update);
+    var allowDelete = permissionService.Authorize(StandardPermissionName.Maintenance_ServiceRequest_Delete);
+}
+<div id="group-workOrders" class="panel-group">
+    <div class="panel panel-default">
+        <div class="panel-heading" data-bind="visible: status() == 'Execution'">
+            <button type="button" id="createWorkOrder" class="btn btn-primary@(allowCreate || allowUpdate ? "" : " none-display")" title="@T("WorkOrder.AddNew")">
+                <i class="fa fa-plus-square"></i>
+            </button>
+        </div>
+        <div class="panel-body">
+            <div id="workOrders-grid"></div>
+            <script>
+                $(document).ready(function () {
+                    $("#workOrders-grid").kendoGrid({
+                        dataSource: {
+                            type: "json",
+                            transport: {
+                                read: {
+                                    url: "@Html.Raw(Url.Action("WorkOrderList", "ServiceRequest", new { serviceRequestId = Model.ServiceRequestId }))",
+                                    type: "POST",
+                                    dataType: "json",
+                                    data: addAntiForgeryToken
+                                },
+                                //This is used to map field to format that the server can understand
+                                //it runs after the data (additionalData) populated
+                                parameterMap: function (data, operation) {
+                                    sortMapping = [{ from: "AssetName", to: "Asset.Name" },
+                                        { from: "LocationName", to: "Location.Name" }
+                                    ];
+                                    BaseEam.Grid.mapSortColumns(data.sort, sortMapping);
+                                    return data;
+                                }
+                            },
+                            schema: {
+                                data: "Data",
+                                total: "Total",
+                                errors: "Errors",
+                                model: {
+                                    id: "Id"
+                                }
+                            },
+                            error: function(e) {
+                                display_kendoui_grid_error(e);
+                                // Cancel the changes
+                                this.cancelChanges();
+                            },
+                            pageSize: @(defaultGridPageSize),
+                            serverPaging: true,
+                            serverFiltering: true,
+                            serverSorting: true
+                        },
+                        pageable: {
+                            refresh: true,
+                            pageSizes: [@(gridPageSizes)],
+                            @Html.Partial("_GridPagerMessages")
+                        },
+                        sortable: true,
+                        editable: false,
+                        scrollable: false,
+                        columns: [{
+                            field: "Number",
+                            title: "@T("WorkOrder.Number")",
+                            template: '<a target="_blank" href="@Url.Content("~/WorkOrder/Edit/")#=Id#">#=Number#</a>'
+                        }, {
+                            field: "Description",
+                            title: "@T("WorkOrder.Description")"
+                        }, {
+                            field: "PriorityText",
+                            title: "@T("Priority")",
+                            sortable: false
+                        }, {
+                            field: "AssetName",
+                            title: "@T("Asset")"
+                        }, {
+                            field: "LocationName",
+                            title: "@T("Location")"
+                        }, {
+                            field: "ExpectedStartDateTime",
+                            title: "@T("WorkOrder.ExpectedStartDateTime")",
+                            template: '#= ExpectedStartDateTime != null ? kendo.toString(kendo.parseDate(ExpectedStartDateTime, "MM/dd/yyyy HH:mm:ss"), "MM/dd/yyyy HH:mm:ss") : "" #'
+                        }, {
+                            field: "Status",
+                            title: "@T("WorkOrder.Status")"
+                        }]
+                    });
+                });
+            </script>
+        </div>
+    </div>
+</div>
+<script type="text/javascript">
+
+    $(document).ready(function () {
+       
+        $("#createWorkOrder").click(function (e) {
+            e.preventDefault();
+            var postData = {
+                serviceRequestId: $("#Id").val()
+            };
+            addAntiForgeryToken(postData);
+
+            $.ajax({
+                cache: false,
+                type: "POST",
+                url: "@(Url.Action("CreateWorkOrder", "ServiceRequest"))",
+                data: postData,
+                success: function (data) {
+                    if (data != null) {
+                        window.location.href = '/WorkOrder/Edit/' + data.workOrderId;
+                    }
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    showBSModal({ title: 'ERROR', body: thrownError });
+                },
+                traditional: true
+            });
+        });
+    });
+
+</script>

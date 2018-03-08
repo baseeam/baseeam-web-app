@@ -1,0 +1,175 @@
+﻿@using BaseEAM.Services.Security
+@model WorkOrderServiceItemModel
+@{
+    var permissionService = EngineContext.Current.Resolve<BaseEAM.Services.IPermissionService>();
+    var allowCreate = permissionService.Authorize(StandardPermissionName.Maintenance_WorkOrder_Create);
+    var allowRead = permissionService.Authorize(StandardPermissionName.Maintenance_WorkOrder_Read);
+    var allowUpdate = permissionService.Authorize(StandardPermissionName.Maintenance_WorkOrder_Update);
+    var allowDelete = permissionService.Authorize(StandardPermissionName.Maintenance_WorkOrder_Delete);
+
+    var primarySystemCurrencySymbol = EngineContext.Current.Resolve<BaseEAM.Core.IWorkContext>().WorkingCurrency.CurrencySymbol;
+}
+
+<div id="panel-workOrderServiceItem" class="panel panel-default eam-panel">
+    <div class="panel-heading">
+        <button type="button" id="saveWorkOrderServiceItem" class="btn btn-primary@(allowCreate || allowUpdate ? "" : " none-display")" title="@T("Common.Save")">
+            <i class="fa fa-floppy-o"></i>
+        </button>
+        <button type="button" id="cancelWorkOrderServiceItem" class="btn btn-primary" title="@T("Common.Cancel")">
+            <i class="fa fa-ban"></i>
+        </button>
+    </div>
+    <div class="panel-body">
+        @Html.Hidden("WorkOrderId", Model.WorkOrderId)
+        @Html.Hidden("WorkOrderServiceItemId", Model.Id)
+        <div id="workOrderServiceItem-error" class="validation-summary-errors none-display">
+        </div>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.BaseEamLabelFor(model => model.ServiceItemId, required: true)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.BaseEamComboBoxFor(model => model.ServiceItemId, "GetServiceItemActiveList", "ServiceItem", null, true)
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.BaseEamLabelFor(model => model.Description)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.BaseEamEditorFor(model => model.Description)
+                    </div>
+                </div>                
+            </div>
+        </div>    
+        <hr/>
+        <h4>@T("WorkOrderServiceItem.Plan")</h4>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.BaseEamLabelFor(model => model.PlanUnitPrice)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.BaseEamEditorFor(model => model.PlanUnitPrice, postfix: primarySystemCurrencySymbol)
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.BaseEamLabelFor(model => model.PlanQuantity)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.BaseEamEditorFor(model => model.PlanQuantity)
+                    </div>
+                </div>
+            </div>
+        </div>  
+        <hr />
+        <h4>@T("WorkOrderServiceItem.Actual")</h4>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.BaseEamLabelFor(model => model.ActualUnitPrice)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.BaseEamEditorFor(model => model.ActualUnitPrice, postfix: primarySystemCurrencySymbol)
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.BaseEamLabelFor(model => model.ActualQuantity)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.BaseEamEditorFor(model => model.ActualQuantity)
+                    </div>
+                </div>
+            </div>
+        </div>  
+    </div>
+
+    <script type="text/javascript">
+        $("#saveWorkOrderServiceItem").click(function (e) {
+            e.preventDefault();
+            var $group = $("#panel-workOrderServiceItem :input");
+            var postData = $group.serializeJSON({ checkboxUncheckedValue: "false" });
+            //change Id property name so it can map to MVC model
+            postData.Id = postData.WorkOrderServiceItemId;
+            addAntiForgeryToken(postData);
+
+            $.ajax({
+                cache: false,
+                type: "POST",
+                url: "@(Url.Action("SaveWorkOrderServiceItem", "WorkOrder"))",
+                data: postData,
+                success: function (data) {
+                    if (data && data.Errors) {
+                        showErrors(data.Errors, '#workOrderServiceItem-error');
+                    } else {
+                        //then toggle the panel
+                        togglePanelWorkOrderServiceItem(false);
+
+                        //refresh grid
+                        var grid = $('#workOrderServiceItems-grid').data('kendoGrid');
+                        grid.dataSource.page(1);
+                    }
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    showBSModal({ title: 'ERROR', body: thrownError });
+                },
+                traditional: true
+            });
+        });
+
+        $("#cancelWorkOrderServiceItem").click(function (e) {
+            e.preventDefault();
+            var postData = {
+                id: $("#WorkOrderServiceItemId").val()
+            };
+            addAntiForgeryToken(postData);
+
+            $.ajax({
+                cache: false,
+                type: "POST",
+                url: "@(Url.Action("CancelWorkOrderServiceItem", "WorkOrder"))",
+                data: postData,
+                success: function (data) {
+                    //toggle the panel
+                    togglePanelWorkOrderServiceItem(false);
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    showBSModal({ title: 'ERROR', body: thrownError });
+                },
+                traditional: true
+            });
+        });
+
+        $("#@Html.FieldIdFor(model => model.ServiceItemId)").change(function (e) {
+            e.preventDefault();
+            var postData = {
+                serviceItemId: $("#@Html.FieldIdFor(model => model.ServiceItemId)").val()
+            };
+            addAntiForgeryToken(postData);
+
+            $.ajax({
+                cache: false,
+                type: "POST",
+                url: "@(Url.Action("ServiceItemInfo", "ServiceItem"))",
+                data: postData,
+                success: function (data) {
+                    if (data != null && data.serviceItemInfo != null) {
+                        $("#panel-workOrderServiceItem").find("#@Html.FieldIdFor(model => model.Description)").val(data.serviceItemInfo.Description);
+                        $("#panel-workOrderServiceItem").find("#@Html.FieldIdFor(model => model.PlanUnitPrice)").val(data.serviceItemInfo.UnitPrice);
+                        $("#panel-workOrderServiceItem").find("#@Html.FieldIdFor(model => model.PlanQuantity)").val(data.serviceItemInfo.Quantity);
+                    }
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    showBSModal({ title: 'ERROR', body: thrownError });
+                },
+                traditional: true
+            });
+        });
+    </script>
+</div>

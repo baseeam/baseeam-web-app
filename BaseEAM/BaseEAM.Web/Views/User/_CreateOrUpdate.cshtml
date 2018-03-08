@@ -1,0 +1,304 @@
+﻿@model UserModel
+@Html.HiddenFor(model => model.Id)
+@Html.HiddenFor(model => model.IsNew)
+
+<script>
+    $(document).ready(function () {
+        bindBootstrapTabSelectEvent('user-edit');
+    });
+
+    function savedCallback(data) {
+        viewModel.isNew(false);
+        viewModel.publicKey(data.publicKey);
+        viewModel.secretKey(data.secretKey);
+    }
+</script>
+
+<div class="content">
+    <div class="form-horizontal">
+        <div id="user-edit" class="nav-tabs-custom">
+            <ul class="nav nav-tabs">
+                @Html.RenderBootstrapTabHeader("tab-info", @T("User.Info"), true)
+                @Html.RenderBootstrapTabHeader("tab-securityGroups", @T("User.SecurityGroups"))
+                @Html.RenderBootstrapTabHeader("tab-approvalLimits", @T("User.ApprovalLimits"))
+            </ul>
+            <div class="tab-content">
+                @Html.RenderBootstrapTabContent("tab-info", @TabInfo(), true)
+                @Html.RenderBootstrapTabContent("tab-securityGroups", @TabSecurityGroups(), dataBind: "visible: !isNew()")
+                @Html.RenderBootstrapTabContent("tab-approvalLimits", @TabApprovalLimits(), dataBind: "visible: !isNew()")
+            </div>
+        </div>
+    </div>
+</div>
+
+@{
+    //custom tabs
+    var eventMessage = new AdminTabStripCreated(this.Html, "user-edit");
+    EngineContext.Current.Resolve<IEventPublisher>().Publish(eventMessage);
+    foreach (var eventBlock in eventMessage.BlocksToRender)
+    {
+        @eventBlock
+    }
+}
+
+@helper TabInfo()
+{
+    <div class="raw clearfix">
+        <div class="col-md-6">
+            <div class="panel-group">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        @T("Common.Info")
+                    </div>
+                    <div class="panel-body">
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.Name, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamEditorFor(model => model.Name)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.Email, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamEditorFor(model => model.Email)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.Phone, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamEditorFor(model => model.Phone)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.Cellphone)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamEditorFor(model => model.Cellphone)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.Fax)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamEditorFor(model => model.Fax)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.AddressCountry)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamEditorFor(model => model.AddressCountry)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.AddressState)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamEditorFor(model => model.AddressState)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.AddressCity)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamEditorFor(model => model.AddressCity)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.Address)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamEditorFor(model => model.Address)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.DefaultSiteId, required: false)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamComboBoxFor(model => model.DefaultSiteId, "SiteList", "Site", null, true)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.LanguageId)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamComboBoxFor(model => model.LanguageId, "GetChoices", "Common",
+                                            new RouteValueDictionary { { "dbTable", "Language" }, { "dbTextColumn", "Name" }, { "dbValueColumn", "Id" } }, true)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.TimeZoneId)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamComboBoxFor(model => model.TimeZoneId, "TimeZones", "Common", null, true)
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.SupervisorId)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamComboBoxFor(model => model.SupervisorId, "GetChoices", "Common",
+                                            new RouteValueDictionary { { "dbTable", "User" }, { "dbTextColumn", "Name" }, { "dbValueColumn", "Id" } }, true)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.UserType)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.EnumDropDownListFor(model => model.UserType, new { @class = "form-control" })
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.Active)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamCheckBoxFor(model => model.Active)
+                            </div>
+                        </div>
+                        @if (Model.Id > 0 && Model.IsNew == false)
+                        {
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.FirstCreatedBy)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamDisplayFor(model => model.FirstCreatedBy)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.LastUpdatedBy)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamDisplayFor(model => model.LastUpdatedBy)
+                            </div>
+                        </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="panel-group">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        @T("User.Credentials")
+                    </div>
+                    <div class="panel-body">
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.LoginName, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamEditorFor(model => model.LoginName)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.LoginPassword, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.PasswordFor(model => model.LoginPassword, new { @class = "ays-ignore form-control" })
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                            </div>
+                            <div class="col-md-9">
+                                <button type="button" id="changePassword" class="btn btn-primary btn-master" title="@T("User.ChangePassword")">
+                                    @T("User.ChangePassword")
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        @T("User.WebApiCredentials")
+                    </div>
+                    <div class="panel-body">
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.WebApiEnabled)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamCheckBoxFor(model => model.WebApiEnabled)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.PublicKey)
+                            </div>
+                            <div class="col-md-9" data-bind="html: publicKey">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.SecretKey)
+                            </div>
+                            <div class="col-md-9" data-bind="html: secretKey">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script type="text/javascript">
+        //change password
+        $('#changePassword').click(function (e) {
+            e.preventDefault();
+            var postData = {
+                id: $('#Id').val(),
+                loginName: $("#LoginName").val(),
+                loginPassword: $('#LoginPassword').val()
+            };
+            addAntiForgeryToken(postData);
+            $.ajax({
+                cache: false,
+                type: "POST",
+                url: "@(Url.Action("ChangePassword", "User"))",
+                data: postData,
+                success: function (data) {
+                    if (data && data.Errors) {
+                        showErrors(data.Errors);
+                    } else {
+                    }
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    showBSModal({ title: 'ERROR', body: thrownError });
+                },
+                traditional: true
+            });
+        });
+    </script>
+}
+
+@helper TabSecurityGroups()
+{
+    @Html.Partial("_SecurityGroups", new SecurityGroupModel())
+}
+
+@helper TabApprovalLimits()
+{
+    @Html.Partial("_ApprovalLimit", Model)
+}

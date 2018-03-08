@@ -1,0 +1,158 @@
+﻿/*******************************************************
+ * Copyright 2016 (C) BaseEAM Systems, Inc
+ * All Rights Reserved
+*******************************************************/
+using System;
+using System.Globalization;
+using System.Text;
+using NReco.PdfGenerator;
+using BaseEAM.Core;
+
+namespace BaseEAM.Services.Pdf
+{
+    public class WkHtmlToPdfConverter : IPdfConverter
+    {
+        public WkHtmlToPdfConverter()
+        {
+        }
+
+        public byte[] Convert(PdfConvertSettings settings)
+        {
+            if (settings.Page == null)
+            {
+                throw new BaseEamException("The 'Page' property of the 'settings' argument cannot be null.");
+            }
+
+            try
+            {
+                var converter = CreateWkConverter(settings);
+
+                var input = settings.Page.Process("page");
+
+                if (settings.Page.Kind == PdfContentKind.Url)
+                {
+                    return converter.GeneratePdfFromFile(input, null);
+                }
+                else
+                {
+                    return converter.GeneratePdf(input, null);
+                }
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+            finally
+            {
+                TeardownContent(settings.Cover);
+                TeardownContent(settings.Footer);
+                TeardownContent(settings.Header);
+                TeardownContent(settings.Page);
+            }
+        }
+
+        private void TeardownContent(IPdfContent content)
+        {
+            if (content != null)
+                content.Teardown();
+        }
+
+        internal HtmlToPdfConverter CreateWkConverter(PdfConvertSettings settings)
+        {
+            // Global options
+            var converter = new HtmlToPdfConverter
+            {
+                Grayscale = settings.Grayscale,
+                LowQuality = settings.LowQuality,
+                Orientation = (PageOrientation)(int)settings.Orientation,
+                PageHeight = settings.PageHeight,
+                PageWidth = settings.PageWidth,
+                Size = (PageSize)(int)settings.Size,
+                //PdfToolPath = "~/App_Data/wkhtmltopdf"
+            };
+
+            if (settings.Margins != null)
+            {
+                converter.Margins.Bottom = settings.Margins.Bottom;
+                converter.Margins.Left = settings.Margins.Left;
+                converter.Margins.Right = settings.Margins.Right;
+                converter.Margins.Top = settings.Margins.Top;
+            }
+
+            var sb = new StringBuilder(settings.CustomFlags);
+
+            // doc title
+            if (!string.IsNullOrWhiteSpace(settings.Title))
+            {
+                sb.AppendFormat(CultureInfo.CurrentCulture, " --title \"{0}\"", settings.Title);
+            }
+
+            // Cover content & options
+            if (settings.Cover != null)
+            {
+                var path = settings.Cover.Process("cover");
+                if (!string.IsNullOrWhiteSpace(path))
+                {
+                    sb.AppendFormat(" cover \"{0}\" ", path);
+                    settings.Cover.WriteArguments("cover", sb);
+                    if (settings.CoverOptions != null)
+                    {
+                        settings.CoverOptions.Process("cover", sb);
+                    }
+                }
+            }
+
+            // Toc options
+            if (settings.TocOptions != null && settings.TocOptions.Enabled)
+            {
+                settings.TocOptions.Process("toc", sb);
+            }
+
+            // apply cover & toc
+            converter.CustomWkHtmlArgs = (string.IsNullOrEmpty(sb.ToString().Trim())) ? null : sb.ToString().Trim();
+            sb.Clear();
+
+            // Page options
+            if (settings.PageOptions != null)
+            {
+                settings.PageOptions.Process("page", sb);
+            }
+
+            // Header content & options
+            if (settings.Header != null)
+            {
+                var path = settings.Header.Process("header");
+                if (!string.IsNullOrWhiteSpace(path))
+                {
+                    sb.AppendFormat(" --header-html \"{0}\"", path);
+                    settings.Header.WriteArguments("header", sb);
+                }
+            }
+            if (settings.HeaderOptions != null && (settings.Header != null || settings.HeaderOptions.HasText))
+            {
+                settings.HeaderOptions.Process("header", sb);
+            }
+
+            // Footer content & options
+            if (settings.Footer != null)
+            {
+                var path = settings.Footer.Process("footer");
+                if (!string.IsNullOrWhiteSpace(path))
+                {
+                    sb.AppendFormat(" --footer-html \"{0}\"", path);
+                    settings.Footer.WriteArguments("footer", sb);
+                }
+            }
+            if (settings.FooterOptions != null && (settings.Footer != null || settings.FooterOptions.HasText))
+            {
+                settings.FooterOptions.Process("footer", sb);
+            }
+
+            // apply settings
+            converter.CustomWkHtmlPageArgs = (string.IsNullOrEmpty(sb.ToString().Trim())) ? null : sb.ToString().Trim();
+
+            return converter;
+        }
+
+    }
+}

@@ -1,0 +1,33 @@
+﻿@using BaseEAM.Services.Security
+@model VisualModel
+@{
+    var defaultGridPageSize = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().DefaultGridPageSize;
+    var gridPageSizes = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().GridPageSizes;
+
+    var permissionService = EngineContext.Current.Resolve<BaseEAM.Services.IPermissionService>();
+    var allowCreate = permissionService.Authorize(StandardPermissionName.Report_Visual_Create);
+    var allowRead = permissionService.Authorize(StandardPermissionName.Report_Visual_Read);
+    var allowUpdate = permissionService.Authorize(StandardPermissionName.Report_Visual_Update);
+    var allowDelete = permissionService.Authorize(StandardPermissionName.Report_Visual_Delete);
+}
+
+<div id="panel-visualQuery" class="panel panel-default eam-panel">
+    <div class="panel-body">
+            <div class="form-group">
+                <div class="col-md-2">
+                    @Html.BaseEamLabelFor(model => model.Query, required: true)
+                </div>
+                <div class="col-md-10">
+                    @Html.BaseEamTextAreaFor(model => model.Query, rows: 20)
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-md-2">
+                    @Html.BaseEamLabelFor(model => model.SortExpression, required: true)
+                </div>
+                <div class="col-md-10">
+                    @Html.BaseEamEditorFor(model => model.SortExpression)
+                </div>
+            </div>
+        </div>
+</div>

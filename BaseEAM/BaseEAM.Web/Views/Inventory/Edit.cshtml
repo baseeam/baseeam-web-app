@@ -1,0 +1,34 @@
+﻿@using BaseEAM.Services.Security
+@model StoreItemModel
+
+@{
+    //page title
+    ViewBag.Title = T("Inventory.EditInventoryDetails").Text;
+
+    var permissionService = EngineContext.Current.Resolve<BaseEAM.Services.IPermissionService>();
+    var allowCreate = permissionService.Authorize(StandardPermissionName.Inventory_Store_Create);
+    var allowUpdate = permissionService.Authorize(StandardPermissionName.Inventory_Store_Update);
+}
+@using (Html.BeginForm("Edit", "Inventory", FormMethod.Post, new { id = "inventory-form" }))
+{
+    @Html.AntiForgeryToken()
+    <div class="content-header clearfix">
+        <h1 class="pull-left">
+            <small><i class="fa fa-arrow-circle-left fa-padding"></i>@Html.ActionLink(T("Common.BackToList").Text, "List")</small>
+        </h1>
+        <div class="pull-right">
+            <button type="button" id="save" name="save" class="btn btn-primary@(allowCreate || allowUpdate ? "" : " none-display")" title="@T("Common.Save")">
+                <i class="fa fa-floppy-o"></i>
+            </button>
+        </div>
+    </div>
+    @Html.Partial("_CreateOrUpdate", Model)
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $("#save").click(function (e) {
+                e.preventDefault();
+                saveForm('inventory-form', '@(Url.Action("Edit", "Inventory"))');
+            });
+        });
+    </script>
+}

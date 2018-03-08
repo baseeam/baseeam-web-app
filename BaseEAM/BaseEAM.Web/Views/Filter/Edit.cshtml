@@ -1,0 +1,54 @@
+﻿@using BaseEAM.Services.Security
+@model FilterModel
+
+@{
+    //page title
+    ViewBag.Title = T("Filter.EditFilterDetails").Text;
+    var permissionService = EngineContext.Current.Resolve<BaseEAM.Services.IPermissionService>();
+    var allowCreate = permissionService.Authorize(StandardPermissionName.Report_Filter_Create);
+    var allowRead = permissionService.Authorize(StandardPermissionName.Report_Filter_Read);
+    var allowUpdate = permissionService.Authorize(StandardPermissionName.Report_Filter_Update);
+    var allowDelete = permissionService.Authorize(StandardPermissionName.Report_Filter_Delete);
+}
+@using (Html.BeginForm("Edit", "Filter", FormMethod.Post, new { id = "filter-form" }))
+{
+    @Html.AntiForgeryToken()
+    <div class="content-header clearfix">
+        <h1 class="pull-left">
+            <small><i class="fa fa-arrow-circle-left fa-padding"></i>@Html.ActionLink(T("Common.BackToList").Text, "List")</small>
+        </h1>
+        <div class="pull-right">
+            <button type="button" id="save" name="save" class="btn btn-primary@(allowCreate || allowUpdate ? "" : " none-display")" title="@T("Common.Save")">
+                <i class="fa fa-floppy-o"></i>
+            </button>
+            <button type="button" id="cancel" name="cancel" class="btn btn-primary@(Model.IsNew == true ? "" : " none-display")" title="@T("Common.Cancel")">
+                <i class="fa fa-ban"></i>
+            </button>
+            <button type="button" id="filter-delete" class="btn btn-primary@(allowDelete && Model.IsNew == false ? "" : " none-display")" title="@T("Common.Delete")">
+                <i class="fa fa-trash-o"></i>
+            </button>
+        </div>
+    </div>
+    <div id="validation-summary" class="validation-summary-errors" style="display:none">
+    </div>
+    @Html.Partial("_CreateOrUpdate", Model)
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $("#save").click(function (e) {
+                e.preventDefault();
+                saveForm('filter-form', '@(Url.Action("Edit", "Filter"))');
+            });
+
+            $("#cancel").click(function (e) {
+                e.preventDefault();
+                $('#form').removeClass('dirty');
+                BaseEam.Grid.deleteRow(null, @Model.Id, "@Url.Action("Cancel", "Filter")", "",  "@Url.Action("List", "Filter")", false);
+            });
+
+            $("#filter-delete").click(function (e) {
+                e.preventDefault();
+                BaseEam.Grid.deleteRow(null, @Model.Id, "@Url.Action("Delete", "Filter")", "", "@Url.Action("List", "Filter")", true);
+            });
+        });
+    </script>
+}

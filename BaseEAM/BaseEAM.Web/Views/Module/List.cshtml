@@ -1,0 +1,432 @@
+﻿@using BaseEAM.Services.Security
+@model SearchModel
+@{
+    //page title
+    ViewBag.Title = T("System.Module").Text;
+
+    var defaultGridPageSize = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().DefaultGridPageSize;
+    var gridPageSizes = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().GridPageSizes;
+
+    var permissionService = EngineContext.Current.Resolve<BaseEAM.Services.IPermissionService>();
+    var allowCreate = permissionService.Authorize(StandardPermissionName.System_Module_Create);
+    var allowRead = permissionService.Authorize(StandardPermissionName.System_Module_Read);
+    var allowUpdate = permissionService.Authorize(StandardPermissionName.System_Module_Update);
+    var allowDelete = permissionService.Authorize(StandardPermissionName.System_Module_Delete);
+}
+
+@Html.AntiForgeryToken()
+<div class="content-header clearfix">
+    <h1 class="pull-left">
+        @T("System.Module")
+    </h1>
+    <div class="pull-right">
+        <div class="btn-group">
+            <button type="button" class="btn btn-primary" title="@T("Common.Actions")">
+                <i class="fa fa-bolt"></i>
+            </button>
+            <button type="button" class="btn btn-success dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
+                <span class="caret"></span>
+                <span class="sr-only">&nbsp;</span>
+            </button>
+            <ul class="dropdown-menu" role="menu">
+                <li>
+                    <button type="button" id="create-module" name="create-module">
+                        @T("Module.AddNew")
+                    </button>
+                </li>
+                <li>
+                    <button type="button" id="create-feature" name="create-feature">
+                        @T("Feature.AddNew")
+                    </button>
+                </li>
+                <li>
+                    <button type="button" id="create-featureaction" name="create-featureaction">
+                        @T("FeatureAction.AddNew")
+                    </button>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
+<div id="validation-summary" class="validation-summary-errors" style="display:none">
+</div>
+<div class="content">
+    <div class="form-horizontal">
+        <div class="panel-group">
+            @Html.Partial("Filter", Model)
+            <div class="panel panel-default">
+                <div class="panel-body">
+                    <div id="modules-grid"></div>
+
+                    <script>
+                        $(document).ready(function () {
+                            $("#modules-grid").kendoGrid({
+                                dataSource: {
+                                    type: "json",
+                                    transport: {
+                                        read: {
+                                            url: "@Html.Raw(Url.Action("List", "Module"))",
+                                            type: "POST",
+                                            dataType: "json",
+                                            data: additionalData
+                                        }
+                                    },
+                                    schema: {
+                                        data: "Data",
+                                        total: "Total",
+                                        errors: "Errors",
+                                        model: {
+                                            fields: {
+                                            }
+                                        }
+                                    },
+                                    error: function (e) {
+                                        display_kendoui_grid_error(e);
+                                        // Cancel the changes
+                                        this.cancelChanges();
+                                    },
+                                    pageSize: @(defaultGridPageSize),
+                                    serverPaging: true,
+                                    serverFiltering: true,
+                                    serverSorting: true
+                                },
+                                pageable: {
+                                    refresh: true,
+                                    pageSizes: [@(gridPageSizes)],
+                                    @Html.Partial("_GridPagerMessages")
+                                },
+                                sortable: false,
+                                detailInit: featureDetailInit,
+                                editable: false,
+                                scrollable: false,
+                                columns: [{
+                                    field: "Name",
+                                    title: "@T("Module.Name")"
+                                }, {
+                                    field: "Description",
+                                    title: "@T("Module.Description")"
+                                },{
+                                    field: "DisplayOrder",
+                                    title: "@T("Common.DisplayOrder")",
+                                    width: 150
+                                }
+                                ]
+                            });
+                        });
+                    </script>
+                    <script type="text/javascript">
+                        $(document).ready(function () {
+                            //search button
+                            $('#search').click(function () {
+                                //search
+                                var grid = $('#modules-grid').data('kendoGrid');
+                                grid.dataSource.page(1); //new search. Set page size to 1
+                                //grid.dataSource.read(); we already loaded the grid above using "page" function
+                                return false;
+                            });
+
+                            $("div.panel-search").find(':input').keydown(function (event) {
+                                if (event.keyCode == 13) {
+                                    $("#search").click();
+                                    return false;
+                                }
+                            });
+
+                            //create module
+                            $('#create-module').click(function(e) {
+                                e.preventDefault();
+                                $.get('@Url.Action("CreateModuleView", "Module")', function(data) {
+                                    showBSModal({
+                                        title: "@T("Module.AddNew")",
+                                        body: data,
+                                        actions: [{
+                                            label: '@T("Common.Save")',
+                                            cssClass: 'btn-success',
+                                            onClick: createModule
+                                        },{
+                                            label: '@T("Common.Cancel")',
+                                            cssClass: 'btn-danger',
+                                            onClick: function(e){
+                                                $(e.target).parents('.modal').modal('hide');
+                                            }
+                                        }]
+                                    });
+                                });
+                            });
+
+                            //create feature
+                            $('#create-feature').click(function(e) {
+                                e.preventDefault();
+                                $.get('@Url.Action("CreateFeatureView", "Module")', function(data) {
+                                    showBSModal({
+                                        title: "@T("Feature.AddNew")",
+                                        body: data,
+                                        actions: [{
+                                            label: '@T("Common.Save")',
+                                            cssClass: 'btn-success',
+                                            onClick: createFeature
+                                        },{
+                                            label: '@T("Common.Cancel")',
+                                            cssClass: 'btn-danger',
+                                            onClick: function(e){
+                                                $(e.target).parents('.modal').modal('hide');
+                                            }
+                                        }]
+                                    });
+                                });
+                            });
+
+                            //create featureaction
+                            $('#create-featureaction').click(function(e) {
+                                e.preventDefault();
+                                $.get('@Url.Action("CreateFeatureActionView", "Module")', function(data) {
+                                    showBSModal({
+                                        title: "@T("FeatureAction.AddNew")",
+                                        body: data,
+                                        actions: [{
+                                            label: '@T("Common.Save")',
+                                            cssClass: 'btn-success',
+                                            onClick: createFeatureAction
+                                        },{
+                                            label: '@T("Common.Cancel")',
+                                            cssClass: 'btn-danger',
+                                            onClick: function(e){
+                                                $(e.target).parents('.modal').modal('hide');
+                                            }
+                                        }]
+                                    });
+                                });
+                            });
+                        });
+
+                        function createModule(e) {
+                            e.preventDefault();
+                            var $form = $(".modal-body > #create-module-popup");
+                            var postData = $form.serializeJSON({ checkboxUncheckedValue: "false" });
+                            addAntiForgeryToken(postData);
+                            $.ajax({
+                                cache: false,
+                                type: "POST",
+                                url: '@Url.Action("CreateModule", "Module")',
+                                data: postData,
+                                success: function (data) {
+                                    if (data && data.Errors) {
+                                        showErrors(data.Errors, '#module-error');
+                                    } else {
+                                        //hide modal popup
+                                        $(e.target).parents('.modal').modal('hide');
+
+                                        //refresh grid
+                                        var grid = $('#modules-grid').data('kendoGrid');
+                                        grid.dataSource.page(1);
+                                    }
+                                },
+                                error: function (xhr, ajaxOptions, thrownError) {
+                                    showBSModal({ title: "Error", body: thrownError });
+                                },
+                                traditional: true
+                            });
+                        };
+
+                        function createFeature(e) {
+                            e.preventDefault();
+                            var $form = $(".modal-body > #create-feature-popup");
+                            var postData = $form.serializeJSON({ checkboxUncheckedValue: "false" });
+                            addAntiForgeryToken(postData);
+                            $.ajax({
+                                cache: false,
+                                type: "POST",
+                                url: '@Url.Action("CreateFeature", "Module")',
+                                data: postData,
+                                success: function (data) {
+                                    if (data && data.Errors) {
+                                        showErrors(data.Errors, '#feature-error');
+                                    } else {
+                                        //hide modal popup
+                                        $(e.target).parents('.modal').modal('hide');
+
+                                        //refresh grid
+                                        var grid = $('#modules-grid').data('kendoGrid');
+                                        grid.dataSource.page(1);
+                                    }
+                                },
+                                error: function (xhr, ajaxOptions, thrownError) {
+                                    showBSModal({ title: "Error", message: thrownError });
+                                },
+                                traditional: true
+                            });
+                        };
+
+                        function createFeatureAction(e) {
+                            e.preventDefault();
+                            var $form = $(".modal-body > #create-featureaction-popup");
+                            var postData = $form.serializeJSON({ checkboxUncheckedValue: "false" });
+                            addAntiForgeryToken(postData);
+                            $.ajax({
+                                cache: false,
+                                type: "POST",
+                                url: '@Url.Action("CreateFeatureAction", "Module")',
+                                data: postData,
+                                success: function (data) {
+                                    if (data && data.Errors) {
+                                        showErrors(data.Errors, '#featureaction-error');
+                                    } else {
+                                        //hide modal popup
+                                        $(e.target).parents('.modal').modal('hide');
+
+                                        //refresh grid
+                                        var grid = $('#modules-grid').data('kendoGrid');
+                                        grid.dataSource.page(1);
+                                    }
+                                },
+                                error: function (xhr, ajaxOptions, thrownError) {
+                                    showBSModal({ title: "Error", body: thrownError });
+                                },
+                                traditional: true
+                            });
+                        };
+
+                        function additionalData() {
+                            var data = {
+                                searchValues: $("div.panel-search").find(':input').serialize()
+                            };
+                            addAntiForgeryToken(data);
+                            return data;
+                        }
+
+                        function additionalData2(e){
+                            var data = {
+                                moduleId : e.data.Id,
+                            }
+                            addAntiForgeryToken(data);
+                            return data;
+                        }
+
+                        function additionalData3(e){
+                            var data = {
+                                featureId : e.data.Id,
+                            }
+                            addAntiForgeryToken(data);
+                            return data;
+                        }
+
+                        function featureDetailInit(e) {
+                            $("<div/>").appendTo(e.detailCell).kendoGrid({
+                                dataSource: {
+                                    type: "json",
+                                    transport: {
+                                        read: {
+                                            url: "@Html.Raw(Url.Action("Features", "Module"))",
+                                            type: "POST",
+                                            dataType: "json",
+                                            data: additionalData2(e)
+                                        }
+                                    },
+                                    schema: {
+                                        data: "Data",
+                                        total: "Total",
+                                        errors: "Errors",
+                                        model: {
+                                            fields: {
+                                            }
+                                        }
+                                    },
+                                    error: function (e) {
+                                        display_kendoui_grid_error(e);
+                                        // Cancel the changes
+                                        this.cancelChanges();
+                                    },
+                                    pageSize: @(defaultGridPageSize),
+                                    serverPaging: true,
+                                    serverFiltering: true,
+                                    serverSorting: true
+                                },
+                                pageable: {
+                                    refresh: true,
+                                    pageSizes: [@(gridPageSizes)],
+                                    @Html.Partial("_GridPagerMessages")
+                                },
+                                sortable: false,
+                                detailInit: featureActionDetailInit,
+                                editable: false,
+                                scrollable: false,
+                                columns: [{
+                                    field: "Name",
+                                    title: "@T("Feature.Name")"
+                                }, {
+                                    field: "Description",
+                                    title: "@T("Feature.Description")"
+                                }, {
+                                    field: "EntityType",
+                                    title: "@T("EntityType")"
+                                }, {
+                                    field: "WorkflowEnabled",
+                                    title: "@T("Feature.WorkflowEnabled")"
+                                }, {
+                                    field: "DisplayOrder",
+                                    title: "@T("Common.DisplayOrder")",
+                                    width: 150
+                                }
+                                ]
+                            });
+                        }
+
+                        function featureActionDetailInit(e) {
+                            $("<div/>").appendTo(e.detailCell).kendoGrid({
+                                dataSource: {
+                                    type: "json",
+                                    transport: {
+                                        read: {
+                                            url: "@Html.Raw(Url.Action("FeatureActions", "Module"))",
+                                            type: "POST",
+                                            dataType: "json",
+                                            data: additionalData3(e)
+                                        }
+                                    },
+                                    schema: {
+                                        data: "Data",
+                                        total: "Total",
+                                        errors: "Errors",
+                                        model: {
+                                            fields: {
+                                            }
+                                        }
+                                    },
+                                    error: function (e) {
+                                        display_kendoui_grid_error(e);
+                                        // Cancel the changes
+                                        this.cancelChanges();
+                                    },
+                                    pageSize: @(defaultGridPageSize),
+                                    serverPaging: true,
+                                    serverFiltering: true,
+                                    serverSorting: true
+                                },
+                                pageable: {
+                                    refresh: true,
+                                    pageSizes: [@(gridPageSizes)],
+                                    @Html.Partial("_GridPagerMessages")
+                                },
+                                sortable: false,
+                                editable: false,
+                                scrollable: false,
+                                columns: [{
+                                    field: "Name",
+                                    title: "@T("FeatureAction.Name")"
+                                }, {
+                                    field: "Description",
+                                    title: "@T("FeatureAction.Description")"
+                                },{
+                                    field: "DisplayOrder",
+                                    title: "@T("Common.DisplayOrder")",
+                                    width: 150
+                                }
+                                ]
+                            });
+                        }
+                    </script>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

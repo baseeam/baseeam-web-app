@@ -1,0 +1,134 @@
+﻿@using BaseEAM.Services.Security
+@model MeterEventModel
+@{
+    var permissionService = EngineContext.Current.Resolve<BaseEAM.Services.IPermissionService>();
+
+    var allowCreate = permissionService.Authorize(StandardPermissionName.Asset_Asset_Create)
+            || permissionService.Authorize(StandardPermissionName.Asset_Location_Create);
+    var allowRead = permissionService.Authorize(StandardPermissionName.Asset_Asset_Read)
+        || permissionService.Authorize(StandardPermissionName.Asset_Location_Read);
+    var allowUpdate = permissionService.Authorize(StandardPermissionName.Asset_Asset_Update)
+        || permissionService.Authorize(StandardPermissionName.Asset_Location_Update);
+    var allowDelete = permissionService.Authorize(StandardPermissionName.Asset_Asset_Delete)
+        || permissionService.Authorize(StandardPermissionName.Asset_Location_Delete);
+
+}
+<div class="row" style="padding: 20px" id="row-meterEventDetails" >
+    <div id="panel-meterEventDetails" class="panel panel-default eam-panel">
+        <div class="panel-heading">
+            <button type="button" id="saveMeterEventDetail" class="btn btn-primary@(allowCreate || allowUpdate ? "" : " none-display")" title="@T("Common.Save")">
+                <i class="fa fa-floppy-o"></i>
+            </button>
+            <button type="button" id="cancelMeterEventDetail" class="btn btn-primary" title="@T("Common.Cancel")">
+                <i class="fa fa-ban"></i>
+            </button>
+        </div>
+        <div class="panel-body">
+            @Html.Hidden("MeterEventId", Model.Id)
+            <div id="meterEvent-error" class="validation-summary-errors none-display">
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <div class="col-md-3">
+                            @Html.BaseEamLabelFor(model => model.Description, required: true)
+                        </div>
+                        <div class="col-md-9">
+                            @Html.BaseEamEditorFor(model => model.Description)
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="col-md-3">
+                            @Html.BaseEamLabelFor(model => model.DisplayOrder, required: true)
+                        </div>
+                        <div class="col-md-9">
+                            @Html.BaseEamDisplayFor(model => model.DisplayOrder)
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="col-md-3">
+                            @Html.BaseEamLabelFor(model => model.MeterName, required: true)
+                        </div>
+                        <div class="col-md-9">
+                            @Html.BaseEamDisplayFor(model => model.MeterName)
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <div class="col-md-3">
+                            @Html.BaseEamLabelFor(model => model.LowerLimit, required: true)
+                        </div>
+                        <div class="col-md-9">
+                            @Html.BaseEamEditorFor(model => model.LowerLimit)
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="col-md-3">
+                            @Html.BaseEamLabelFor(model => model.UpperLimit, required: true)
+                        </div>
+                        <div class="col-md-9">
+                            @Html.BaseEamEditorFor(model => model.UpperLimit)
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script type="text/javascript">
+        $("#saveMeterEventDetail").click(function (e) {
+            e.preventDefault();
+            var $group = $("#panel-meterEvent :input");
+            var postData = $group.serializeJSON({ checkboxUncheckedValue: "false" });
+            //change Id property name so it can map to MVC model
+            postData.Id = postData.MeterEventId;
+            addAntiForgeryToken(postData);
+
+            $.ajax({
+                cache: false,
+                type: "POST",
+                url: "@(Url.Action("SaveMeterEvent", "Point"))",
+                data: postData,
+                success: function (data) {
+                    if (data && data.Errors) {
+                        showErrors(data.Errors, '#meterEvent-error');
+                    } else {
+                        //then toggle the panel
+                        togglePanelMeterEvent(false);
+
+                        //refresh grid
+                        var grid = $('#meterEvents-grid').data('kendoGrid');
+                        grid.dataSource.page(1);
+                    }
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    showBSModal({ title: 'ERROR', body: thrownError });
+                },
+                traditional: true
+            });
+        });
+
+        $("#cancelMeterEventDetail").click(function (e) {
+            e.preventDefault();
+            var postData = {
+                id: $("#MeterEventId").val()
+            };
+            addAntiForgeryToken(postData);
+
+            $.ajax({
+                cache: false,
+                type: "POST",
+                url: "@(Url.Action("CancelMeterEvent", "Point"))",
+                data: postData,
+                success: function (data) {
+                    //toggle the panel
+                    togglePanelMeterEvent(false);
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    showBSModal({ title: 'ERROR', body: thrownError });
+                },
+                traditional: true
+            });
+        });
+    </script>
+</div>

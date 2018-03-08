@@ -1,0 +1,141 @@
+﻿@using BaseEAM.Services.Security
+@model SearchModel
+@{
+    //page title
+    ViewBag.Title = T("Inventory.Inventory").Text;
+
+    var defaultGridPageSize = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().DefaultGridPageSize;
+    var gridPageSizes = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().GridPageSizes;
+    var primarySystemCurrencySymbol = EngineContext.Current.Resolve<BaseEAM.Core.IWorkContext>().WorkingCurrency.CurrencySymbol;
+
+    var permissionService = EngineContext.Current.Resolve<BaseEAM.Services.IPermissionService>();
+    var allowRead = permissionService.Authorize(StandardPermissionName.Inventory_Store_Read);
+}
+
+@Html.AntiForgeryToken()
+<div class="content-header clearfix">
+    <h1 class="pull-left">
+        @T("Inventory.Inventory")
+    </h1>
+    <div class="pull-right">
+    </div>
+</div>
+<div class="validation-summary-errors none-display">
+</div>
+<div class="content">
+    <div class="form-horizontal">
+        <div class="panel-group">
+            @Html.Partial("Filter", Model)
+            <div class="panel panel-default">
+                <div class="panel-body">
+                    <div id="inventories-grid"></div>
+
+                    <script>
+                        $(document).ready(function () {
+                            $("#inventories-grid").kendoGrid({
+                                dataSource: {
+                                    type: "json",
+                                    transport: {
+                                        read: {
+                                            url: "@Html.Raw(Url.Action("List", "Inventory"))",
+                                            type: "POST",
+                                            dataType: "json",
+                                            data: additionalData
+                                        },
+                                        parameterMap: function(data, operation) {
+                                            sortMapping = [
+                                                {from: "ItemName", to: "Item.Name"},
+                                                {from: "StoreName", to: "Store.Name"},
+                                                {from: "SiteName", to: "Site.Name"}
+                                            ];
+                                            BaseEam.Grid.mapSortColumns(data.sort, sortMapping);
+                                            return data;
+                                        }
+                                    },
+                                    schema: {
+                                        data: "Data",
+                                        total: "Total",
+                                        errors: "Errors",
+                                        model: {
+                                            fields: {
+                                            }
+                                        }
+                                    },
+                                    error: function (e) {
+                                        display_kendoui_grid_error(e);
+                                        // Cancel the changes
+                                        this.cancelChanges();
+                                    },
+                                    pageSize: @(defaultGridPageSize),
+                                    serverPaging: true,
+                                    serverFiltering: true,
+                                    serverSorting: true
+                                },
+                                pageable: {
+                                    refresh: true,
+                                    pageSizes: [@(gridPageSizes)],
+                                    @Html.Partial("_GridPagerMessages")
+                                },
+                                sortable: true,
+                                editable: false,
+                                scrollable: false,
+                                columns: [{
+                                    field: "ItemName",
+                                    title: "@T("Item")"
+                                }, {
+                                    field: "StoreName",
+                                    title: "@T("Store")"
+                                }, {
+                                    field: "SiteName",
+                                    title: "@T("Site")"
+                                },{
+                                    field: "TotalQuantity",
+                                    title: "@T("StoreItem.TotalQuantity")",
+                                    template: '#= TotalQuantity != null ? kendo.toString(TotalQuantity, "n") : "" #'
+                                },{
+                                    field: "TotalCost",
+                                    title: "@T("StoreItem.TotalCost") [@(primarySystemCurrencySymbol)]",
+                                    template: '#= TotalCost != null ? kendo.toString(TotalCost, "n") : "" #'
+                                }, {
+                                    field: "StoreItemId",
+                                    headerTemplate: "",
+                                    width: 50,
+                                    template: '<a class="btn btn-primary@(allowRead ? "" : " none-display")" title="@T("Common.Details")" href="Edit/#=StoreItemId#"></span><i class="fa fa-pencil aria-hidden="true""></i></a>',
+                                    sortable: false
+                                }
+                                ]
+                            });
+                        });
+                    </script>
+                    <script type="text/javascript">
+                        $(document).ready(function () {
+                            //search button
+                            $('#search').click(function () {
+                                //search
+                                var grid = $('#inventories-grid').data('kendoGrid');
+                                grid.dataSource.page(1); //new search. Set page size to 1
+                                //grid.dataSource.read(); we already loaded the grid above using "page" function
+                                return false;
+                            });
+
+                            $("div.panel-search").find(':input').keydown(function (event) {
+                                if (event.keyCode == 13) {
+                                    $("#search").click();
+                                    return false;
+                                }
+                            });
+                        });
+
+                        function additionalData() {
+                            var data = {
+                                searchValues: $("div.panel-search").find(':input').serialize()
+                            };
+                            addAntiForgeryToken(data);
+                            return data;
+                        }
+                    </script>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

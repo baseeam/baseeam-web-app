@@ -1,0 +1,259 @@
+﻿@using BaseEAM.Services.Security
+@model AdjustItemModel
+@{
+    var defaultGridPageSize = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().DefaultGridPageSize;
+    var gridPageSizes = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().GridPageSizes;
+    var primarySystemCurrencySymbol = EngineContext.Current.Resolve<BaseEAM.Core.IWorkContext>().WorkingCurrency.CurrencySymbol;
+
+    var permissionService = EngineContext.Current.Resolve<BaseEAM.Services.IPermissionService>();
+    var allowCreate = permissionService.Authorize(StandardPermissionName.Inventory_Adjust_Create);
+    var allowRead = permissionService.Authorize(StandardPermissionName.Inventory_Adjust_Read);
+    var allowUpdate = permissionService.Authorize(StandardPermissionName.Inventory_Adjust_Update);
+    var allowDelete = permissionService.Authorize(StandardPermissionName.Inventory_Adjust_Delete);
+}
+<div id="group-adjustItems" class="panel-group" data-bind="visible: !isNew()">
+    <div class="panel panel-default">
+        <div class="panel-heading" data-bind="visible: !isApproved()">
+            <button type="button" id="createAdjustItem" class="btn btn-primary@(allowCreate || allowUpdate ? "" : " none-display")" title="@T("Common.AddNew")">
+                <i class="fa fa-plus-square"></i>
+            </button>
+            <button type="button" id="createAdjustItems" class="btn btn-primary@(allowCreate || allowUpdate ? "" : " none-display")" title="@T("Common.AddMultiple")">
+                <i class="fa fa-angle-double-down"></i>
+            </button>
+            <button type="button" id="deleteSelectedAdjustItems" class="btn btn-primary@(allowCreate || allowUpdate ? "" : " none-display")" title="@T("Common.Delete.Selected")">
+                <i class="fa fa-trash-o"></i>
+            </button>
+        </div>
+        <div class="panel-body">
+            <div id="adjustItems-grid" data-bind="gridDeleteRowEnabled: !isApproved()"></div>
+            <script>
+                var gridCheckboxHandler = new BaseEam.CheckBoxHandler('adjustItems-grid');
+                gridCheckboxHandler.init();
+
+                $(document).ready(function () {
+                    $("#adjustItems-grid").kendoGrid({
+                        dataSource: {
+                            type: "json",
+                            transport: {
+                                read: {
+                                    url: "@Html.Raw(Url.Action("AdjustItemList", "Adjust"))",
+                                    type: "POST",
+                                    dataType: "json",
+                                    data: additionalData
+                                },
+                                parameterMap: function (data, operation) {
+                                    sortMapping = [{ from: "ItemName", to: "Item.Name" },
+                                                    { from: "ItemUnitOfMeasureName", to: "Item.UnitOfMeasure.Name" }];
+                                    BaseEam.Grid.mapSortColumns(data.sort, sortMapping);
+                                    return data;
+                                }
+                            },
+                            schema: {
+                                data: "Data",
+                                total: "Total",
+                                errors: "Errors",
+                                model: {
+                                    id: "Id"
+                                }
+                            },
+                            aggregate: [
+                                        { field: "AdjustCost", aggregate: "sum" }
+                            ],
+                            error: function(e) {
+                                display_kendoui_grid_error(e);
+                                // Cancel the changes
+                                this.cancelChanges();
+                            },
+                            pageSize: @(defaultGridPageSize),
+                            serverPaging: true,
+                            serverFiltering: true,
+                            serverSorting: true
+                        },
+                        pageable: {
+                            refresh: true,
+                            pageSizes: [@(gridPageSizes)],
+                            @Html.Partial("_GridPagerMessages")
+                        },
+                        sortable: true,
+                        editable: false,
+                        scrollable: false,
+                        dataBound: gridCheckboxHandler.onDataBound,
+                        columns: [{
+                            field: "Id",
+                            headerTemplate: "<input id='adjustItems-grid-mastercheckbox' type='checkbox'/>",
+                            headerAttributes: { style: "text-align:center" },
+                            attributes: { style: "text-align:center" },
+                            template: "<input type='checkbox' value='#=Id#' class='checkboxGroups'/>",
+                            width: 50,
+                            sortable: false
+                        },{
+                            field: "ItemName",
+                            title: "@T("Item")"
+                        },{
+                            field: "ItemUnitOfMeasureName",
+                            title: "@T("UnitOfMeasure")"
+                        },{
+                            field: "StoreLocator.Name",
+                            title: "@T("AdjustItem.StoreLocator")"
+                        },{
+                            field: "AdjustQuantity",
+                            title: "@T("AdjustItem.AdjustQuantity")",
+                            template: '#= AdjustQuantity != null ? kendo.toString(AdjustQuantity, "n") : "" #'
+                        }, {
+                            field: "AdjustCost",
+                            title: "@T("AdjustItem.AdjustCost") [@(primarySystemCurrencySymbol)]",
+                            template: '#= AdjustCost != null ? kendo.toString(AdjustCost, "n") : "" #',
+                            footerTemplate: '#= sum != null ? kendo.toString(sum, "n") : "" #'
+                        }, {
+                            field: "Id",
+                            headerTemplate: "",
+                            width: 100,
+                            template: '<button type="button" class="btn btn-primary@(allowRead || allowUpdate ? "" : " none-display")" onclick="editAdjustItem(event, #=Id#);"></span><i class="fa fa-pencil aria-hidden="true""></i></a>' +
+                                    '<button type="button" class="deleteRow btn btn-primary@(allowDelete ? "" : " none-display")" title="@T("Common.Delete")" onclick="deleteAdjustItem(event, #=Id#);"></span><i class="fa fa-trash aria-hidden="true""></i></a>',
+                            sortable: false
+                        }]
+                    });
+                });
+            </script>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    function createAdjustItems(e) {
+        e.preventDefault();
+        BaseEam.Grid.saveChanges('@Url.Action("CreateAdjustItems", "Adjust")', '#createAdjustItems-grid', '#createAdjustItems-error', false);
+    };
+
+    function editAdjustItem(e, id){
+        e.preventDefault();
+        //check if panel-adjustItem is open => close it before edit
+        if($('#panel-adjustItem').is(":visible")){
+            togglePanelAdjustItem(false);
+        }
+        var postData = {
+            id : id
+        };
+        addAntiForgeryToken(postData);
+
+        $.ajax({
+            cache: false,
+            type: "POST",
+            url: "@(Url.Action("AdjustItem", "Adjust"))",
+            data: postData,
+            success: function(data) {
+                //append html
+                $("#group-adjustItems").append(data.Html);
+
+                //apply binding for the newly generated element
+                ko.applyBindings(viewModel, $("#panel-adjustItem")[0]);
+
+                //then toggle the panel
+                togglePanelAdjustItem(true);
+            },
+            error: function(xhr, ajaxOptions, thrownError) {
+                showBSModal({title: 'ERROR', body: thrownError});
+            },
+            traditional: true
+        });
+    };
+
+    function deleteAdjustItem(e, id){
+        e.preventDefault();
+        //check if panel-adjustItem is open => close it before delete
+        if($('#panel-adjustItem').is(":visible")){
+            togglePanelAdjustItem(false);
+        }
+
+        BaseEam.Grid.deleteRow($("#Id").val(), id, "@Url.Action("DeleteAdjustItem", "Adjust")", "adjustItems-grid", "", true);
+    };
+
+    function additionalData() {
+        var data = {
+            adjustId: $("#Id").val()
+        };
+        addAntiForgeryToken(data);
+        return data;
+    }
+
+    function togglePanelAdjustItem(editmode) {
+        if (editmode) {
+            $('#panel-adjustItem').show();
+            $('#createAdjustItem').hide();
+            $('#createAdjustItems').hide();
+            $('#deleteSelectedAdjustItems').hide();
+        }
+        else {
+            ////remove the panel html so we won't care
+            //about dirty change tracking for newly added input tag
+            $('#panel-adjustItem').remove();
+            $('#createAdjustItem').show();
+            $('#createAdjustItems').show();
+            $('#deleteSelectedAdjustItems').show();
+        }
+    }
+
+    $(document).ready(function () {
+        $("#createAdjustItem").click(function(e){
+            e.preventDefault();
+            var postData = {
+                adjustId : $("#Id").val()
+            };
+            addAntiForgeryToken(postData);
+
+            $.ajax({
+                cache: false,
+                type: "POST",
+                url: "@(Url.Action("CreateAdjustItem", "Adjust"))",
+                data: postData,
+                success: function(data) {
+                    //append html
+                    $("#group-adjustItems").append(data.Html);
+
+                    //then toggle the panel
+                    togglePanelAdjustItem(true);
+                },
+                error: function(xhr, ajaxOptions, thrownError) {
+                    showBSModal({title: 'ERROR', body: thrownError});
+                },
+                traditional: true
+            });
+        });
+
+        $("#createAdjustItems").click(function(e){
+            e.preventDefault();
+            $.get('@Url.Action("CreateAdjustItemsView", "Adjust")', function(data) {
+                showBSModal({
+                    title: "@T("Common.AddMultiple")",
+                    size: "large",
+                    body: data,
+                    actions: [{
+                        label: '@T("Common.Save")',
+                        cssClass: 'btn-success',
+                        onClick: createAdjustItems
+                    },{
+                        label: '@T("Common.Cancel")',
+                        cssClass: 'btn-danger',
+                        onClick: function(e){
+                            $(e.target).parents('.modal').modal('hide');
+                        }
+                    }]
+                });
+            });
+        });
+
+        $("#deleteSelectedAdjustItems").click(function(e){
+            e.preventDefault();
+            BaseEam.Grid.deleteSelectedRows($("#Id").val(), gridCheckboxHandler.selectedIds, "@Url.Action("DeleteSelectedAdjustItems", "Adjust")", "adjustItems-grid", "", true);
+        });
+
+        window.EventBroker.subscribe("grid_batch_saved", function (message, data) {
+            //hide modal popup
+            $('.modal').modal('hide');
+
+            //refresh grid
+            var grid = $('#adjustItems-grid').data('kendoGrid');
+            grid.dataSource.page(1);
+        });
+    });
+</script>

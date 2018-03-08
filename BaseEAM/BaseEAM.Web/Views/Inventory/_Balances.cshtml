@@ -1,0 +1,117 @@
+﻿@using BaseEAM.Services.Security
+@using BaseEAM.Web.Framework.CustomField
+@model SearchModel
+@{
+    var defaultGridPageSize = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().DefaultGridPageSize;
+    var gridPageSizes = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().GridPageSizes;
+    var primarySystemCurrencySymbol = EngineContext.Current.Resolve<BaseEAM.Core.IWorkContext>().WorkingCurrency.CurrencySymbol;
+}
+<div id="group-balances" class="panel-group">
+    <div class="panel panel-default">
+        <div class="panel-body">
+            <div id="balances-grid"></div>
+            <script>
+                $(document).ready(function () {
+                    $("#balances-grid").kendoGrid({
+                        dataSource: {
+                            type: "json",
+                            transport: {
+                                read: {
+                                    url: "@Html.Raw(Url.Action("BalanceList", "Inventory"))",
+                                    type: "POST",
+                                    dataType: "json",
+                                    data: additionalData
+                                },
+                                parameterMap: function(data, operation) {
+                                    sortMapping = [
+                                        {from: "StoreLocatorName", to: "StoreLocator.Name"}
+                                    ];
+                                    BaseEam.Grid.mapSortColumns(data.sort, sortMapping);
+                                    return data;
+                                }
+                            },
+                            schema: {
+                                data: "Data",
+                                total: "Total",
+                                errors: "Errors",
+                                model: {
+                                }
+                            },
+                            aggregate: [
+                                        { field: "TotalCost", aggregate: "sum" }
+                            ],
+                            error: function(e) {
+                                display_kendoui_grid_error(e);
+                                // Cancel the changes
+                                this.cancelChanges();
+                            },
+                            pageSize: @(defaultGridPageSize),
+                            serverPaging: true,
+                            serverFiltering: true,
+                            serverSorting: true
+                        },
+                        pageable: {
+                            refresh: true,
+                            pageSizes: [@(gridPageSizes)],
+                            @Html.Partial("_GridPagerMessages")
+                        },
+                        sortable: true,
+                        editable: false,
+                        scrollable: false,
+                        columns: [{
+                            field: "StoreLocatorName",
+                            title: "@T("StoreLocator")"
+                        },{
+                            field: "TotalQuantity",
+                            title: "@T("StoreLocatorItem.TotalQuantity")",
+                            template: '#= TotalQuantity != null ? kendo.toString(TotalQuantity, "n") : "" #'
+                        },{
+                            field: "TotalCost",
+                            title: "@T("StoreLocatorItem.TotalCost") [@(primarySystemCurrencySymbol)]",
+                            template: '#= TotalCost != null ? kendo.toString(TotalCost, "n") : "" #',
+                            footerTemplate: '#= sum != null ? kendo.toString(sum, "n") : "" #'
+                        }, {
+                            field: "StoreLocatorItemId",
+                            headerTemplate: "",
+                            width: 50,
+                            template: '<a class="btn btn-primary" title="@T("Common.Transactions")" href = "" onclick="viewTransactions(event, #=SiteId#, #=StoreId#, #=StoreLocatorId#, #=ItemId#);"></span><i class="fa fa-history aria-hidden="true""></i></a>',
+                            sortable: false
+                        }]
+                    });
+                });
+            </script>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    function additionalData() {
+        var data = {
+            storeId: $("#StoreId").val(),
+            itemId: $("#ItemId").val()
+        };
+        addAntiForgeryToken(data);
+        return data;
+    }
+
+    function viewTransactions(e, siteId, storeId, storeLocatorId, itemId){
+        e.preventDefault();
+        var storeLocatorItemId = siteId.toString() + '_' + storeId.toString() + '_' + storeLocatorId.toString() + '_' + itemId.toString();
+        var url = '@Url.Action("TransactionsView", "Inventory")' + '/' + storeLocatorItemId;
+        $.get(url, function(data) {
+            showBSModal({
+                title: "@T("Common.Transactions")",
+                size: "large",
+                body: data,
+                actions: [{
+                    label: '@T("Common.Cancel")',
+                    cssClass: 'btn-danger',
+                    onClick: function(e){
+                        $(e.target).parents('.modal').modal('hide');
+                    }
+                }]
+            });
+        });
+    };
+
+</script>

@@ -1,0 +1,146 @@
+﻿@model StoreItemModel
+@Html.HiddenFor(model => model.Id)
+@Html.HiddenFor(model => model.IsNew)
+@Html.HiddenFor(model => model.StoreId)
+@Html.HiddenFor(model => model.ItemId)
+
+@functions
+{
+    string primarySystemCurrencySymbol = EngineContext.Current.Resolve<BaseEAM.Core.IWorkContext>().WorkingCurrency.CurrencySymbol;
+}
+
+<div class="content">
+    <div class="form-horizontal">
+        <div id="inventory-edit" class="nav-tabs-custom">
+            <ul class="nav nav-tabs">
+                @Html.RenderBootstrapTabHeader("tab-info", @T("Inventory.Info"), true)
+                @Html.RenderBootstrapTabHeader("tab-reorderDetails", @T("Inventory.ReorderDetails"))
+            </ul>
+            <div class="tab-content">
+                @Html.RenderBootstrapTabContent("tab-info", @TabInfo(), true)
+                @Html.RenderBootstrapTabContent("tab-reorderDetails", @TabReorderDetails())
+            </div>
+        </div>
+    </div>
+</div>
+
+@{
+    //custom tabs
+    var eventMessage = new AdminTabStripCreated(this.Html, "inventory-edit");
+    EngineContext.Current.Resolve<IEventPublisher>().Publish(eventMessage);
+    foreach (var eventBlock in eventMessage.BlocksToRender)
+    {
+        @eventBlock
+    }
+}
+
+@helper TabInfo()
+{
+    <div class="panel-group">
+        <div class="panel panel-default">
+            <div class="panel-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.SiteId, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamDisplayFor(model => model.Site.Name)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.Item.Name, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamDisplayFor(model => model.Item.Name)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.Item.ItemCategory, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamDisplayFor(model => model.Item.ItemCategory)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.Item.Barcode)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamDisplayFor(model => model.Item.Barcode)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.StandardCostingUnitPrice)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamEditorFor(model => model.StandardCostingUnitPrice, postfix: primarySystemCurrencySymbol)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.CostingType, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamEditorFor(model => model.CostingType)
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.StoreId, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamDisplayFor(model => model.Store.Name)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.Item.UnitOfMeasureId, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamDisplayFor(model => model.Item.UnitOfMeasure.Name)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.Item.ItemGroupId, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamDisplayFor(model => model.Item.ItemGroup.Name)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.StockType, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.EnumDropDownListFor(model => model.StockType, new { @class = "form-control" })
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.LotType, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.EnumDropDownListFor(model => model.LotType, new { @class = "form-control" })
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <hr />
+                <h4>@T("Inventory.Balances")</h4>
+                @Html.Partial("_Balances", new SearchModel())
+            </div>
+        </div>
+    </div>
+}
+@helper TabReorderDetails()
+{
+    @Html.Partial("_ReorderDetails", Model)
+}

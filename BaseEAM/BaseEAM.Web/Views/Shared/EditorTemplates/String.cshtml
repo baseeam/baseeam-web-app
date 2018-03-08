@@ -1,0 +1,11 @@
+﻿@model String
+
+@{
+    var dataBind = "";
+    if (ViewData.ContainsKey("dataBind") && ViewData["dataBind"] != null)
+    {
+        dataBind = ViewData["dataBind"].ToString();
+    }
+}
+
+@Html.TextBoxFor(model => model, new { @class = "form-control", data_bind = dataBind })

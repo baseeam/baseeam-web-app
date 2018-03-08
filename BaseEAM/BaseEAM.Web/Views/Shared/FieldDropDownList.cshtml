@@ -1,0 +1,8 @@
+﻿@using BaseEAM.Web.Framework.CustomField
+@model FieldModel
+
+@{ 
+    var choices = FieldHelper.GetChoices(Model);
+}
+
+@Html.DropDownList(Model.Name, choices, new { @class = "form-control" })

@@ -1,0 +1,218 @@
+﻿@model ServiceRequestModel
+@Html.HiddenFor(model => model.Id)
+@Html.HiddenFor(model => model.IsNew)
+@Html.HiddenFor(model => model.Status)
+@Html.HiddenFor(model => model.AvailableActions)
+
+<script>
+    $(document).ready(function() {
+        bindBootstrapTabSelectEvent('serviceRequest-edit');
+    });
+
+    function savedCallback(data) {
+        viewModel.isNew(false);
+        viewModel.number(data.number);
+    }
+</script>
+
+<div class="content">
+    <div class="form-horizontal">
+        <div id="serviceRequest-edit" class="nav-tabs-custom">
+            <ul class="nav nav-tabs">
+                @Html.RenderBootstrapTabHeader("tab-info", @T("ServiceRequest.Info"), true)
+                @Html.RenderBootstrapTabHeader("tab-workOrders", @T("WorkOrders"))
+                @Html.RenderBootstrapTabHeader("tab-assignmentHistories", @T("AssignmentHistories"))
+                @Html.RenderBootstrapTabHeader("tab-attachments", @T("Common.Attachments"))
+                @Html.RenderBootstrapTabHeader("tab-comments", @T("Common.Comments"))
+            </ul>
+            <div class="tab-content">
+                @Html.RenderBootstrapTabContent("tab-info", @TabInfo(), true)
+                @Html.RenderBootstrapTabContent("tab-workOrders", @TabWorkOrders(), dataBind: "visible: !isNew()")
+                @Html.RenderBootstrapTabContent("tab-assignmentHistories", @TabAssignmentHistories(), dataBind: "visible: !isNew()")
+                @Html.RenderBootstrapTabContent("tab-attachments", @TabAttachments(), dataBind: "visible: !isNew()")
+                @Html.RenderBootstrapTabContent("tab-comments", @TabComments(), dataBind: "visible: !isNew()")
+            </div>
+        </div>
+    </div>
+</div>
+
+@{
+    //custom tabs
+    var eventMessage = new AdminTabStripCreated(this.Html, "serviceRequest-edit");
+    EngineContext.Current.Resolve<IEventPublisher>().Publish(eventMessage);
+    foreach (var eventBlock in eventMessage.BlocksToRender)
+    {
+        @eventBlock
+    }
+}
+
+@helper TabInfo()
+{
+    <div class="panel-group">
+        <div class="panel panel-default">
+            <div class="panel-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.Number, required: true)
+                            </div>
+                            <div class="col-md-9" data-bind="html: number">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.Description, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamEditorFor(model => model.Description)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.SiteId)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamComboBoxFor(model => model.SiteId, "SiteList", "Site", null, true)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.AssetId)
+                                @Html.HiddenFor(model => model.AssetId)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.AssetLookupFor(model => model.AssetName)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.LocationId)
+                                @Html.HiddenFor(model => model.LocationId)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.LocationLookupFor(model => model.LocationName)
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.Status, required: true)
+                            </div>
+                            <div class="col-md-9" data-bind="html: status">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.AssignedUsers, required: true)
+                            </div>
+                            <div class="col-md-9" id="assignedUsers" data-bind="html: assignedUsers">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.Priority)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.EnumDropDownListFor(model => model.Priority, new { @class = "form-control" })
+                            </div>
+                        </div>                        
+                    </div>
+                </div>
+                <hr />
+                <h4>@T("ServiceRequest.Requestor")</h4>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.RequestorType)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.EnumDropDownListFor(model => model.RequestorType, new { @class = "form-control" })
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.RequestorName, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamEditorFor(model => model.RequestorName)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.RequestorEmail, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamEditorFor(model => model.RequestorEmail)
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.RequestorPhone, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamEditorFor(model => model.RequestorPhone)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.RequestedDateTime)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamEditorFor(model => model.RequestedDateTime)
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <hr />
+                @if (Model.Id > 0 && Model.IsNew == false)
+                {
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <div class="col-md-3">
+                                    @Html.BaseEamLabelFor(model => model.FirstCreatedBy)
+                                </div>
+                                <div class="col-md-9">
+                                    @Html.BaseEamDisplayFor(model => model.FirstCreatedBy)
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <div class="col-md-3">
+                                    @Html.BaseEamLabelFor(model => model.LastUpdatedBy)
+                                </div>
+                                <div class="col-md-9">
+                                    @Html.BaseEamDisplayFor(model => model.LastUpdatedBy)
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+@helper TabWorkOrders()
+{
+    @Html.Partial("_WorkOrders", new WorkOrderModel { ServiceRequestId = Model.Id})
+}
+
+@helper TabAssignmentHistories()
+{
+    @Html.Partial("AssignmentHistory", new AssignmentHistoryModel { EntityId = Model.Id, EntityType = EntityType.ServiceRequest })
+}
+
+@helper TabAttachments()
+{
+    @Html.Partial("Attachment", new AttachmentModel { EntityId = Model.Id, EntityType = EntityType.ServiceRequest })
+}
+
+@helper TabComments()
+{
+    @Html.Partial("Comment", new CommentModel { EntityId = Model.Id, EntityType = EntityType.ServiceRequest })
+}

@@ -1,0 +1,2 @@
+﻿@model DateTime?
+@(Model > DateTime.MinValue || Model.HasValue ? Model.Value.ToShortTimeString() : null)

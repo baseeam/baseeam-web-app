@@ -1,0 +1,193 @@
+﻿@using BaseEAM.Services.Security
+@model CalendarNonWorkingModel
+@{
+    var defaultGridPageSize = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().DefaultGridPageSize;
+    var gridPageSizes = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().GridPageSizes;
+
+    var permissionService = EngineContext.Current.Resolve<BaseEAM.Services.IPermissionService>();
+    var allowCreate = permissionService.Authorize(StandardPermissionName.Resource_Calendar_Create);
+    var allowRead = permissionService.Authorize(StandardPermissionName.Resource_Calendar_Read);
+    var allowUpdate = permissionService.Authorize(StandardPermissionName.Resource_Calendar_Update);
+    var allowDelete = permissionService.Authorize(StandardPermissionName.Resource_Calendar_Delete);
+}
+<div id="group-calendarNonWorkings" class="panel-group">
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <button type="button" id="createCalendarNonWorking" class="btn btn-primary@(allowCreate || allowUpdate ? "" : " none-display")" title="@T("Common.AddNew")">
+                <i class="fa fa-plus-square"></i>
+            </button>
+            <button type="button" id="deleteSelectedCalendarNonWorkings" class="btn btn-primary@(allowCreate || allowUpdate ? "" : " none-display")" title="@T("Common.Delete.Selected")">
+                <i class="fa fa-trash-o"></i>
+            </button>
+        </div>
+        <div class="panel-body">
+            <div id="calendarNonWorkings-grid"></div>
+            <script>
+                var gridCheckboxHandler = new BaseEam.CheckBoxHandler('calendarNonWorkings-grid');
+                gridCheckboxHandler.init();
+
+                $(document).ready(function () {
+                    $("#calendarNonWorkings-grid").kendoGrid({
+                        dataSource: {
+                            type: "json",
+                            transport: {
+                                read: {
+                                    url: "@Html.Raw(Url.Action("CalendarNonWorkingList", "Calendar"))",
+                                    type: "POST",
+                                    dataType: "json",
+                                    data: additionalData
+                                }
+                            },
+                            schema: {
+                                data: "Data",
+                                total: "Total",
+                                errors: "Errors",
+                                model: {
+                                    id: "Id"
+                                }
+                            },
+                            error: function(e) {
+                                display_kendoui_grid_error(e);
+                                // Cancel the changes
+                                this.cancelChanges();
+                            },
+                            pageSize: @(defaultGridPageSize),
+                            serverPaging: true,
+                            serverFiltering: true,
+                            serverSorting: true
+                        },
+                        pageable: {
+                            refresh: true,
+                            pageSizes: [@(gridPageSizes)],
+                            @Html.Partial("_GridPagerMessages")
+                        },
+                        sortable: true,
+                        editable: false,
+                        scrollable: false,
+                        dataBound: gridCheckboxHandler.onDataBound,
+                        columns: [{
+                            field: "Id",
+                            headerTemplate: "<input id='calendarNonWorkings-grid-mastercheckbox' type='checkbox'/>",
+                            headerAttributes: { style: "text-align:center" },
+                            attributes: { style: "text-align:center" },
+                            template: "<input type='checkbox' value='#=Id#' class='checkboxGroups'/>",
+                            width: 50,
+                            sortable: false
+                        },{
+                            field: "Name",
+                            title: "@T("CalendarNonWorking.Name")"
+                        },{
+                            field: "NonWorkingDate",
+                            title: "@T("CalendarNonWorking.NonWorkingDate")",
+                            template: '#= NonWorkingDate != null ? kendo.toString(kendo.parseDate(NonWorkingDate, "MM/dd/yyyy"), "MM/dd/yyyy") : "" #',
+                        }, {
+                            field: "Id",
+                            headerTemplate: "",
+                            width: 100,
+                            template:'<a class="btn btn-primary@(allowCreate || allowUpdate ? "" : " none-display")" href="" onclick="editCalendarNonWorking(event, #=Id#);"></span><i class="fa fa-pencil aria-hidden="true""></i></a>' +
+                                     '<a class="btn btn-primary@(allowCreate || allowUpdate ? "" : " none-display")" href="" onclick="deleteCalendarNonWorking(event, #=Id#);"></span><i class="fa fa-trash aria-hidden="true""></i></a>',
+                            sortable: false
+                        }]
+                    });
+                });
+            </script>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    function editCalendarNonWorking(e, id) {
+        e.preventDefault();
+        if ($('#panel-calendarNonWorking').is(":visible")) {
+            togglePanelCalendarNonWorking(false);
+        }
+        var postData = {
+            id: id
+        };
+        addAntiForgeryToken(postData);
+
+        $.ajax({
+            cache: false,
+            type: "POST",
+            url: "@(Url.Action("CalendarNonWorking", "Calendar"))",
+            data: postData,
+            success: function (data) {
+                //append html
+                $("#group-calendarNonWorkings").append(data.Html);
+
+                //then toggle the panel
+                togglePanelCalendarNonWorking(true);
+            },
+            error: function (xhr, ajaxOptions, thrownError) {
+                showBSModal({ title: 'ERROR', body: thrownError });
+            },
+            traditional: true
+        });
+    };
+
+    function deleteCalendarNonWorking(e, id) {
+        e.preventDefault();
+        //check if panel-calendarNonWorking is open => close it before delete
+        if ($('#panel-calendarNonWorking').is(":visible")) {
+            togglePanelCalendarNonWorking(false);
+        }
+
+        BaseEam.Grid.deleteRow($("#Id").val(), id, "@Url.Action("DeleteCalendarNonWorking", "Calendar")", "calendarNonWorkings-grid", "", true);
+    };
+
+    function additionalData() {
+        var data = {
+            calendarId: $("#Id").val()
+        };
+        addAntiForgeryToken(data);
+        return data;
+    }
+
+    function togglePanelCalendarNonWorking(editmode) {
+        if (editmode) {
+            $('#panel-calendarNonWorking').show();
+            $('#createCalendarNonWorking').hide();
+            $('#deleteSelectedCalendarNonWorkings').hide();
+        }
+        else {
+            ////remove the panel html so we won't care
+            //about dirty change tracking for newly added input tag
+            $('#panel-calendarNonWorking').remove();
+            $('#createCalendarNonWorking').show();
+            $('#deleteSelectedCalendarNonWorkings').show();
+        }
+    }
+
+    $(document).ready(function () {
+        $("#createCalendarNonWorking").click(function (e) {
+            e.preventDefault();
+            var postData = {
+                calendarId: $("#Id").val()
+            };
+            addAntiForgeryToken(postData);
+
+            $.ajax({
+                cache: false,
+                type: "POST",
+                url: "@(Url.Action("CreateCalendarNonWorking", "Calendar"))",
+                data: postData,
+                success: function (data) {
+                    //append html
+                    $("#group-calendarNonWorkings").append(data.Html);
+
+                    //then toggle the panel
+                    togglePanelCalendarNonWorking(true);
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    showBSModal({ title: 'ERROR', body: thrownError });
+                },
+                traditional: true
+            });
+        });
+
+        $("#deleteSelectedCalendarNonWorkings").click(function (e) {
+            e.preventDefault();
+            BaseEam.Grid.deleteSelectedRows($("#Id").val(), gridCheckboxHandler.selectedIds, "@Url.Action("DeleteSelectedCalendarNonWorkings", "Calendar")", "calendarNonWorkings-grid", "", true);
+        });
+    });
+</script>

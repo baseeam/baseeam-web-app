@@ -1,0 +1,134 @@
+﻿@using BaseEAM.Services.Security
+@model StoreLocatorModel
+@{
+    var defaultGridPageSize = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().DefaultGridPageSize;
+    var gridPageSizes = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().GridPageSizes;
+
+    var permissionService = EngineContext.Current.Resolve<BaseEAM.Services.IPermissionService>();
+    var allowCreate = permissionService.Authorize(StandardPermissionName.Inventory_Store_Create);
+    var allowRead = permissionService.Authorize(StandardPermissionName.Inventory_Store_Read);
+    var allowUpdate = permissionService.Authorize(StandardPermissionName.Inventory_Store_Update);
+    var allowDelete = permissionService.Authorize(StandardPermissionName.Inventory_Store_Delete);
+}
+<div class="validation-summary-errors none-display" id="storeLocator-error">
+</div>
+<div id="group-storeLocators" class="panel-group">
+    <div class="panel panel-default">
+        <div class="panel-body">
+            <div id="storeLocators-grid"></div>
+            <script>
+                $(document).ready(function () {
+                    $("#storeLocators-grid").kendoGrid({
+                        dataSource: {
+                            type: "json",
+                            transport: {
+                                read: {
+                                    url: "@Html.Raw(Url.Action("StoreLocatorList", "Store"))",
+                                    type: "POST",
+                                    dataType: "json",
+                                    data: additionalData
+                                }
+                            },
+                            schema: {
+                                data: "Data",
+                                total: "Total",
+                                errors: "Errors",
+                                model: {
+                                    id: "Id",
+                                    fields: {
+                                        Id: { hidden: true, editable: false, defaultValue: 0 },
+                                        StoreId: { hidden: true, defaultValue: $('#Id').val() },
+                                        Name: { editable: true, validation: { required: { message: '@T("StoreLocator.Name.Required")'}} }
+                                    }
+                                }
+                            },
+                            batch: true,
+                            error: function (e) {
+                                display_kendoui_grid_error(e);
+                                // Cancel the changes
+                                this.cancelChanges();
+                            },
+                            change: function (e) {
+                                if (e.action == "itemchange") {
+                                    e.items[0].dirtyFields = e.items[0].dirtyFields || {};
+                                    e.items[0].dirtyFields[e.field] = true;
+                                }
+                            },
+                            pageSize: @(defaultGridPageSize),
+                            serverPaging: true,
+                            serverFiltering: true,
+                            serverSorting: true
+                        },
+                        pageable: {
+                            refresh: true,
+                            pageSizes: [@(gridPageSizes)],
+                            @Html.Partial("_GridPagerMessages")
+                        },
+                        toolbar: ["create", "save", "cancel"],
+                        saveChanges: function(e) {
+                            e.preventDefault();
+                            BaseEam.Grid.saveChanges('@Url.Action("SaveChanges","Store")', '#storeLocators-grid', '#storeLocator-error');
+                        },
+                        edit: function (e) {
+                            if (e.model.IsDefault == true) {
+                                $('#storeLocators-grid').data("kendoGrid").closeCell();
+                            }
+                        },
+                        navigatable: true,
+                        sortable: true,
+                        editable: true,
+                        scrollable: false,
+                        dataBound: onDataBound,
+                        columns: [{
+                            field: "Name",
+                            title: "@T("StoreLocator.Name")",
+                            template: "#=BaseEam.Grid.dirtyHtml(data,'Name')# #:Name ? Name : '' #"
+                        },{
+                            command: { name: "destroy", text: "@T("Common.Delete")" },
+                            width: 100
+                        }]
+                    });
+                });
+
+                //Cannot delete the default store locator.
+                //Therefore, remove the delete button if the store locator is dedault
+                function onDataBound() {
+                    $("#storeLocators-grid tbody tr .k-grid-delete").each(function () {
+                        var currentDataItem = $("#storeLocators-grid").data("kendoGrid").dataItem($(this).closest("tr"));
+                        if (currentDataItem.IsDefault == true) {
+                            $(this).remove();
+                        }
+                    })
+                }
+            </script>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    $(document).ready(function () {
+        //search button
+        $('#search').click(function () {
+            //search
+            var grid = $('#storeLocators-grid').data('kendoGrid');
+            grid.dataSource.page(1); //new search. Set page size to 1
+            //grid.dataSource.read(); we already loaded the grid above using "page" function
+            return false;
+        });
+    });
+
+    function additionalData() {
+        var data = {
+            storeId: $("#Id").val()
+        };
+        addAntiForgeryToken(data);
+        return data;
+    }
+
+    $("div.panel-search").find(':input').keydown(function (event) {
+        if (event.keyCode == 13) {
+            $("#search").click();
+            return false;
+        }
+    });
+</script>

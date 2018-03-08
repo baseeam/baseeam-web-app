@@ -1,0 +1,219 @@
+﻿@using BaseEAM.Services.Security
+@model ContractPriceItemModel
+@{
+    var defaultGridPageSize = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().DefaultGridPageSize;
+    var gridPageSizes = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().GridPageSizes;
+    var primarySystemCurrencySymbol = EngineContext.Current.Resolve<BaseEAM.Core.IWorkContext>().WorkingCurrency.CurrencySymbol;
+
+    var permissionService = EngineContext.Current.Resolve<BaseEAM.Services.IPermissionService>();
+    var allowCreate = permissionService.Authorize(StandardPermissionName.Purchasing_Contract_Create);
+    var allowRead = permissionService.Authorize(StandardPermissionName.Purchasing_Contract_Read);
+    var allowUpdate = permissionService.Authorize(StandardPermissionName.Purchasing_Contract_Update);
+    var allowDelete = permissionService.Authorize(StandardPermissionName.Purchasing_Contract_Delete);
+}
+<div id="group-contractPriceItems" class="panel-group" data-bind="visible: !isNew()">
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <button type="button" id="createContractPriceItem" class="btn btn-primary@(allowCreate || allowUpdate ? "" : " none-display")" title="@T("Common.AddNew")">
+                <i class="fa fa-plus-square"></i>
+            </button>
+            <button type="button" id="deleteSelectedContractPriceItems" class="btn btn-primary@(allowCreate || allowUpdate ? "" : " none-display")" title="@T("Common.Delete.Selected")">
+                <i class="fa fa-trash-o"></i>
+            </button>
+        </div>
+        <div class="panel-body">
+            <div id="contractPriceItems-grid"></div>
+            <script>
+                var gridCheckboxHandler = new BaseEam.CheckBoxHandler('contractPriceItems-grid');
+                gridCheckboxHandler.init();
+
+                $(document).ready(function () {
+                    $("#contractPriceItems-grid").kendoGrid({
+                        dataSource: {
+                            type: "json",
+                            transport: {
+                                read: {
+                                    url: "@Html.Raw(Url.Action("ContractPriceItemList", "Contract"))",
+                                    type: "POST",
+                                    dataType: "json",
+                                    data: additionalData
+                                },
+                                parameterMap: function(data, operation) {
+                                    sortMapping = [
+                                        {
+                                            from: "ItemName", to: "Item.Name",
+                                            from: "ItemUnitOfMeasureName", to: "Item.UnitOfMeasure.Name"
+                                        }
+                                    ];
+                                    BaseEam.Grid.mapSortColumns(data.sort, sortMapping);
+                                    return data;
+                                }
+                            },
+                            schema: {
+                                data: "Data",
+                                total: "Total",
+                                errors: "Errors",
+                                model: {
+                                    id: "Id"
+                                }
+                            },
+                            error: function(e) {
+                                display_kendoui_grid_error(e);
+                                // Cancel the changes
+                                this.cancelChanges();
+                            },
+                            pageSize: @(defaultGridPageSize),
+                            serverPaging: true,
+                            serverFiltering: true,
+                            serverSorting: true
+                        },
+                        pageable: {
+                            refresh: true,
+                            pageSizes: [@(gridPageSizes)],
+                            @Html.Partial("_GridPagerMessages")
+                        },
+                        sortable: true,
+                        editable: false,
+                        scrollable: false,
+                        dataBound: function(e) {
+                            gridCheckboxHandler.onDataBound(e);
+                        },
+                        columns: [{
+                            field: "Id",
+                            headerTemplate: "<input id='contractPriceItems-grid-mastercheckbox' type='checkbox'/>",
+                            headerAttributes: { style: "text-align:center" },
+                            attributes: { style: "text-align:center" },
+                            template: "<input type='checkbox' value='#=Id#' class='checkboxGroups'/>",
+                            width: 50,
+                            sortable: false
+                        },{
+                            field: "ItemName",
+                            title: "@T("Item")"
+                        },{
+                            field: "ItemUnitOfMeasureName",
+                            title: "@T("UnitOfMeasure")"
+                        },{
+                            field: "ContractedPrice",
+                            title: "@T("ContractPriceItem.ContractedPrice") [@primarySystemCurrencySymbol]",
+                            template: '#= ContractedPrice != null ? kendo.toString(ContractedPrice, "n") : "" #'
+                        }, {
+                            field: "Id",
+                            headerTemplate: "",
+                            width: 100,
+                            template: '<button type="button" class="btn btn-primary@(allowRead || allowUpdate ? "" : " none-display")" onclick="editContractPriceItem(event, #=Id#);"></span><i class="fa fa-pencil aria-hidden="true""></i></a>' +
+                                    '<button type="button" class="deleteRow btn btn-primary@(allowDelete ? "" : " none-display")" onclick="deleteContractPriceItem(event, #=Id#);"></span><i class="fa fa-trash aria-hidden="true""></i></a>',
+                            sortable: false
+                        }]
+                    });
+                });
+            </script>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    function createContractPriceItems(e) {
+        e.preventDefault();
+        BaseEam.Grid.saveChanges('@Url.Action("CreateContractPriceItems", "Contract")', '#createContractPriceItems-grid', '#createContractPriceItems-error', false);
+    };
+
+    function editContractPriceItem(e, id){
+        e.preventDefault();
+        //check if panel-contractPriceItem is open => close it before edit
+        if($('#panel-contractPriceItem').is(":visible")){
+            togglePanelContractPriceItem(false);
+        }
+
+        var postData = {
+            id : id
+        };
+        addAntiForgeryToken(postData);
+
+        $.ajax({
+            cache: false,
+            type: "POST",
+            url: "@(Url.Action("ContractPriceItem", "Contract"))",
+            data: postData,
+            success: function(data) {
+                //append html
+                $("#group-contractPriceItems").append(data.Html);
+
+                //apply binding for the newly generated element
+                ko.applyBindings(viewModel, $("#panel-contractPriceItem")[0]);
+
+                //then toggle the panel
+                togglePanelContractPriceItem(true);
+            },
+            error: function(xhr, ajaxOptions, thrownError) {
+                showBSModal({title: 'ERROR', body: thrownError});
+            },
+            traditional: true
+        });
+    };
+
+    function deleteContractPriceItem(e, id){
+        e.preventDefault();
+        //check if panel-contractPriceItem is open => close it before delete
+        if($('#panel-contractPriceItem').is(":visible")){
+            togglePanelContractPriceItem(false);
+        }
+
+        BaseEam.Grid.deleteRow($("#Id").val(), id, "@Url.Action("DeleteContractPriceItem", "Contract")", "contractPriceItems-grid", "", true);
+    };
+
+    function additionalData() {
+        var data = {
+            contractId: $("#Id").val()
+        };
+        addAntiForgeryToken(data);
+        return data;
+    }
+
+    function togglePanelContractPriceItem(editmode) {
+        if (editmode) {
+            $('#panel-contractPriceItem').show();
+            $('#createContractPriceItem').hide();
+            $('#deleteSelectedContractPriceItems').hide();
+        }
+        else {
+            ////remove the panel html so we won't care
+            //about dirty change tracking for newly added input tag
+            $('#panel-contractPriceItem').remove();
+            $('#createContractPriceItem').show();
+            $('#deleteSelectedContractPriceItems').show();
+        }
+    }
+
+    $(document).ready(function () {
+        $("#createContractPriceItem").click(function(e){
+            e.preventDefault();
+            var postData = {
+                contractId : $("#Id").val()
+            };
+            addAntiForgeryToken(postData);
+
+            $.ajax({
+                cache: false,
+                type: "POST",
+                url: "@(Url.Action("CreateContractPriceItem", "Contract"))",
+                data: postData,
+                success: function(data) {
+                    //append html
+                    $("#group-contractPriceItems").append(data.Html);
+
+                    //then toggle the panel
+                    togglePanelContractPriceItem(true);
+                },
+                error: function(xhr, ajaxOptions, thrownError) {
+                    showBSModal({title: 'ERROR', body: thrownError});
+                },
+                traditional: true
+            });
+        });
+
+        $("#deleteSelectedContractPriceItems").click(function(e){
+            e.preventDefault();
+            BaseEam.Grid.deleteSelectedRows($("#Id").val(), gridCheckboxHandler.selectedIds, "@Url.Action("DeleteSelectedContractPriceItems", "Contract")", "contractPriceItems-grid", "", true);
+        });
+    });
+</script>

@@ -1,0 +1,105 @@
+﻿@using BaseEAM.Services.Security
+@model LanguageModel
+
+@{
+    //page title
+    ViewBag.Title = T("Language.EditLanguageDetails").Text;
+    var permissionService = EngineContext.Current.Resolve<BaseEAM.Services.IPermissionService>();
+    var allowCreate = permissionService.Authorize(StandardPermissionName.Administration_Language_Create);
+    var allowRead = permissionService.Authorize(StandardPermissionName.Administration_Language_Read);
+    var allowUpdate = permissionService.Authorize(StandardPermissionName.Administration_Language_Update);
+    var allowDelete = permissionService.Authorize(StandardPermissionName.Administration_Language_Delete);
+}
+@using (Html.BeginForm("Edit", "Language", FormMethod.Post, new { id = "language-form" }))
+{
+    @Html.AntiForgeryToken()
+    <div class="content-header clearfix">
+        <h1 class="pull-left">
+            <small><i class="fa fa-arrow-circle-left fa-padding"></i>@Html.ActionLink(T("Common.BackToList").Text, "List")</small>
+        </h1>
+        <div class="pull-right">
+            <button type="button" id="save" name="save" class="btn btn-primary@(allowCreate || allowUpdate ? "" : " none-display")" title="@T("Common.Save")">
+                <i class="fa fa-floppy-o"></i>                
+            </button>
+            <button type="button" id="cancel" name="cancel" class="btn btn-primary@(Model.IsNew == true ? "" : " none-display")" title="@T("Common.Cancel")">
+                <i class="fa fa-ban"></i>
+            </button>
+            <button type="button" id="language-delete" class="btn btn-primary@(allowDelete && Model.IsNew == false ? "" : " none-display")" title="@T("Common.Delete")">
+                <i class="fa fa-trash-o"></i>
+            </button>            
+            <a href="@Url.Action("ExportXml", new {id = Model.Id})" class="btn bg-green">
+                <i class="fa fa-download"></i>
+                @T("Language.Export")
+            </a>
+            <button type="button" class="btn bg-olive" data-toggle="modal" data-target="#importxml-window">
+                <i class="fa fa-upload"></i>
+                @T("Language.Import")
+            </button>            
+        </div>
+    </div>
+    <div id="validation-summary" class="validation-summary-errors" style="display:none">
+    </div>
+    @Html.Partial("_CreateOrUpdate", Model)
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $("#save").click(function (e) {
+                e.preventDefault();
+                saveForm('language-form', '@(Url.Action("Edit", "Language"))');
+            });
+
+            $("#cancel").click(function (e) {
+                e.preventDefault();
+                $('#form').removeClass('dirty');
+                BaseEam.Grid.deleteRow(null, @Model.Id, "@Url.Action("Cancel", "Language")", "",  "@Url.Action("List", "Language")", false);
+            });
+
+            $("#language-delete").click(function (e) {
+                e.preventDefault();
+                BaseEam.Grid.deleteRow(null, @Model.Id, "@Url.Action("Delete", "Language")", "", "@Url.Action("List", "Language")", true);
+            });
+        });
+    </script>
+}
+
+@*import resources form*@
+<div id="importxml-window" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="importxml-window-title">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title" id="importxml-window-title">@T("Language.Import")</h4>
+            </div>
+            @using (Html.BeginForm("ImportXml", "Language", new { id = Model.Id }, FormMethod.Post, new { enctype = "multipart/form-data" }))
+            {
+            <div class="form-horizontal">
+                <div class="modal-body">
+                    @Html.AntiForgeryToken()
+                    <ul class="common-list">
+                        <li>
+                            <strong>@T("Language.XmlFile.Note1")</strong>
+                        </li>
+                        <li>
+                            <strong>@T("Language.XmlFile.Note2")</strong>
+                        </li>
+                    </ul>
+                    <div class="form-group">
+                        <div class="col-md-2">
+                            <div class="label-wrapper">
+                                <label class="control-label">
+                                    @T("Language.XmlFile")
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-10">
+                            <input type="file" id="importxmlfile" name="importxmlfile" class="form-control" />
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <input id="importxmlsubmit" type="submit" class="btn btn-primary" value="@T("Language.Import")" />
+                </div>
+            </div>
+            }
+        </div>
+    </div>
+</div>

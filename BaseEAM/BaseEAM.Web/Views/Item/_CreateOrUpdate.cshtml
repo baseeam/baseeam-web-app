@@ -1,0 +1,208 @@
+﻿@model ItemModel
+@Html.HiddenFor(model => model.Id)
+@Html.HiddenFor(model => model.IsNew)
+
+@functions
+{
+    string primarySystemCurrencySymbol = EngineContext.Current.Resolve<BaseEAM.Core.IWorkContext>().WorkingCurrency.CurrencySymbol;
+}
+
+<script>
+    $(document).ready(function() {
+        bindBootstrapTabSelectEvent('item-edit');
+        if ($('#IsNew').val() == 'True') {
+            toggleTabs(false);
+        } else {
+            toggleTabs(true);
+        }
+
+        $("#printBarcode").click(function (e) {
+            e.preventDefault();
+            var barcode = $("#Barcode").val();
+            var url = '@(Url.Action("BarcodeImage", "Common"))';
+            url = url + '?barcode=' + barcode;
+            OpenWindow(url, 1200, 500, true);
+        });
+    });
+
+    function toggleTabs(show) {
+        if (show) {
+            $('#tab-attachments-header').show();
+            $('#tab-entityAttributes-header').show();
+        } else {
+            $('#tab-attachments-header').hide();
+            $('#tab-entityAttributes-header').hide();
+        }
+    }
+</script>
+
+<div class="content">
+    <div class="form-horizontal">
+        <div id="item-edit" class="nav-tabs-custom">
+            <ul class="nav nav-tabs">
+                @Html.RenderBootstrapTabHeader("tab-info", @T("Item.Info"), true)
+                @Html.RenderBootstrapTabHeader("tab-entityAttributes", @T("Common.EntityAttributes"))
+                @Html.RenderBootstrapTabHeader("tab-attachments", @T("Common.Attachments"))
+            </ul>
+            <div class="tab-content">
+                @Html.RenderBootstrapTabContent("tab-info", @TabInfo(), true)
+                @Html.RenderBootstrapTabContent("tab-attachments", @TabAttachments())
+                @Html.RenderBootstrapTabContent("tab-entityAttributes", @TabEntityAttributes())
+            </div>
+        </div>
+    </div>
+</div>
+
+@{
+    //custom tabs
+    var eventMessage = new AdminTabStripCreated(this.Html, "item-edit");
+    EngineContext.Current.Resolve<IEventPublisher>().Publish(eventMessage);
+    foreach (var eventBlock in eventMessage.BlocksToRender)
+    {
+        @eventBlock
+    }
+}
+
+@helper TabInfo()
+{
+    <div class="panel-group">
+        <div class="panel panel-default">
+            <div class="panel-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.Name, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamEditorFor(model => model.Name)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.ItemCategory, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.EnumDropDownListFor(model => model.ItemCategory, new { @class = "form-control" })
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.Description)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamEditorFor(model => model.Description)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.Barcode)
+                            </div>
+                            <div class="col-md-9">
+                                <div class="input-group">
+                                    @Html.BaseEamEditorFor(model => model.Barcode)
+                                    <span class="input-group-btn">
+                                        <button type="button" id="printBarcode" class="btn btn-primary btn-master" title="@T("Common.Print")">
+                                            <i class="fa fa-print"></i>
+                                        </button>
+                                    </span>
+                                </div>                                
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.UnitPrice)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamEditorFor(model => model.UnitPrice, postfix: primarySystemCurrencySymbol)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.PictureId)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.EditorFor(model => Model.PictureId, "Picture", new { entityId = Model.Id, entityType = EntityType.Item })
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.ItemGroupId, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamComboBoxFor(model => model.ItemGroupId, "GetChoices", "Common",
+                                            new RouteValueDictionary { { "dbTable", "ItemGroup" }, { "dbTextColumn", "Name" }, { "dbValueColumn", "Id" } }, true)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.ManufacturerId)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamComboBoxFor(model => model.ManufacturerId, "GetChoices", "Common",
+                                            new RouteValueDictionary { { "dbTable", "Company" }, { "dbTextColumn", "Name" }, { "dbValueColumn", "Id" } }, true)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.UnitOfMeasureId, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamComboBoxFor(model => model.UnitOfMeasureId, "GetChoices", "Common",
+                                            new RouteValueDictionary { { "dbTable", "UnitOfMeasure" }, { "dbTextColumn", "Name" }, { "dbValueColumn", "Id" } }, true)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.ItemStatusId, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamComboBoxFor(model => model.ItemStatusId, "ValueItems", "Common",
+                                            new RouteValueDictionary { { "additionalField", "category" }, { "additionalValue", "Item Status" } }, true)
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <hr />
+                @Html.Partial("Attribute", new ViewDataDictionary { { "entityId", Model.Id }, { "entityType", EntityType.Item } })
+                <hr />
+                @if (Model.Id > 0 && Model.IsNew == false)
+                {
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <div class="col-md-3">
+                                    @Html.BaseEamLabelFor(model => model.FirstCreatedBy)
+                                </div>
+                                <div class="col-md-9">
+                                    @Html.BaseEamDisplayFor(model => model.FirstCreatedBy)
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <div class="col-md-3">
+                                    @Html.BaseEamLabelFor(model => model.LastUpdatedBy)
+                                </div>
+                                <div class="col-md-9">
+                                    @Html.BaseEamDisplayFor(model => model.LastUpdatedBy)
+                                </div>
+                            </div>
+                        </div>
+                    </div>                    
+                }
+            </div>
+        </div>
+    </div>
+}
+
+@helper TabEntityAttributes()
+{
+    @Html.Partial("EntityAttribute", new EntityAttributeModel { EntityId = Model.Id, EntityType = EntityType.Item })
+}
+
+
+@helper TabAttachments()
+{
+    @Html.Partial("Attachment", new AttachmentModel { EntityId = Model.Id, EntityType = EntityType.Item })
+}

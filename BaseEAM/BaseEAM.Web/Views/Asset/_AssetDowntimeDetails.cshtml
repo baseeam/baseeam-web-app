@@ -1,0 +1,133 @@
+﻿@using BaseEAM.Services.Security
+@model AssetDowntimeModel
+@{
+    var permissionService = EngineContext.Current.Resolve<BaseEAM.Services.IPermissionService>();
+    var allowCreate = permissionService.Authorize(StandardPermissionName.Asset_Asset_Create);
+    var allowRead = permissionService.Authorize(StandardPermissionName.Asset_Asset_Read);
+    var allowUpdate = permissionService.Authorize(StandardPermissionName.Asset_Asset_Update);
+    var allowDelete = permissionService.Authorize(StandardPermissionName.Asset_Asset_Delete);
+
+    var primarySystemCurrencySymbol = EngineContext.Current.Resolve<BaseEAM.Core.IWorkContext>().WorkingCurrency.CurrencySymbol;
+}
+
+<div id="panel-assetDowntime" class="panel panel-default eam-panel">
+    <div class="panel-heading">
+        <button type="button" id="saveAssetDowntime" class="btn btn-primary@(allowCreate || allowUpdate ? "" : " none-display")" title="@T("Common.Save")">
+            <i class="fa fa-floppy-o"></i>
+        </button>
+        <button type="button" id="cancelAssetDowntime" class="btn btn-primary" title="@T("Common.Cancel")">
+            <i class="fa fa-ban"></i>
+        </button>
+    </div>
+    <div class="panel-body">
+        @Html.Hidden("AssetId", Model.AssetId)
+        @Html.Hidden("AssetDowntimeId", Model.Id)
+        <div id="assetDowntime-error" class="validation-summary-errors none-display">
+        </div>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.BaseEamLabelFor(model => model.DowntimeTypeId, required: true)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.BaseEamComboBoxFor(model => model.DowntimeTypeId, "ValueItems", "Common",
+                                            new RouteValueDictionary { { "additionalField", "category" }, { "additionalValue", "Downtime Type" } }, true)
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.BaseEamLabelFor(model => model.StartDateTime, required: true)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.BaseEamEditorFor(model => model.StartDateTime)
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.BaseEamLabelFor(model => model.EndDateTime, required: true)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.BaseEamEditorFor(model => model.EndDateTime)
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.BaseEamLabelFor(model => model.ReportedDateTime, required: true)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.BaseEamEditorFor(model => model.ReportedDateTime)
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.BaseEamLabelFor(model => model.ReportedUserId, required: true)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.BaseEamComboBoxFor(model => model.ReportedUserId, "UserList", "Site",
+                                            new RouteValueDictionary { { "parentFieldName", "SiteId" } }, true)
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script type="text/javascript">
+        $("#saveAssetDowntime").click(function (e) {
+            e.preventDefault();
+            var $group = $("#panel-assetDowntime :input");
+            var postData = $group.serializeJSON({ checkboxUncheckedValue: "false" });
+            //change Id property name so it can map to MVC model
+            postData.Id = postData.AssetDowntimeId;
+            addAntiForgeryToken(postData);
+
+            $.ajax({
+                cache: false,
+                type: "POST",
+                url: "@(Url.Action("SaveAssetDowntime", "Asset"))",
+                data: postData,
+                success: function (data) {
+                    if (data && data.Errors) {
+                        showErrors(data.Errors, '#assetDowntime-error');
+                    } else {
+                        //then toggle the panel
+                        togglePanelAssetDowntime(false);
+
+                        //refresh grid
+                        var grid = $('#assetDowntimes-grid').data('kendoGrid');
+                        grid.dataSource.page(1);
+                    }
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    showBSModal({ title: 'ERROR', body: thrownError });
+                },
+                traditional: true
+            });
+        });
+
+        $("#cancelAssetDowntime").click(function (e) {
+            e.preventDefault();
+            var postData = {
+                id: $("#AssetDowntimeId").val()
+            };
+            addAntiForgeryToken(postData);
+
+            $.ajax({
+                cache: false,
+                type: "POST",
+                url: "@(Url.Action("CancelAssetDowntime", "Asset"))",
+                data: postData,
+                success: function (data) {
+                    //toggle the panel
+                    togglePanelAssetDowntime(false);
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    showBSModal({ title: 'ERROR', body: thrownError });
+                },
+                traditional: true
+            });
+        });
+
+    </script>
+</div>

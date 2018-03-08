@@ -1,0 +1,122 @@
+﻿@model TechnicianModel
+@Html.HiddenFor(model => model.Id)
+@Html.HiddenFor(model => model.IsNew)
+
+<script>
+    $(document).ready(function () {
+        bindBootstrapTabSelectEvent('technician-edit');
+        if ($('#IsNew').val() == 'True') {
+            toggleTabs(false);
+        } else {
+            toggleTabs(true);
+        }
+    });
+   
+    function toggleTabs(show) {
+        if (show) {
+            $('#tab-teams-header').show();
+        } else {
+            $('#tab-teams-header').hide();
+        }
+    }
+</script>
+
+<div class="content">
+    <div class="form-horizontal">
+        <div id="technician-edit" class="nav-tabs-custom">
+            <ul class="nav nav-tabs">
+                @Html.RenderBootstrapTabHeader("tab-info", @T("Technician.Info"), true)
+                @Html.RenderBootstrapTabHeader("tab-teams", @T("Technician.Teams"))
+            </ul>
+            <div class="tab-content">
+                @Html.RenderBootstrapTabContent("tab-info", @TabInfo(), true)
+                 @Html.RenderBootstrapTabContent("tab-teams", @TabTeams())
+            </div>
+        </div>
+    </div>
+</div>
+
+@{
+    //custom tabs
+    var eventMessage = new AdminTabStripCreated(this.Html, "technician-edit");
+    EngineContext.Current.Resolve<IEventPublisher>().Publish(eventMessage);
+    foreach (var eventBlock in eventMessage.BlocksToRender)
+    {
+        @eventBlock
+    }
+}
+
+@helper TabInfo()
+{
+    <div class="panel-group">
+        <div class="panel panel-default">
+            <div class="panel-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.UserId, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamComboBoxFor(model => model.UserId, "GetChoices", "Common",
+                                            new RouteValueDictionary { { "dbTable", "User" }, { "dbTextColumn", "Name" }, { "dbValueColumn", "Id" } }, true)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.ShiftId, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamComboBoxFor(model => model.ShiftId, "GetChoices", "Common",
+                                            new RouteValueDictionary { { "dbTable", "Shift" }, { "dbTextColumn", "Name" }, { "dbValueColumn", "Id" } }, true)
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.CalendarId, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamComboBoxFor(model => model.CalendarId, "GetChoices", "Common",
+                                            new RouteValueDictionary { { "dbTable", "Calendar" }, { "dbTextColumn", "Name" }, { "dbValueColumn", "Id" } }, true)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.CraftId, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamComboBoxFor(model => model.CraftId, "GetChoices", "Common",
+                                            new RouteValueDictionary { { "dbTable", "Craft" }, { "dbTextColumn", "Name" }, { "dbValueColumn", "Id" } }, true)
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @if (Model.Id > 0 && Model.IsNew == false)
+                {
+                    <div class="form-group">
+                        <div class="col-md-3">
+                            @Html.BaseEamLabelFor(model => model.FirstCreatedBy)
+                        </div>
+                        <div class="col-md-9">
+                            @Html.BaseEamDisplayFor(model => model.FirstCreatedBy)
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="col-md-3">
+                            @Html.BaseEamLabelFor(model => model.LastUpdatedBy)
+                        </div>
+                        <div class="col-md-9">
+                            @Html.BaseEamDisplayFor(model => model.LastUpdatedBy)
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}
+@helper TabTeams()
+{
+    @Html.Partial("_Teams", new TeamModel())
+}

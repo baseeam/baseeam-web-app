@@ -1,0 +1,141 @@
+﻿@using BaseEAM.Services.Security
+@using BaseEAM.Web.Framework.CustomField
+@model SearchModel
+@{
+    var defaultGridPageSize = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().DefaultGridPageSize;
+    var gridPageSizes = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().GridPageSizes;
+
+    var searchModel = new SearchModel();
+    var moduleNameFilter = new FieldModel
+    {
+        DisplayOrder = 1,
+        Name = "ModuleName",
+        ResourceKey = "Module.Name",
+        DbColumn = "ModuleId",
+        Value = null,
+        ControlType = FieldControlType.DropDownList,
+        DataType = FieldDataType.Int64,
+        DataSource = FieldDataSource.DB,
+        DbTable = "Module",
+        DbTextColumn = "Name",
+        DbValueColumn = "Id",
+        IsRequiredField = false
+    };
+    searchModel.Filters.Add(moduleNameFilter);
+
+    var featureNameFilter = new FieldModel
+    {
+        DisplayOrder = 3,
+        Name = "FeatureName",
+        ResourceKey = "Feature.Name",
+        DbColumn = "FeatureId",
+        Value = null,
+        ControlType = FieldControlType.DropDownList,
+        DataType = FieldDataType.Int64,
+        DataSource = FieldDataSource.MVC,
+        MvcController = "Module",
+        MvcAction = "FeatureList",
+        IsRequiredField = false,
+        ParentFieldName = "ModuleName"
+    };
+    searchModel.Filters.Add(featureNameFilter);
+}
+<div id="group-permissions" class="panel-group">
+    @Html.Partial("Filter", searchModel)
+    <div class="panel panel-default">
+        <div class="panel-body">
+            <div id="permissions-grid"></div>
+            <script>
+                $(document).ready(function () {
+                    $("#permissions-grid").kendoGrid({
+                        dataSource: {
+                            type: "json",
+                            transport: {
+                                read: {
+                                    url: "@Html.Raw(Url.Action("PermissionList", "SecurityGroup"))",
+                                    type: "POST",
+                                    dataType: "json",
+                                    data: additionalData2
+                                },
+                                update: {
+                                    url:"@Html.Raw(Url.Action("UpdateAccessControl", "SecurityGroup"))",
+                                    type: "POST",
+                                    dataType: "json",
+                                    data: addAntiForgeryToken
+                                }
+                            },
+                            schema: {
+                                data: "Data",
+                                total: "Total",
+                                errors: "Errors",
+                                model: {
+                                    id: "SecurityGroupId",
+                                    SecurityGroupId: { type: "number", editable: false },
+                                    Name: { type: "string", editable: false },
+                                    HasPermission: { type: "boolean", editable: true }
+                                }
+                            },
+                            batch: true,
+                            error: function(e) {
+                                display_kendoui_grid_error(e);
+                                // Cancel the changes
+                                this.cancelChanges();
+                            },
+                            pageSize: @(defaultGridPageSize),
+                            serverPaging: true,
+                            serverFiltering: true,
+                            serverSorting: true
+                        },
+                        pageable: {
+                            refresh: true,
+                            pageSizes: [@(gridPageSizes)],
+                            @Html.Partial("_GridPagerMessages")
+                        },
+                        toolbar: ["save", "cancel"],
+                        sortable: false,
+                        editable: true,
+                        scrollable: false,
+                        columns: [{
+                            field: "Name",
+                            title: "@T("PermissionRecord.Name")"
+                        }, {
+                            field: "HasPermission",
+                            title: "@T("AccessControl.HasPermission")",
+                            headerAttributes: { "class": "column-header-editable" },
+                            width: 100
+                        }]
+                    });
+                });
+            </script>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    function additionalData2() {
+        var data = {
+            securityGroupId: $("#Id").val(),
+            searchValues: $("#group-permissions div.panel-search").find(':input').serialize()
+        };
+        addAntiForgeryToken(data);
+        return data;
+    }
+
+    $(document).ready(function () {
+        //search button
+        $('#group-permissions').find('#search').click(function () {
+            //search
+            var grid = $('#permissions-grid').data('kendoGrid');
+            grid.dataSource.page(1); //new search. Set page size to 1
+            //grid.dataSource.read(); we already loaded the grid above using "page" function
+            return false;
+        });
+
+        $("#group-permissions div.panel-search").find(':input').keydown(function (event) {
+            if (event.keyCode == 13) {
+                $('#group-permissions').find('#search').click();
+                return false;
+            }
+        });
+    });
+</script>

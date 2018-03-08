@@ -1,0 +1,3 @@
+@using System.Globalization
+@model DateTime?
+@(Model > DateTime.MinValue || Model.HasValue ? Model.Value.ToString(CultureInfo.CurrentCulture.DateTimeFormat) : null)

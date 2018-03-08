@@ -1,0 +1,149 @@
+﻿@using BaseEAM.Services.Security
+@model SearchModel
+@{
+    //page title
+    ViewBag.Title = T("System.ScheduledJob").Text;
+
+    var defaultGridPageSize = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().DefaultGridPageSize;
+    var gridPageSizes = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().GridPageSizes;
+
+    var permissionService = EngineContext.Current.Resolve<BaseEAM.Services.IPermissionService>();
+    var allowCreate = permissionService.Authorize(StandardPermissionName.System_ScheduledJob_Create);
+    var allowRead = permissionService.Authorize(StandardPermissionName.System_ScheduledJob_Read);
+    var allowUpdate = permissionService.Authorize(StandardPermissionName.System_ScheduledJob_Update);
+    var allowDelete = permissionService.Authorize(StandardPermissionName.System_ScheduledJob_Delete);
+}
+
+@Html.AntiForgeryToken()
+<div class="content-header clearfix">
+    <h1 class="pull-left">
+        @T("System.ScheduledJob")
+    </h1>
+    <div class="pull-right">
+    </div>
+</div>
+<div class="validation-summary-errors none-display">
+</div>
+<div class="content">
+    <div class="form-horizontal">
+        <div class="panel-group">
+            @Html.Partial("Filter", Model)
+            <div class="panel panel-default">
+                <div class="panel-body">
+                    <div id="scheduledJobs-grid"></div>
+
+                    <script>
+                        $(document).ready(function () {
+                            $("#scheduledJobs-grid").kendoGrid({
+                                dataSource: {
+                                    type: "json",
+                                    transport: {
+                                        read: {
+                                            url: "@Html.Raw(Url.Action("List", "ScheduledJob"))",
+                                            type: "POST",
+                                            dataType: "json",
+                                            data: additionalData
+                                        }
+                                    },
+                                    schema: {
+                                        data: "Data",
+                                        total: "Total",
+                                        errors: "Errors",
+                                        model: {
+                                            fields: {
+                                            }
+                                        }
+                                    },
+                                    error: function (e) {
+                                        display_kendoui_grid_error(e);
+                                        // Cancel the changes
+                                        this.cancelChanges();
+                                    },
+                                    pageSize: @(defaultGridPageSize),
+                                    serverPaging: true,
+                                    serverFiltering: true,
+                                    serverSorting: true
+                                },
+                                pageable: {
+                                    refresh: true,
+                                    pageSizes: [@(gridPageSizes)],
+                                    @Html.Partial("_GridPagerMessages")
+                                },
+                                sortable: false,
+                                editable: false,
+                                scrollable: false,
+                                columns: [{
+                                    field: "JobName",
+                                    title: "@T("ScheduledJob.JobName")"
+                                }, {
+                                    field: "IsSimpleTrigger",
+                                    title: "@T("ScheduledJob.IsSimpleTrigger")",
+                                }, {
+                                    field: "RepeatCount",
+                                    title: "@T("ScheduledJob.RepeatCount")",
+                                    template: '#= RepeatCount != null ? kendo.toString(RepeatCount, "n") : "" #'
+                                }, {
+                                    field: "RepeatInterval",
+                                    title: "@T("ScheduledJob.RepeatInterval")",
+                                    template: '#= RepeatInterval != null ? kendo.toString(RepeatInterval, "n") : "" #'
+                                }, {
+                                    field: "IsCronTrigger",
+                                    title: "@T("ScheduledJob.IsCronTrigger")",
+                                }, {
+                                    field: "CronExpression",
+                                    title: "@T("ScheduledJob.CronExpression")",
+                                }, {
+                                    field: "NextFireTime",
+                                    title: "@T("ScheduledJob.NextFireTime")",
+                                    template: '#= NextFireTime != null ? kendo.toString(kendo.parseDate(NextFireTime, "MM/dd/yyyy HH:mm:ss"), "MM/dd/yyyy HH:mm:ss") : "" #'
+                                }, {
+                                    field: "PreviousFireTime",
+                                    title: "@T("ScheduledJob.PreviousFireTime")",
+                                    template: '#= PreviousFireTime != null ? kendo.toString(kendo.parseDate(PreviousFireTime, "MM/dd/yyyy HH:mm:ss"), "MM/dd/yyyy HH:mm:ss") : "" #'
+                                }, {
+                                    field: "RunTime",
+                                    title: "@T("ScheduledJob.RunTime")",
+                                    template: '#= RunTime != null ? kendo.toString(RunTime, "n") : "" #'
+                                }, {
+                                    field: "JobName",
+                                    headerTemplate: "",
+                                    width: 60,
+                                    template: '<a class="btn btn-primary@(allowRead || allowUpdate ? "" : " none-display")" title="@T("Common.Details")" href="Edit/#=JobName#"></span><i class="fa fa-pencil aria-hidden="true""></i></a>'
+                                }
+                                ]
+                            });
+                        });
+                    </script>
+                    <script type="text/javascript">
+
+                        $(document).ready(function () {
+                            //search button
+                            $('#search').click(function () {
+                                //search
+                                var grid = $('#scheduledJobs-grid').data('kendoGrid');
+                                grid.dataSource.page(1); //new search. Set page size to 1
+                                //grid.dataSource.read(); we already loaded the grid above using "page" function
+                                return false;
+                            });
+
+                            $("div.panel-search").find(':input').keydown(function (event) {
+                                if (event.keyCode == 13) {
+                                    $("#search").click();
+                                    return false;
+                                }
+                            });
+                        });
+
+                        function additionalData() {
+                            var data = {
+                                searchValues: $("div.panel-search").find(':input').serialize()
+                            };
+                            addAntiForgeryToken(data);
+                            return data;
+                        }
+                    </script>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

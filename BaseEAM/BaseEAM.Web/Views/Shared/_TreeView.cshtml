@@ -1,0 +1,44 @@
+﻿@using BaseEAM.Web.Framework.Mvc
+@model TreeViewLookup
+
+<div class="content" id="treeview-popup">
+    <div class="form-horizontal">
+        <div class="panel-group">
+            <div class="panel panel-default">
+                <div id="treeview"></div>
+            </div>
+        </div>
+    </div>    
+    <script type="text/javascript">
+        $("#treeview").kendoTreeView({
+            dataSource: {
+                type: "json",
+                transport: {
+                    read: {
+                        url: "@Html.Raw(Url.Action("TreeLoadChildren", Model.TreeType))",
+                        type: "POST",
+                        dataType: "json",
+                        data: addAntiForgeryToken
+                    }
+                },
+                schema: {
+                    model: {
+                        id: "id",
+                        hasChildren: "hasChildren"
+                    }
+                }
+            },
+            dataTextField: "Name",
+            select: function (e) {
+                var treeview = $("#treeview").data("kendoTreeView");
+                var item = treeview.dataItem(e.node);
+                if (item) {
+                    $('#@Model.ValueFieldId').val(item.id);
+                    $('#@Model.TextFieldId').val(item.Name);
+                }
+                //hide modal popup
+                $('.modal').modal('hide');
+            }
+        });
+    </script>
+</div>

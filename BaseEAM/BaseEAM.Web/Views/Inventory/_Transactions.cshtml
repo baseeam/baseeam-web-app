@@ -1,0 +1,116 @@
+﻿@model SearchModel
+@{
+    var defaultGridPageSize = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().DefaultGridPageSize;
+    var gridPageSizes = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().GridPageSizes;
+    var primarySystemCurrencySymbol = EngineContext.Current.Resolve<BaseEAM.Core.IWorkContext>().WorkingCurrency.CurrencySymbol;
+}
+<div class="content" id="transactions-popup">
+    <div class="validation-summary-errors none-display" id="transactions-error">
+    </div>
+    <div class="form-horizontal">
+        <div class="panel-group">
+            @Html.Partial("Filter", Model)
+            <div class="panel panel-default">
+                <div class="panel-body">
+                    <div id="transactions-grid"></div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        function additionalData2() {
+            var data = {
+                searchValues: $("div.panel-search").find(':input').serialize(),
+                storeLocatorId: '@ViewData["StoreLocatorId"]',
+                itemId: '@ViewData["ItemId"]'
+            };
+            addAntiForgeryToken(data);
+            return data;
+        }
+
+        $("#transactions-grid").kendoGrid({
+            dataSource: {
+                type: "json",
+                transport: {
+                    read: {
+                        url: "@Html.Raw(Url.Action("TransactionList", "Inventory"))",
+                        type: "POST",
+                        dataType: "json",
+                        data: additionalData2
+                    }
+                },
+                schema: {
+                    data: "Data",
+                    total: "Total",
+                    errors: "Errors",
+                    model: {
+                        id: "Id",
+                        fields: {
+                        }
+                    }
+                },
+                error: function (e) {
+                    display_kendoui_grid_error(e);
+                    // Cancel the changes
+                    this.cancelChanges();
+                },
+                pageSize: @(defaultGridPageSize),
+                serverPaging: true,
+                serverFiltering: true,
+                serverSorting: true
+            },
+            pageable: {
+                refresh: true,
+                pageSizes: [@(gridPageSizes)],
+                @Html.Partial("_GridPagerMessages")
+            },
+            navigatable: true,
+            sortable: true,
+            editable: false,
+            scrollable: false,
+            columns: [{
+                field: "StoreLocator.Name",
+                title: "@T("StoreLocator")"
+            }, {
+                field: "Item.Name",
+                title: "@T("Item")",
+            },{
+                field: "TransactionType",
+                title: "@T("StoreLocatorItemLog.TransactionType")"
+            },{
+                field: "TransactionNumber",
+                title: "@T("StoreLocatorItemLog.TransactionNumber")"
+            },{
+                field: "TransactionDate",
+                title: "@T("StoreLocatorItemLog.TransactionDate")",
+                template: '#= TransactionDate != null ? kendo.toString(kendo.parseDate(TransactionDate, "MM/dd/yyyy HH:mm:ss"), "MM/dd/yyyy HH:mm:ss") : "" #'
+            },{
+                field: "QuantityChanged",
+                title: "@T("StoreLocatorItemLog.QuantityChanged")",
+                template: '#= QuantityChanged != null ? kendo.toString(QuantityChanged, "n") : "" #',
+            },{
+                field: "CostChanged",
+                title: "@T("StoreLocatorItemLog.CostChanged") [@(primarySystemCurrencySymbol)]",
+                template: '#= CostChanged != null ? kendo.toString(CostChanged, "n") : "" #'
+            }
+            ]
+        });
+
+        //search button
+        $('#transactions-popup').find('#search').click(function () {
+            //search
+            var grid = $('#transactions-grid').data('kendoGrid');
+            grid.dataSource.page(1); //new search. Set page size to 1
+            //grid.dataSource.read(); we already loaded the grid above using "page" function
+            return false;
+        });
+
+        $("#transactions-popup div.panel-search").find(':input').keydown(function (event) {
+            if (event.keyCode == 13) {
+                $('#transactions-popup').find('#search').click();
+                return false;
+            }
+        });
+    </script>
+</div>

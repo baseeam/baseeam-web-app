@@ -1,0 +1,134 @@
+﻿@model ShiftModel
+@Html.HiddenFor(model => model.Id)
+@Html.HiddenFor(model => model.IsNew)
+
+<script>
+    $(document).ready(function () {
+        bindBootstrapTabSelectEvent('shift-edit');
+        if ($('#IsNew').val() == 'True') {
+            toggleTabs(false);
+        } else {
+            toggleTabs(true);
+        }
+        $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+            var target = $(e.target).attr("data-tab-name") // activated tab
+            if (target == 'tab-shiftPatterns') {
+                grid = $("#shiftPatterns-grid").data('kendoGrid');
+                grid.dataSource.read();
+            }
+        });
+    });
+   
+    function toggleTabs(show) {
+        if (show) {
+            $('#tab-shiftPatterns-header').show();
+        } else {
+            $('#tab-shiftPatterns-header').hide();
+        }
+    }
+</script>
+
+<div class="content">
+    <div class="form-horizontal">
+        <div id="shift-edit" class="nav-tabs-custom">
+            <ul class="nav nav-tabs">
+                @Html.RenderBootstrapTabHeader("tab-info", @T("Shift.Info"), true)
+                @Html.RenderBootstrapTabHeader("tab-shiftPatterns", @T("Shift.ShiftPatterns"))
+            </ul>
+            <div class="tab-content">
+                @Html.RenderBootstrapTabContent("tab-info", @TabInfo(), true)
+                 @Html.RenderBootstrapTabContent("tab-shiftPatterns", @TabShiftPatterns())
+            </div>
+        </div>
+    </div>
+</div>
+
+@{
+    //custom tabs
+    var eventMessage = new AdminTabStripCreated(this.Html, "shift-edit");
+    EngineContext.Current.Resolve<IEventPublisher>().Publish(eventMessage);
+    foreach (var eventBlock in eventMessage.BlocksToRender)
+    {
+        @eventBlock
+    }
+}
+
+@helper TabInfo()
+{
+    <div class="panel-group">
+        <div class="panel panel-default">
+            <div class="panel-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.Name, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamEditorFor(model => model.Name)
+                            </div>
+                        </div>                        
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.Description)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamEditorFor(model => model.Description)
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">  
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.CalendarId, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamComboBoxFor(model => model.CalendarId, "GetChoices", "Common",
+                                            new RouteValueDictionary { { "dbTable", "Calendar" }, { "dbTextColumn", "Name" }, { "dbValueColumn", "Id" } }, true)
+                            </div>
+                        </div>                      
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.DaysInPattern, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamEditorFor(model => model.DaysInPattern)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.StartDay, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.EnumDropDownListFor(model => model.StartDay, new { @class = "form-control" })
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @if (Model.Id > 0 && Model.IsNew == false)
+                {
+                    <div class="form-group">
+                        <div class="col-md-3">
+                            @Html.BaseEamLabelFor(model => model.FirstCreatedBy)
+                        </div>
+                        <div class="col-md-9">
+                            @Html.BaseEamDisplayFor(model => model.FirstCreatedBy)
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="col-md-3">
+                            @Html.BaseEamLabelFor(model => model.LastUpdatedBy)
+                        </div>
+                        <div class="col-md-9">
+                            @Html.BaseEamDisplayFor(model => model.LastUpdatedBy)
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}
+@helper TabShiftPatterns()
+{
+    @Html.Partial("_ShiftPatterns", new ShiftPatternModel())
+}

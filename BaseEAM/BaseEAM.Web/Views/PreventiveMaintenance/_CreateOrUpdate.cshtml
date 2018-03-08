@@ -1,0 +1,215 @@
+﻿@model PreventiveMaintenanceModel
+@Html.HiddenFor(model => model.Id)
+@Html.HiddenFor(model => model.IsNew)
+
+<script>
+    $(document).ready(function() {
+        bindBootstrapTabSelectEvent('preventiveMaintenance-edit');
+    });
+
+    function savedCallback(data) {
+        viewModel.isNew(false);
+        viewModel.number(data.number);
+
+        refreshTasksTab();
+    }
+</script>
+
+<div class="content">
+    <div class="form-horizontal">
+        <div id="preventiveMaintenance-edit" class="nav-tabs-custom">
+            <ul class="nav nav-tabs">
+                @Html.RenderBootstrapTabHeader("tab-info", @T("PreventiveMaintenance.Info"), true)
+                @Html.RenderBootstrapTabHeader("tab-scheduling", @T("PreventiveMaintenance.Scheduling"))
+                @Html.RenderBootstrapTabHeader("tab-costing", @T("PreventiveMaintenance.Costing"))
+                @Html.RenderBootstrapTabHeader("tab-pMTasks", @T("PreventiveMaintenance.PMTasks"))
+                @Html.RenderBootstrapTabHeader("tab-workOrders", @T("PreventiveMaintenance.WorkOrders"))
+                @Html.RenderBootstrapTabHeader("tab-attachments", @T("Common.Attachments"))
+            </ul>
+            <div class="tab-content">
+                @Html.RenderBootstrapTabContent("tab-info", @TabInfo(), true)
+                @Html.RenderBootstrapTabContent("tab-scheduling", @TabScheduling(), dataBind: "visible: !isNew()")
+                @Html.RenderBootstrapTabContent("tab-costing", @TabCosting(), dataBind: "visible: !isNew()")
+                @Html.RenderBootstrapTabContent("tab-pMTasks", @TabPMTasks(), dataBind: "visible: !isNew()")
+                @Html.RenderBootstrapTabContent("tab-workOrders", @TabWorkOrders(), dataBind: "visible: !isNew()")
+                @Html.RenderBootstrapTabContent("tab-attachments", @TabAttachments(), dataBind: "visible: !isNew()")
+            </div>
+        </div>
+    </div>
+</div>
+
+@{
+    //custom tabs
+    var eventMessage = new AdminTabStripCreated(this.Html, "preventiveMaintenance-edit");
+    EngineContext.Current.Resolve<IEventPublisher>().Publish(eventMessage);
+    foreach (var eventBlock in eventMessage.BlocksToRender)
+    {
+        @eventBlock
+    }
+}
+
+@helper TabInfo()
+{
+    <div class="panel-group">
+        <div class="panel panel-default">
+            <div class="panel-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.Number, required: true)
+                                @Html.HiddenFor(model => model.Number)
+                            </div>
+                            <div class="col-md-9">
+                                <div class="form-text-row" data-bind="html: number"></div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.Description, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamEditorFor(model => model.Description)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.SiteId, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamComboBoxFor(model => model.SiteId, "SiteList", "Site", null, true)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.AssetId, required: true)
+                                @Html.HiddenFor(model => model.AssetId)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.AssetLookupFor(model => model.AssetName)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.LocationId, required: true)
+                                @Html.HiddenFor(model => model.LocationId)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.LocationLookupFor(model => model.LocationName)
+                            </div>
+                        </div>                        
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.PMStatusId, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamComboBoxFor(model => model.PMStatusId, "ValueItems", "Common",
+                                            new RouteValueDictionary { { "additionalField", "category" }, { "additionalValue", "PM Status" } }, true)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.Priority)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.EnumDropDownListFor(model => model.Priority, new { @class = "form-control" })
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.WorkCategoryId, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamComboBoxFor(model => model.WorkCategoryId, "ValueItems", "Common",
+                                            new RouteValueDictionary { { "additionalField", "category" }, { "additionalValue", "Work Category" } }, true)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.WorkTypeId)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamComboBoxFor(model => model.WorkTypeId, "ValueItems", "Common",
+                                            new RouteValueDictionary { { "additionalField", "category" }, { "additionalValue", "Work Type" } }, true)
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.FailureGroupId)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamComboBoxFor(model => model.FailureGroupId, "FailureGroupList", "Code")
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <hr />
+                <h4>@T("Contractor")</h4>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.ContractId)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamComboBoxFor(model => model.ContractId, "GetChoices", "Common",
+                                            new RouteValueDictionary { { "dbTable", "Contract" }, { "dbTextColumn", "Number" }, { "dbValueColumn", "Id" } }, true)
+                            </div>
+                        </div>
+                    </div>
+                </div>                
+                <hr />
+                @if (Model.Id > 0 && Model.IsNew == false)
+                {
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <div class="col-md-3">
+                                    @Html.BaseEamLabelFor(model => model.FirstCreatedBy)
+                                </div>
+                                <div class="col-md-9">
+                                    @Html.BaseEamDisplayFor(model => model.FirstCreatedBy)
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <div class="col-md-3">
+                                    @Html.BaseEamLabelFor(model => model.LastUpdatedBy)
+                                </div>
+                                <div class="col-md-9">
+                                    @Html.BaseEamDisplayFor(model => model.LastUpdatedBy)
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+@helper TabScheduling()
+{
+    @Html.Partial("_Scheduling", Model)
+}
+
+@helper TabCosting()
+{
+    @Html.Partial("_Costing", Model)
+}
+
+@helper TabPMTasks()
+{
+    @Html.Partial("_PMTasks", new PMTaskModel { PreventiveMaintenanceId = Model.Id, PreventiveMaintenanceNumber = Model.Number, TaskGroupId = Model.TaskGroupId })
+}
+
+@helper TabWorkOrders()
+{
+    @Html.Partial("_WorkOrders", Model)
+}
+
+@helper TabAttachments()
+{
+    @Html.Partial("Attachment", new AttachmentModel { EntityId = Model.Id, EntityType = EntityType.PreventiveMaintenance })
+}

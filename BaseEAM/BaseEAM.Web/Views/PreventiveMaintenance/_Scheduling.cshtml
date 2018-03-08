@@ -1,0 +1,48 @@
+﻿@model PreventiveMaintenanceModel
+
+<div class="panel-group">
+    <div class="panel panel-default">
+        <div class="panel-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <div class="col-md-3">
+                            @Html.BaseEamLabelFor(model => model.Number, required: true)
+                        </div>
+                        <div class="col-md-9">
+                            <div class="form-text-row" data-bind="html: number"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>            
+            <hr />
+            <div id="sheduling-edit" class="nav-tabs-custom">
+                <ul class="nav nav-tabs">
+                    @Html.RenderBootstrapTabHeader("tab-timeBased", @T("TimeBased"), true)
+                    @Html.RenderBootstrapTabHeader("tab-meterBased", @T("MeterBased"))
+                    @Html.RenderBootstrapTabHeader("tab-eventBased", @T("EventBased"))
+                </ul>
+                <div class="tab-content">
+                    @Html.RenderBootstrapTabContent("tab-timeBased", @TabTimeBased(), true)
+                    @Html.RenderBootstrapTabContent("tab-meterBased", @TabMeterBased())
+                    @Html.RenderBootstrapTabContent("tab-eventBased", @TabEventBased())
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@helper TabTimeBased()
+{
+    @Html.Partial("_TimeBased", Model)
+}
+
+@helper TabMeterBased()
+{
+    @Html.Partial("_MeterBased", new PMMeterFrequencyModel { PreventiveMaintenanceId = Model.Id})
+}
+
+@helper TabEventBased()
+{
+    @Html.Partial("_EventBased", Model)
+}

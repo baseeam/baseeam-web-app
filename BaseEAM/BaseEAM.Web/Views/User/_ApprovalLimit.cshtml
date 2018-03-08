@@ -1,0 +1,24 @@
+﻿@model UserModel
+
+@{
+    var primarySystemCurrencySymbol = EngineContext.Current.Resolve<BaseEAM.Core.IWorkContext>().WorkingCurrency.CurrencySymbol;
+}
+
+<div class="panel-group">
+    <div class="panel panel-default">
+        <div class="panel-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <div class="col-md-3">
+                            @Html.BaseEamLabelFor(model => model.POApprovalLimit)
+                        </div>
+                        <div class="col-md-9">
+                            @Html.BaseEamEditorFor(model => model.POApprovalLimit, postfix: primarySystemCurrencySymbol)
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

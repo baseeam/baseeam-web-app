@@ -1,0 +1,238 @@
+﻿@using BaseEAM.Services.Security
+@model WorkOrderLaborModel
+@{
+    var defaultGridPageSize = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().DefaultGridPageSize;
+    var gridPageSizes = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().GridPageSizes;
+    var primarySystemCurrencySymbol = EngineContext.Current.Resolve<BaseEAM.Core.IWorkContext>().WorkingCurrency.CurrencySymbol;
+
+    var permissionService = EngineContext.Current.Resolve<BaseEAM.Services.IPermissionService>();
+    var allowCreate = permissionService.Authorize(StandardPermissionName.Maintenance_WorkOrder_Create);
+    var allowRead = permissionService.Authorize(StandardPermissionName.Maintenance_WorkOrder_Read);
+    var allowUpdate = permissionService.Authorize(StandardPermissionName.Maintenance_WorkOrder_Update);
+    var allowDelete = permissionService.Authorize(StandardPermissionName.Maintenance_WorkOrder_Delete);
+}
+<div id="group-workOrderLabors" class="panel-group" data-bind="visible: !isNew()">
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <button type="button" id="createWorkOrderLabor" class="btn btn-primary@(allowCreate || allowUpdate ? "" : " none-display")" title="@T("Common.AddNew")">
+                <i class="fa fa-plus-square"></i>
+            </button>
+            <button type="button" id="deleteSelectedWorkOrderLabors" class="btn btn-primary@(allowCreate || allowUpdate ? "" : " none-display")" title="@T("Common.Delete.Selected")">
+                <i class="fa fa-trash-o"></i>
+            </button>
+        </div>
+        <div class="panel-body">
+            <div id="workOrderLabors-grid"></div>
+            <script>
+                var gridCheckboxHandler1 = new BaseEam.CheckBoxHandler('workOrderLabors-grid');
+                gridCheckboxHandler1.init();
+
+                $(document).ready(function () {
+                    $("#workOrderLabors-grid").kendoGrid({
+                        dataSource: {
+                            type: "json",
+                            transport: {
+                                read: {
+                                    url: "@Html.Raw(Url.Action("WorkOrderLaborList", "WorkOrder"))",
+                                    type: "POST",
+                                    dataType: "json",
+                                    data: additionalData1
+                                },
+                                parameterMap: function(data, operation) {
+                                    sortMapping = [
+                                        {from: "TeamName", to: "Team.Name"},
+                                        {from: "TechnicianName", to: "Technician.Name"},
+                                        {from: "CraftName", to: "Craft.Name"}
+                                    ];
+                                    BaseEam.Grid.mapSortColumns(data.sort, sortMapping);
+                                    return data;
+                                }
+                            },
+                            schema: {
+                                data: "Data",
+                                total: "Total",
+                                errors: "Errors",
+                                model: {
+                                    id: "Id"
+                                }
+                            },
+                            aggregate: [
+                                        { field: "PlanTotal", aggregate: "sum" },
+                                        { field: "ActualTotal", aggregate: "sum" }
+                            ],
+                            error: function(e) {
+                                display_kendoui_grid_error(e);
+                                // Cancel the changes
+                                this.cancelChanges();
+                            },
+                            pageSize: @(defaultGridPageSize),
+                            serverPaging: true,
+                            serverFiltering: true,
+                            serverSorting: true
+                        },
+                        pageable: {
+                            refresh: true,
+                            pageSizes: [@(gridPageSizes)],
+                            @Html.Partial("_GridPagerMessages")
+                        },
+                        sortable: true,
+                        editable: false,
+                        scrollable: false,
+                        dataBound: function(e) {
+                            gridCheckboxHandler1.onDataBound(e);
+                        },
+                        columns: [{
+                            field: "Id",
+                            headerTemplate: "<input id='workOrderLabors-grid-mastercheckbox' type='checkbox'/>",
+                            headerAttributes: { style: "text-align:center" },
+                            attributes: { style: "text-align:center" },
+                            template: "<input type='checkbox' value='#=Id#' class='checkboxGroups'/>",
+                            width: 50,
+                            sortable: false
+                        },{
+                            field: "TeamName",
+                            title: "@T("Team")"
+                        },{
+                            field: "TechnicianName",
+                            title: "@T("Technician")"
+                        },{
+                            field: "CraftName",
+                            title: "@T("Craft")"
+                        },{
+                            field: "PlanHours",
+                            title: "@T("WorkOrderLabor.PlanHours")",
+                            template: '#= PlanHours != null ? kendo.toString(PlanHours, "n") : "" #'
+                        }, {
+                            field: "PlanTotal",
+                            title: "@T("WorkOrderLabor.PlanTotal") [@(primarySystemCurrencySymbol)]",
+                            template: '#= PlanTotal != null ? kendo.toString(PlanTotal, "n") : "" #',
+                            footerTemplate: '#= sum != null ? kendo.toString(sum, "n") : "" #'
+                        },{
+                            field: "ActualNormalHours",
+                            title: "@T("WorkOrderLabor.ActualNormalHours")",
+                            template: '#= ActualNormalHours != null ? kendo.toString(ActualNormalHours, "n") : "" #'
+                        },{
+                            field: "ActualOTHours",
+                            title: "@T("WorkOrderLabor.ActualOTHours")",
+                            template: '#= ActualOTHours != null ? kendo.toString(ActualOTHours, "n") : "" #'
+                        }, {
+                            field: "ActualTotal",
+                            title: "@T("WorkOrderLabor.ActualTotal") [@(primarySystemCurrencySymbol)]",
+                            template: '#= ActualTotal != null ? kendo.toString(ActualTotal, "n") : "" #',
+                            footerTemplate: '#= sum != null ? kendo.toString(sum, "n") : "" #'
+                        }, {
+                            field: "Id",
+                            headerTemplate: "",
+                            width: 100,
+                            template: '<button type="button" class="btn btn-primary@(allowRead || allowUpdate ? "" : " none-display")" onclick="editWorkOrderLabor(event, #=Id#);"></span><i class="fa fa-pencil aria-hidden="true""></i></a>' +
+                                    '<button type="button" class="deleteRow btn btn-primary@(allowDelete ? "" : " none-display")" onclick="deleteWorkOrderLabor(event, #=Id#);"></span><i class="fa fa-trash aria-hidden="true""></i></a>',
+                            sortable: false
+                        }]
+                    });
+                });
+            </script>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    function editWorkOrderLabor(e, id){
+        e.preventDefault();
+        //check if panel-workOrderLabor is open => close it before edit
+        if($('#panel-workOrderLabor').is(":visible")){
+            togglePanelWorkOrderLabor(false);
+        }
+
+        var postData = {
+            id : id
+        };
+        addAntiForgeryToken(postData);
+
+        $.ajax({
+            cache: false,
+            type: "POST",
+            url: "@(Url.Action("WorkOrderLabor", "WorkOrder"))",
+            data: postData,
+            success: function(data) {
+                //append html
+                $("#group-workOrderLabors").append(data.Html);
+
+                //apply binding for the newly generated element
+                ko.applyBindings(viewModel, $("#panel-workOrderLabor")[0]);
+
+                //then toggle the panel
+                togglePanelWorkOrderLabor(true);
+            },
+            error: function(xhr, ajaxOptions, thrownError) {
+                showBSModal({title: 'ERROR', body: thrownError});
+            },
+            traditional: true
+        });
+    };
+
+    function deleteWorkOrderLabor(e, id){
+        e.preventDefault();
+        //check if panel-workOrderLabor is open => close it before delete
+        if($('#panel-workOrderLabor').is(":visible")){
+            togglePanelWorkOrderLabor(false);
+        }
+
+        BaseEam.Grid.deleteRow($("#Id").val(), id, "@Url.Action("DeleteWorkOrderLabor", "WorkOrder")", "workOrderLabors-grid", "", true);
+    };
+
+    function additionalData1() {
+        var data = {
+            workOrderId: $("#Id").val()
+        };
+        addAntiForgeryToken(data);
+        return data;
+    }
+
+    function togglePanelWorkOrderLabor(editmode) {
+        if (editmode) {
+            $('#panel-workOrderLabor').show();
+            $('#createWorkOrderLabor').hide();
+            $('#deleteSelectedWorkOrderLabors').hide();
+        }
+        else {
+            ////remove the panel html so we won't care
+            //about dirty change tracking for newly added input tag
+            $('#panel-workOrderLabor').remove();
+            $('#createWorkOrderLabor').show();
+            $('#deleteSelectedWorkOrderLabors').show();
+        }
+    }
+
+    $(document).ready(function () {
+        $("#createWorkOrderLabor").click(function(e){
+            e.preventDefault();
+            var postData = {
+                workOrderId : $("#Id").val()
+            };
+            addAntiForgeryToken(postData);
+
+            $.ajax({
+                cache: false,
+                type: "POST",
+                url: "@(Url.Action("CreateWorkOrderLabor", "WorkOrder"))",
+                data: postData,
+                success: function(data) {
+                    //append html
+                    $("#group-workOrderLabors").append(data.Html);
+
+                    //then toggle the panel
+                    togglePanelWorkOrderLabor(true);
+                },
+                error: function(xhr, ajaxOptions, thrownError) {
+                    showBSModal({title: 'ERROR', body: thrownError});
+                },
+                traditional: true
+            });
+        });
+
+        $("#deleteSelectedWorkOrderLabors").click(function(e){
+            e.preventDefault();
+            BaseEam.Grid.deleteSelectedRows($("#Id").val(), gridCheckboxHandler1.selectedIds, "@Url.Action("DeleteSelectedWorkOrderLabors", "WorkOrder")", "workOrderLabors-grid", "", true);
+        });
+    });
+</script>

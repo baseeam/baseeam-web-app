@@ -1,0 +1,192 @@
+﻿@using BaseEAM.Services.Security
+@model TaskModel
+@{
+    var defaultGridPageSize = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().DefaultGridPageSize;
+    var gridPageSizes = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().GridPageSizes;
+
+    var permissionService = EngineContext.Current.Resolve<BaseEAM.Services.IPermissionService>();
+    var allowCreate = permissionService.Authorize(StandardPermissionName.Maintenance_TaskGroup_Create);
+    var allowRead = permissionService.Authorize(StandardPermissionName.Maintenance_TaskGroup_Read);
+    var allowUpdate = permissionService.Authorize(StandardPermissionName.Maintenance_TaskGroup_Update);
+    var allowDelete = permissionService.Authorize(StandardPermissionName.Maintenance_TaskGroup_Delete);
+}
+<div id="group-tasks" class="panel-group">
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <button type="button" id="createTask" class="btn btn-primary@(allowCreate || allowUpdate ? "" : " none-display")" title="@T("Common.AddNew")">
+                <i class="fa fa-plus-square"></i>
+            </button>
+            <button type="button" id="deleteSelectedTasks" class="btn btn-primary@(allowCreate || allowUpdate ? "" : " none-display")" title="@T("Common.Delete.Selected")">
+                <i class="fa fa-trash-o"></i>
+            </button>
+        </div>
+        <div class="panel-body">
+            <div id="tasks-grid"></div>
+            <script>
+                var gridCheckboxHandler1 = new BaseEam.CheckBoxHandler('tasks-grid');
+                gridCheckboxHandler1.init();
+
+                $(document).ready(function () {
+                    $("#tasks-grid").kendoGrid({
+                        dataSource: {
+                            type: "json",
+                            transport: {
+                                read: {
+                                    url: "@Html.Raw(Url.Action("TaskList", "TaskGroup"))",
+                                    type: "POST",
+                                    dataType: "json",
+                                    data: additionalData1
+                                }
+                            },
+                            schema: {
+                                data: "Data",
+                                total: "Total",
+                                errors: "Errors",
+                                model: {
+                                    id: "Id"
+                                }
+                            },
+                            error: function(e) {
+                                display_kendoui_grid_error(e);
+                                // Cancel the changes
+                                this.cancelChanges();
+                            },
+                            pageSize: @(defaultGridPageSize),
+                            serverPaging: true,
+                            serverFiltering: true,
+                            serverSorting: true
+                        },
+                        pageable: {
+                            refresh: true,
+                            pageSizes: [@(gridPageSizes)],
+                            @Html.Partial("_GridPagerMessages")
+                        },
+                        sortable: true,
+                        editable: false,
+                        scrollable: false,
+                        dataBound: gridCheckboxHandler1.onDataBound,
+                        columns: [{
+                            field: "Id",
+                            headerTemplate: "<input id='tasks-grid-mastercheckbox' type='checkbox'/>",
+                            headerAttributes: { style: "text-align:center" },
+                            attributes: { style: "text-align:center" },
+                            template: "<input type='checkbox' value='#=Id#' class='checkboxGroups'/>",
+                            width: 50,
+                            sortable: false
+                        },{
+                            field: "Sequence",
+                            title: "@T("Task.Sequence")"
+                        }, {
+                            field: "Description",
+                            title: "@T("Task.Description")"
+                        }, {
+                            field: "Id",
+                            headerTemplate: "",
+                            width: 100,
+                           template: '<button type="button" class="btn btn-primary@(allowRead || allowUpdate ? "" : " none-display")" onclick="editTask(event, #=Id#);"></span><i class="fa fa-pencil aria-hidden="true""></i></a>' +
+                                    '<button type="button" class="btn btn-primary@(allowDelete ? "" : " none-display")" title="@T("Common.Delete")" onclick="deleteTask(event, #=Id#);"></span><i class="fa fa-trash aria-hidden="true""></i></a>',
+                            sortable: false
+                        }]
+                    });
+                });
+            </script>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    function editTask(e, id){
+        e.preventDefault();
+        if($('#panel-task').is(":visible")){
+            togglePanelTask(false);
+        }
+        var postData = {
+            id : id
+        };
+        addAntiForgeryToken(postData);
+
+        $.ajax({
+            cache: false,
+            type: "POST",
+            url: "@(Url.Action("Task", "TaskGroup"))",
+            data: postData,
+            success: function(data) {
+                //append html
+                $("#group-tasks").append(data.Html);
+
+                //then toggle the panel
+                togglePanelTask(true);
+            },
+            error: function(xhr, ajaxOptions, thrownError) {
+                showBSModal({title: 'ERROR', body: thrownError});
+            },
+            traditional: true
+        });
+    };
+
+    function deleteTask(e, id){
+        e.preventDefault();
+        //check if panel-task is open => close it before delete
+        if($('#panel-task').is(":visible")){
+            togglePanelTask(false);
+        }
+
+        BaseEam.Grid.deleteRow($("#Id").val(), id, "@Url.Action("DeleteTask", "TaskGroup")", "tasks-grid", "", true);
+    };
+
+    function additionalData1() {
+        var data = {
+            taskGroupId: $("#Id").val()
+        };
+        addAntiForgeryToken(data);
+        return data;
+    }
+
+    function togglePanelTask(editmode) {
+        if (editmode) {
+            $('#panel-task').show();
+            $('#createTask').hide();
+            $('#deleteSelectedTasks').hide();
+        }
+        else {
+            ////remove the panel html so we won't care
+            //about dirty change tracking for newly added input tag
+            $('#panel-task').remove();
+            $('#createTask').show();
+            $('#deleteSelectedTasks').show();
+        }
+    }
+
+    $(document).ready(function () {
+        $("#createTask").click(function(e){
+            e.preventDefault();
+            var postData = {
+                taskGroupId : $("#Id").val()
+            };
+            addAntiForgeryToken(postData);
+
+            $.ajax({
+                cache: false,
+                type: "POST",
+                url: "@(Url.Action("CreateTask", "TaskGroup"))",
+                data: postData,
+                success: function(data) {
+                    //append html
+                    $("#group-tasks").append(data.Html);
+
+                    //then toggle the panel
+                    togglePanelTask(true);
+                },
+                error: function(xhr, ajaxOptions, thrownError) {
+                    showBSModal({title: 'ERROR', body: thrownError});
+                },
+                traditional: true
+            });
+        });
+
+        $("#deleteSelectedTasks").click(function(e){
+            e.preventDefault();
+            BaseEam.Grid.deleteSelectedRows($("#Id").val(), gridCheckboxHandler1.selectedIds, "@Url.Action("DeleteSelectedTasks", "TaskGroup")", "tasks-grid", "", true);
+        });
+    });
+</script>

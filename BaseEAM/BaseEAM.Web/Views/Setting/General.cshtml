@@ -1,0 +1,243 @@
+﻿@model GeneralSettingsModel
+
+@{
+    //page title
+    ViewBag.Title = T("Setting.GeneralSettings").Text;
+}
+@using (Html.BeginForm("General", "Setting", FormMethod.Post, new { id = "generalsettings-form" }))
+{
+    @Html.Hidden("IsNew", false)
+    @Html.AntiForgeryToken()
+    <div class="content-header clearfix">
+        <h1 class="pull-left">
+            @T("Setting.GeneralSettings")
+        </h1>
+        <div class="pull-right">
+            <button type="button" id="save" name="save" class="btn btn-primary" title="@T("Common.Save")">
+                <i class="fa fa-floppy-o"></i>
+            </button>
+        </div>
+    </div>
+
+    <div class="content">
+        <div class="form-horizontal">
+            <div class="panel-group">
+                <div class="panel panel-default">
+                    <div class="panel-body">
+                        <div class="row">
+                            <div class="col-md-10">
+                                <div class="form-group">
+                                    <div class="col-md-3">
+                                        @Html.BaseEamLabelFor(model => model.DefaultGridPageSize)
+                                    </div>
+                                    <div class="col-md-9">
+                                        @Html.BaseEamEditorFor(model => model.DefaultGridPageSize)
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <div class="col-md-3">
+                                        @Html.BaseEamLabelFor(model => model.GridPageSizes)
+                                    </div>
+                                    <div class="col-md-9">
+                                        @Html.BaseEamEditorFor(model => model.GridPageSizes)
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <div class="col-md-3">
+                                        @Html.BaseEamLabelFor(model => model.EnableMiniProfiler)
+                                    </div>
+                                    <div class="col-md-9">
+                                        @Html.BaseEamCheckBoxFor(model => model.EnableMiniProfiler)
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <div class="col-md-3">
+                                        @Html.BaseEamLabelFor(model => model.CollapseMenu)
+                                    </div>
+                                    <div class="col-md-9">
+                                        @Html.BaseEamCheckBoxFor(model => model.CollapseMenu)
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <hr />
+                        <h4>@T("GeneralSettings.Email")</h4>
+                        <div class="row">
+                            <div class="col-md-10">
+                                <div class="form-group">
+                                    <div class="col-md-3">
+                                        @Html.BaseEamLabelFor(model => model.MessageEmailSender)
+                                    </div>
+                                    <div class="col-md-9">
+                                        @Html.BaseEamEditorFor(model => model.MessageEmailSender)
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <div class="col-md-3">
+                                        @Html.BaseEamLabelFor(model => model.MessageSmtpServer)
+                                    </div>
+                                    <div class="col-md-9">
+                                        @Html.BaseEamEditorFor(model => model.MessageSmtpServer)
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <div class="col-md-3">
+                                        @Html.BaseEamLabelFor(model => model.MessageSmtpPort)
+                                    </div>
+                                    <div class="col-md-9">
+                                        @Html.BaseEamEditorFor(model => model.MessageSmtpPort)
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <div class="col-md-3">
+                                        @Html.BaseEamLabelFor(model => model.MessageSmtpRequiresAuthentication)
+                                    </div>
+                                    <div class="col-md-9">
+                                        @Html.BaseEamCheckBoxFor(model => model.MessageSmtpRequiresAuthentication)
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <div class="col-md-3">
+                                        @Html.BaseEamLabelFor(model => model.MessageSmtpServerUserName)
+                                    </div>
+                                    <div class="col-md-9">
+                                        @Html.BaseEamEditorFor(model => model.MessageSmtpServerUserName)
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <div class="col-md-3">
+                                        @Html.BaseEamLabelFor(model => model.MessageSmtpServerPassword)
+                                    </div>
+                                    <div class="col-md-9">
+                                        @Html.BaseEamEditorFor(model => model.MessageSmtpServerPassword)
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <hr />
+                        <h4>@T("GeneralSettings.Clickatell")</h4>
+                        <div class="row">
+                            <div class="col-md-10">
+                                <div class="form-group">
+                                    <div class="col-md-3">
+                                        @Html.BaseEamLabelFor(model => model.SMSEnabled)
+                                    </div>
+                                    <div class="col-md-9">
+                                        @Html.BaseEamCheckBoxFor(model => model.SMSEnabled)
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <div class="col-md-3">
+                                        @Html.BaseEamLabelFor(model => model.ClickatellApiId)
+                                    </div>
+                                    <div class="col-md-9">
+                                        @Html.BaseEamEditorFor(model => model.ClickatellApiId)
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <div class="col-md-3">
+                                        @Html.BaseEamLabelFor(model => model.ClickatellUsername)
+                                    </div>
+                                    <div class="col-md-9">
+                                        @Html.BaseEamEditorFor(model => model.ClickatellUsername)
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <div class="col-md-3">
+                                        @Html.BaseEamLabelFor(model => model.ClickatellPassword)
+                                    </div>
+                                    <div class="col-md-9">
+                                        @Html.BaseEamEditorFor(model => model.ClickatellPassword)
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <hr />
+                        <h4>@T("GeneralSettings.SendMessage")</h4>
+                        <div class="row">
+                            <div class="col-md-10">
+                                <div class="form-group">
+                                    <div class="col-md-3">
+                                        @Html.BaseEamLabelFor(model => model.MessageNumberOfTries)
+                                    </div>
+                                    <div class="col-md-9">
+                                        @Html.BaseEamEditorFor(model => model.MessageNumberOfTries)
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <div class="col-md-3">
+                                        @Html.BaseEamLabelFor(model => model.OnlyLogMessage)
+                                    </div>
+                                    <div class="col-md-9">
+                                        @Html.BaseEamCheckBoxFor(model => model.OnlyLogMessage)
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <hr />
+                        <h4>@T("GeneralSettings.WebApiSettings")</h4>
+                        <div class="row">
+                            <div class="col-md-10">
+                                <div class="form-group">
+                                    <div class="col-md-3">
+                                        @Html.BaseEamLabelFor(model => model.ValidMinutePeriod)
+                                    </div>
+                                    <div class="col-md-9">
+                                        @Html.BaseEamEditorFor(model => model.ValidMinutePeriod)
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <div class="col-md-3">
+                                        @Html.BaseEamLabelFor(model => model.NoRequestTimestampValidation)
+                                    </div>
+                                    <div class="col-md-9">
+                                        @Html.BaseEamCheckBoxFor(model => model.NoRequestTimestampValidation)
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <div class="col-md-3">
+                                        @Html.BaseEamLabelFor(model => model.AllowEmptyMd5Hash)
+                                    </div>
+                                    <div class="col-md-9">
+                                        @Html.BaseEamCheckBoxFor(model => model.AllowEmptyMd5Hash)
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <div class="col-md-3">
+                                        @Html.BaseEamLabelFor(model => model.LogUnauthorized)
+                                    </div>
+                                    <div class="col-md-9">
+                                        @Html.BaseEamCheckBoxFor(model => model.LogUnauthorized)
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <hr />
+                        <h4>@T("GeneralSettings.Barcode")</h4>
+                        <div class="row">
+                            <div class="col-md-10">
+                                <div class="form-group">
+                                    <div class="col-md-3">
+                                        @Html.BaseEamLabelFor(model => model.BarcodeType)
+                                    </div>
+                                    <div class="col-md-9">
+                                        @Html.EnumDropDownListFor(model => model.BarcodeType, new { @class = "form-control" })
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $("#save").click(function (e) {
+                e.preventDefault();
+                saveForm('generalsettings-form', '@(Url.Action("General", "Setting"))');
+            });
+        });
+    </script>
+}

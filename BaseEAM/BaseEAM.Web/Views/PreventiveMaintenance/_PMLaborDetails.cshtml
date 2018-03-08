@@ -1,0 +1,173 @@
+﻿@using BaseEAM.Services.Security
+@model PMLaborModel
+@{
+    var permissionService = EngineContext.Current.Resolve<BaseEAM.Services.IPermissionService>();
+    var allowCreate = permissionService.Authorize(StandardPermissionName.Maintenance_PreventiveMaintenance_Create);
+    var allowRead = permissionService.Authorize(StandardPermissionName.Maintenance_PreventiveMaintenance_Read);
+    var allowUpdate = permissionService.Authorize(StandardPermissionName.Maintenance_PreventiveMaintenance_Update);
+    var allowDelete = permissionService.Authorize(StandardPermissionName.Maintenance_PreventiveMaintenance_Delete);
+
+    var primarySystemCurrencySymbol = EngineContext.Current.Resolve<BaseEAM.Core.IWorkContext>().WorkingCurrency.CurrencySymbol;
+}
+
+<div id="panel-pMLabor" class="panel panel-default eam-panel">
+    <div class="panel-heading">
+        <button type="button" id="savePMLaborDetail" class="btn btn-primary@(allowCreate || allowUpdate ? "" : " none-display")" title="@T("Common.Save")">
+            <i class="fa fa-floppy-o"></i>
+        </button>
+        <button type="button" id="cancelPMLaborDetail" class="btn btn-primary" title="@T("Common.Cancel")">
+            <i class="fa fa-ban"></i>
+        </button>
+    </div>
+    <div class="panel-body">
+        @Html.Hidden("PreventiveMaintenanceId", Model.PreventiveMaintenanceId)
+        @Html.Hidden("PMLaborId", Model.Id)
+        <div id="pMLabor-error" class="validation-summary-errors none-display">
+        </div>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.BaseEamLabelFor(model => model.TeamId, required: true)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.BaseEamComboBoxFor(model => model.TeamId, "TeamList", "Site",
+                                            new RouteValueDictionary { { "parentFieldName", "SiteId" } }, true)
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.BaseEamLabelFor(model => model.TechnicianId, required: true)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.BaseEamComboBoxFor(model => model.TechnicianId, "Technicians", "Team",
+                                            new RouteValueDictionary { { "parentFieldName", "TeamId" } }, true)
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.BaseEamLabelFor(model => model.CraftId, required: true)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.BaseEamComboBoxFor(model => model.CraftId, "GetChoices", "Common",
+                                            new RouteValueDictionary { { "dbTable", "Craft" }, { "dbTextColumn", "Name" }, { "dbValueColumn", "Id" } }, true)
+                    </div>
+                </div>
+            </div>
+        </div>
+        <hr />
+        <h4>@T("PMLabor.Plan")</h4>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.BaseEamLabelFor(model => model.PlanHours)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.BaseEamEditorFor(model => model.PlanHours)
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.BaseEamLabelFor(model => model.StandardRate)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.BaseEamEditorFor(model => model.StandardRate, postfix: primarySystemCurrencySymbol)
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.BaseEamLabelFor(model => model.OTRate)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.BaseEamEditorFor(model => model.OTRate, postfix: primarySystemCurrencySymbol)
+                    </div>
+                </div>
+            </div>
+        </div>
+        <hr />
+    </div>
+    <script type="text/javascript">
+
+        $("#savePMLaborDetail").click(function (e) {
+            e.preventDefault();
+            var $group = $("#panel-pMLabor :input");
+            var postData = $group.serializeJSON({ checkboxUncheckedValue: "false" });
+            //change Id property name so it can map to MVC model
+            postData.Id = postData.PMLaborId;
+            addAntiForgeryToken(postData);
+
+            $.ajax({
+                cache: false,
+                type: "POST",
+                url: "@(Url.Action("SavePMLabor", "PreventiveMaintenance"))",
+                data: postData,
+                success: function (data) {
+                    if (data && data.Errors) {
+                        showErrors(data.Errors, '#pMLabor-error');
+                    } else {
+                        //then toggle the panel
+                        togglePanelPMLabor(false);
+
+                        //refresh grid
+                        var grid = $('#pMLabors-grid').data('kendoGrid');
+                        grid.dataSource.page(1);
+                    }
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    showBSModal({ title: 'ERROR', body: thrownError });
+                },
+                traditional: true
+            });
+        });
+
+        $("#cancelPMLaborDetail").click(function (e) {
+            e.preventDefault();
+            var postData = {
+                id: $("#PMLaborId").val()
+            };
+            addAntiForgeryToken(postData);
+
+            $.ajax({
+                cache: false,
+                type: "POST",
+                url: "@(Url.Action("CancelPMLabor", "PreventiveMaintenance"))",
+                data: postData,
+                success: function (data) {
+                    //toggle the panel
+                    togglePanelPMLabor(false);
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    showBSModal({ title: 'ERROR', body: thrownError });
+                },
+                traditional: true
+            });
+        });
+
+        $("#CraftId").change(function (e) {
+            var postData = {
+                craftId: $("#CraftId").val()
+            };
+            addAntiForgeryToken(postData);
+            $.ajax({
+                cache: false,
+                type: "POST",
+                url: "@(Url.Action("CraftInfo", "Craft"))",
+                data: postData,
+                success: function (data) {
+                    if (data != null && data.craftInfo != null) {
+                        $("#panel-pMLabor").find("#StandardRate").val(data.craftInfo.StandardRate)
+                        $("#panel-pMLabor").find("#OTRate").val(data.craftInfo.OvertimeRate)
+                    }
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    showBSModal({ title: 'ERROR', body: thrownError });
+                },
+                traditional: true
+            });
+        });
+
+    </script>
+</div>

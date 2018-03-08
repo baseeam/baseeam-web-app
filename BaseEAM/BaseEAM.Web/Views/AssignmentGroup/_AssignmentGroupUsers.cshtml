@@ -1,0 +1,206 @@
+﻿@using BaseEAM.Services.Security
+@model AssignmentGroupUserModel
+@{
+    var defaultGridPageSize = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().DefaultGridPageSize;
+    var gridPageSizes = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().GridPageSizes;
+
+    var permissionService = EngineContext.Current.Resolve<BaseEAM.Services.IPermissionService>();
+    var allowCreate = permissionService.Authorize(StandardPermissionName.Workflow_AssignmentGroup_Create);
+    var allowRead = permissionService.Authorize(StandardPermissionName.Workflow_AssignmentGroup_Read);
+    var allowUpdate = permissionService.Authorize(StandardPermissionName.Workflow_AssignmentGroup_Update);
+    var allowDelete = permissionService.Authorize(StandardPermissionName.Workflow_AssignmentGroup_Delete);
+}
+<div id="group-assignmentGroupUsers" class="panel-group">
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <button type="button" id="createAssignmentGroupUser" class="btn btn-primary@(allowCreate || allowUpdate ? "" : " none-display")" title="@T("Common.AddNew")">
+                <i class="fa fa-plus-square"></i>
+            </button>
+            <button type="button" id="deleteSelectedAssignmentGroupUsers" class="btn btn-primary@(allowCreate || allowUpdate ? "" : " none-display")" title="@T("Common.Delete.Selected")">
+                <i class="fa fa-trash-o"></i>
+            </button>
+        </div>
+        <div class="panel-body">
+            <div id="assignmentGroupUsers-grid"></div>
+            <script>
+                var gridCheckboxHandler1 = new BaseEam.CheckBoxHandler('assignmentGroupUsers-grid');
+                gridCheckboxHandler1.init();
+
+                $(document).ready(function () {
+                    $("#assignmentGroupUsers-grid").kendoGrid({
+                        dataSource: {
+                            type: "json",
+                            transport: {
+                                read: {
+                                    url: "@Html.Raw(Url.Action("AssignmentGroupUserList", "AssignmentGroup"))",
+                                    type: "POST",
+                                    dataType: "json",
+                                    data: additionalData
+                                },
+                                //This is used to map field to format that the server can understand
+                                //it runs after the data (additionalData) populated
+                                parameterMap: function (data, operation) {
+                                    sortMapping = [{ from: "IsDefault", to: "AssignmentGroupUser.IsDefaultUser" }];
+                                    BaseEam.Grid.mapSortColumns(data.sort, sortMapping);
+                                    return data;
+                                }
+                            },
+                            schema: {
+                                data: "Data",
+                                total: "Total",
+                                errors: "Errors",
+                                model: {
+                                    id: "Id"
+                                }
+                            },
+                            error: function(e) {
+                                display_kendoui_grid_error(e);
+                                // Cancel the changes
+                                this.cancelChanges();
+                            },
+                            pageSize: @(defaultGridPageSize),
+                            serverPaging: true,
+                            serverFiltering: true,
+                            serverSorting: true
+                        },
+                        pageable: {
+                            refresh: true,
+                            pageSizes: [@(gridPageSizes)],
+                            @Html.Partial("_GridPagerMessages")
+                        },
+                        sortable: true,
+                        editable: false,
+                        scrollable: false,
+                        dataBound: gridCheckboxHandler1.onDataBound,
+                        columns: [{
+                            field: "Id",
+                            headerTemplate: "<input id='assignmentGroupUsers-grid-mastercheckbox' type='checkbox'/>",
+                            headerAttributes: { style: "text-align:center" },
+                            attributes: { style: "text-align:center" },
+                            template: "<input type='checkbox' value='#=Id#' class='checkboxGroups'/>",
+                            width: 50,
+                            sortable: false
+                        },{
+                            field: "User.Name",
+                            title: "@T("User")"
+                        },{
+                            field: "User.Email",
+                            title: "@T("User.Email")"
+                        }, {
+                            field: "Site.Name",
+                            title: "@T("Site")"
+                        }, {
+                            field: "IsDefaultUser",
+                            title: "@T("AssignmentGroupUser.IsDefaultUser")"
+                        }, {
+                            field: "Id",
+                            headerTemplate: "",
+                            width: 100,
+                            template: '<a class="btn btn-primary@(allowCreate || allowUpdate ? "" : " none-display")" href="" onclick="editAssignmentGroupUser(event, #=Id#);"></span><i class="fa fa-pencil aria-hidden="true""></i></a>' +
+                                    '<a class="btn btn-primary@(allowCreate || allowUpdate ? "" : " none-display")" href="" onclick="deleteAssignmentGroupUser(event, #=Id#);"></span><i class="fa fa-trash aria-hidden="true""></i></a>',
+                            sortable: false
+                        }]
+                    });
+                });
+            </script>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    function editAssignmentGroupUser(e, id){
+        e.preventDefault();
+        if ($('#panel-assignmentGroupUser').is(":visible")) {
+            togglePanelAssignmentGroupUser(false);
+        }
+
+        var postData = {
+            id : id
+        };
+        addAntiForgeryToken(postData);
+
+        $.ajax({
+            cache: false,
+            type: "POST",
+            url: "@(Url.Action("AssignmentGroupUser", "AssignmentGroup"))",
+            data: postData,
+            success: function(data) {
+                //append html
+                $("#group-assignmentGroupUsers").append(data.Html);
+
+                //then toggle the panel
+                togglePanelAssignmentGroupUser(true);
+            },
+            error: function(xhr, ajaxOptions, thrownError) {
+                showBSModal({title: 'ERROR', body: thrownError});
+            },
+            traditional: true
+        });
+    };
+
+    function deleteAssignmentGroupUser(e, id){
+        e.preventDefault();
+        //check if panel-assignmentGroupUser is open => close it before delete
+        if($('#panel-assignmentGroupUser').is(":visible")){
+            togglePanelAssignmentGroupUser(false);
+        }
+
+        BaseEam.Grid.deleteRow($("#Id").val(), id, "@Url.Action("DeleteAssignmentGroupUser", "AssignmentGroup")", "assignmentGroupUsers-grid", "", true);
+    };
+
+    function additionalData() {
+        var data = {
+            assignmentGroupId: $("#Id").val()
+        };
+        addAntiForgeryToken(data);
+        return data;
+    }
+
+    function togglePanelAssignmentGroupUser(editmode) {
+        if (editmode) {
+            $('#panel-assignmentGroupUser').show();
+            $('#createAssignmentGroupUser').hide();
+            $('#deleteSelectedAssignmentGroupUsers').hide();
+        }
+        else {
+            ////remove the panel html so we won't care
+            //about dirty change tracking for newly added input tag
+            $('#panel-assignmentGroupUser').remove();
+            $('#createAssignmentGroupUser').show();
+            $('#deleteSelectedAssignmentGroupUsers').show();
+        }
+    }
+
+    $(document).ready(function () {
+        $("#createAssignmentGroupUser").click(function(e){
+            e.preventDefault();
+            var postData = {
+                assignmentGroupId : $("#Id").val()
+            };
+            addAntiForgeryToken(postData);
+
+            $.ajax({
+                cache: false,
+                type: "POST",
+                url: "@(Url.Action("CreateAssignmentGroupUser", "AssignmentGroup"))",
+                data: postData,
+                success: function(data) {
+                    //append html
+                    $("#group-assignmentGroupUsers").append(data.Html);
+
+                    //then toggle the panel
+                    togglePanelAssignmentGroupUser(true);
+                },
+                error: function(xhr, ajaxOptions, thrownError) {
+                    showBSModal({title: 'ERROR', body: thrownError});
+                },
+                traditional: true
+            });
+        });
+
+        $("#deleteSelectedAssignmentGroupUsers").click(function(e){
+            e.preventDefault();
+            BaseEam.Grid.deleteSelectedRows($("#Id").val(), gridCheckboxHandler1.selectedIds, "@Url.Action("DeleteSelectedAssignmentGroupUsers", "AssignmentGroup")", "assignmentGroupUsers-grid", "", true);
+        });
+    });
+</script>

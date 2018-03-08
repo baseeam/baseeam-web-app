@@ -1,0 +1,113 @@
+﻿@using BaseEAM.Services.Security
+@model AssignmentGroupUserModel
+@{
+    var permissionService = EngineContext.Current.Resolve<BaseEAM.Services.IPermissionService>();
+    var allowCreate = permissionService.Authorize(StandardPermissionName.Workflow_AssignmentGroup_Create);
+    var allowRead = permissionService.Authorize(StandardPermissionName.Workflow_AssignmentGroup_Read);
+    var allowUpdate = permissionService.Authorize(StandardPermissionName.Workflow_AssignmentGroup_Update);
+    var allowDelete = permissionService.Authorize(StandardPermissionName.Workflow_AssignmentGroup_Delete);
+}
+
+<div id="panel-assignmentGroupUser" class="panel panel-default eam-panel">
+    <div class="panel-heading">
+        <button type="button" id="saveAssignmentGroupUser" class="btn btn-primary@(allowCreate || allowUpdate ? "" : " none-display")" title="@T("Common.Save")">
+            <i class="fa fa-floppy-o"></i>
+        </button>
+        <button type="button" id="cancelAssignmentGroupUser" class="btn btn-primary" title="@T("Common.Cancel")">
+            <i class="fa fa-ban"></i>
+        </button>
+    </div>
+    <div class="panel-body">
+        @Html.Hidden("AssignmentGroupId", Model.AssignmentGroupId)
+        @Html.Hidden("AssignmentGroupUserId", Model.Id)
+        <div id="assignmentGroupUser-error" class="validation-summary-errors none-display">
+        </div>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.BaseEamLabelFor(model => model.SiteId, required: true)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.BaseEamComboBoxFor(model => model.SiteId, "SiteList", "Site", null, true)
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.BaseEamLabelFor(model => model.UserId, required: true)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.BaseEamComboBoxFor(model => model.UserId, "UserList", "Site",
+                                            new RouteValueDictionary { { "parentFieldName", "SiteId" } }, true)
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.BaseEamLabelFor(model => model.IsDefaultUser)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.BaseEamCheckBoxFor(model => model.IsDefaultUser)
+                    </div>
+                </div>
+            </div>
+        </div>
+        <script type="text/javascript">
+        $("#saveAssignmentGroupUser").click(function (e) {
+            e.preventDefault();
+            var $group = $("#panel-assignmentGroupUser :input");
+            var postData = $group.serializeJSON({ checkboxUncheckedValue: "false" });
+            //change Id property name so it can map to MVC model
+            postData.Id = postData.AssignmentGroupUserId;
+            addAntiForgeryToken(postData);
+
+            $.ajax({
+                cache: false,
+                type: "POST",
+                url: "@(Url.Action("SaveAssignmentGroupUser", "AssignmentGroup"))",
+                data: postData,
+                success: function (data) {
+                    if (data && data.Errors) {
+                        showErrors(data.Errors, '#assignmentGroupUser-error');
+                    } else {
+                        //then toggle the panel
+                        togglePanelAssignmentGroupUser(false);
+
+                        //refresh grid
+                        var grid = $('#assignmentGroupUsers-grid').data('kendoGrid');
+                        grid.dataSource.page(1);
+                    }
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    showBSModal({ title: 'ERROR', body: thrownError });
+                },
+                traditional: true
+            });
+        });
+
+        $("#cancelAssignmentGroupUser").click(function (e) {
+            e.preventDefault();
+            var postData = {
+                id: $("#AssignmentGroupUserId").val()
+            };
+            addAntiForgeryToken(postData);
+
+            $.ajax({
+                cache: false,
+                type: "POST",
+                url: "@(Url.Action("CancelAssignmentGroupUser", "AssignmentGroup"))",
+                data: postData,
+                success: function (data) {
+                    //toggle the panel
+                    togglePanelAssignmentGroupUser(false);
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    showBSModal({ title: 'ERROR', body: thrownError });
+                },
+                traditional: true
+            });
+        });
+        </script>
+    </div>
+</div>

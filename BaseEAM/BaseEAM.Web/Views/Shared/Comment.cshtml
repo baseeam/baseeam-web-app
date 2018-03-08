@@ -1,0 +1,61 @@
+﻿@using BaseEAM.Core.Data;
+@using BaseEAM.Core.Domain;
+@model CommentModel
+
+@{
+    var commentRepository = EngineContext.Current.Resolve<IRepository<Comment>>();
+    var comments = commentRepository.GetAll()
+        .Where(c => c.EntityId == Model.EntityId && c.EntityType == Model.EntityType)
+        .OrderByDescending(c => c.CreatedDateTime)
+        .ToList();
+}
+<div id="group-comments" class="panel-group">
+    <div class="box box-widget">
+        <div class="box-footer box-comments">
+            @foreach (var comment in comments)
+            {
+                @Html.Partial("CommentBox", comment);
+            }
+        </div>
+        <div class="box-footer">
+            <div class="input-group">
+                <input type="text" id="comment" name="comment" placeholder="Type Comment ..." class="form-control ays-ignore">
+                <span class="input-group-btn">
+                    <button type="button" id="postComment" class="btn btn-primary btn-flat">@T("Common.Send")</button>
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+<script type="text/javascript">
+    $("#postComment").click(function (e) {
+        e.preventDefault();
+        var postData = {
+            message: $("#comment").val(),
+            entityId: @Model.EntityId,
+            entityType: '@Model.EntityType'
+        };
+        addAntiForgeryToken(postData);
+
+        $.ajax({
+            cache: false,
+            type: "POST",
+            url: "@(Url.Action("Create", "Comment"))",
+            data: postData,
+            success: function (data) {
+                if (data && data.Errors) {
+                    showErrors(data.Errors);
+                } else {
+                    //prepend html
+                    $(".box-comments").prepend(data.Html);
+                    //clear comment input
+                    $("#comment").val("");
+                }
+            },
+            error: function (xhr, ajaxOptions, thrownError) {
+                showBSModal({ title: "Error", body: thrownError });
+            },
+            traditional: true
+        });
+    });
+</script>

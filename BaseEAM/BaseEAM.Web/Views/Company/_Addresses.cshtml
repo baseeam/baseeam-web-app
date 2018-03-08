@@ -1,0 +1,209 @@
+﻿@using BaseEAM.Services.Security
+@model AddressModel
+@{
+    var defaultGridPageSize = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().DefaultGridPageSize;
+    var gridPageSizes = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().GridPageSizes;
+
+    var permissionService = EngineContext.Current.Resolve<BaseEAM.Services.IPermissionService>();
+    var allowCreate = permissionService.Authorize(StandardPermissionName.Purchasing_Company_Create);
+    var allowRead = permissionService.Authorize(StandardPermissionName.Purchasing_Company_Read);
+    var allowUpdate = permissionService.Authorize(StandardPermissionName.Purchasing_Company_Update);
+    var allowDelete = permissionService.Authorize(StandardPermissionName.Purchasing_Company_Delete);
+}
+<div id="group-addresses" class="panel-group">
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <button type="button" id="createAddress" class="btn btn-primary@(allowCreate || allowUpdate ? "" : " none-display")" title="@T("Common.AddNew")">
+                <i class="fa fa-plus-square"></i>
+            </button>
+            <button type="button" id="deleteSelectedAddresses" class="btn btn-primary@(allowCreate || allowUpdate ? "" : " none-display")" title="@T("Common.Delete.Selected")">
+                <i class="fa fa-trash-o"></i>
+            </button>
+        </div>
+        <div class="panel-body">
+            <div id="addresses-grid"></div>
+            <script>
+                var gridCheckboxHandler2 = new BaseEam.CheckBoxHandler('addresses-grid');
+                gridCheckboxHandler2.init();
+
+                $(document).ready(function () {
+                    $("#addresses-grid").kendoGrid({
+                        dataSource: {
+                            type: "json",
+                            transport: {
+                                read: {
+                                    url: "@Html.Raw(Url.Action("AddressList", "Company"))",
+                                    type: "POST",
+                                    dataType: "json",
+                                    data: additionalData
+                                }
+                            },
+                            schema: {
+                                data: "Data",
+                                total: "Total",
+                                errors: "Errors",
+                                model: {
+                                    id: "Id"
+                                }
+                            },
+                            error: function(e) {
+                                display_kendoui_grid_error(e);
+                                // Cancel the changes
+                                this.cancelChanges();
+                            },
+                            pageSize: @(defaultGridPageSize),
+                            serverPaging: true,
+                            serverFiltering: true,
+                            serverSorting: true
+                        },
+                        pageable: {
+                            refresh: true,
+                            pageSizes: [@(gridPageSizes)],
+                            @Html.Partial("_GridPagerMessages")
+                        },
+                        sortable: true,
+                        editable: false,
+                        scrollable: false,
+                        dataBound: gridCheckboxHandler2.onDataBound,
+                        columns: [{
+                            field: "Id",
+                            headerTemplate: "<input id='addresses-grid-mastercheckbox' type='checkbox'/>",
+                            headerAttributes: { style: "text-align:center" },
+                            attributes: { style: "text-align:center" },
+                            template: "<input type='checkbox' value='#=Id#' class='checkboxGroups'/>",
+                            width: 50,
+                            sortable: false
+                        },{
+                            field: "Country",
+                            title: "@T("Address.Country")"
+                        }, {
+                            field: "StateProvince",
+                            title: "@T("Address.StateProvince")"
+                        }, {
+                            field: "City",
+                            title: "@T("Address.City")"
+                        }, {
+                            field: "PhoneNumber",
+                            title: "@T("Address.PhoneNumber")"
+                        }, {
+                            field: "FaxNumber",
+                            title: "@T("Address.FaxNumber")"
+                        }, {
+                            field: "Email",
+                            title: "@T("Address.Email")"
+                        }, {
+                            field: "AddressHtml",
+                            title: "@T("Address")",
+                            encoded: false,
+                            sortable: false
+                        }, {
+                            field: "Id",
+                            headerTemplate: "",
+                            width: 100,
+                            template: '<a class="btn btn-primary@(allowCreate || allowUpdate ? "" : " none-display")" href="" onclick="editAddress(event, #=Id#);"></span><i class="fa fa-pencil aria-hidden="true""></i></a>' +
+                                    '<a class="btn btn-primary@(allowCreate || allowUpdate ? "" : " none-display")" href="" onclick="deleteAddress(event, #=Id#);"></span><i class="fa fa-trash aria-hidden="true""></i></a>',
+                            sortable: false
+                        }]
+                    });
+                });
+            </script>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    function editAddress(e, id){
+        e.preventDefault();
+        if($('#panel-address').is(":visible")){
+            togglePanelAddress(false);
+        }
+        var postData = {
+            id : id
+        };
+        addAntiForgeryToken(postData);
+
+        $.ajax({
+            cache: false,
+            type: "POST",
+            url: "@(Url.Action("Address", "Company"))",
+            data: postData,
+            success: function(data) {
+                //append html
+                $("#group-addresses").append(data.Html);
+
+                //then toggle the panel
+                togglePanelAddress(true);
+            },
+            error: function(xhr, ajaxOptions, thrownError) {
+                showBSModal({title: 'ERROR', body: thrownError});
+            },
+            traditional: true
+        });
+    };
+
+    function deleteAddress(e, id){
+        e.preventDefault();
+        //check if panel-address is open => close it before delete
+        if($('#panel-address').is(":visible")){
+            togglePanelAddress(false);
+        }
+
+        BaseEam.Grid.deleteRow($("#Id").val(), id, "@Url.Action("DeleteAddress", "Company")", "addresses-grid", "", true);
+    };
+
+    function additionalData() {
+        var data = {
+            companyId: $("#Id").val()
+        };
+        addAntiForgeryToken(data);
+        return data;
+    }
+
+    function togglePanelAddress(editmode) {
+        if (editmode) {
+            $('#panel-address').show();
+            $('#createAddress').hide();
+            $('#deleteSelectedAddresses').hide();
+        }
+        else {
+            ////remove the panel html so we won't care
+            //about dirty change tracking for newly added input tag
+            $('#panel-address').remove();
+            $('#createAddress').show();
+            $('#deleteSelectedAddresses').show();
+        }
+    }
+
+    $(document).ready(function () {
+        $("#createAddress").click(function(e){
+            e.preventDefault();
+            var postData = {
+                companyId : $("#Id").val()
+            };
+            addAntiForgeryToken(postData);
+
+            $.ajax({
+                cache: false,
+                type: "POST",
+                url: "@(Url.Action("CreateAddress", "Company"))",
+                data: postData,
+                success: function(data) {
+                    //append html
+                    $("#group-addresses").append(data.Html);
+
+                    //then toggle the panel
+                    togglePanelAddress(true);
+                },
+                error: function(xhr, ajaxOptions, thrownError) {
+                    showBSModal({title: 'ERROR', body: thrownError});
+                },
+                traditional: true
+            });
+        });
+
+        $("#deleteSelectedAddresses").click(function(e){
+            e.preventDefault();
+            BaseEam.Grid.deleteSelectedRows($("#Id").val(), gridCheckboxHandler2.selectedIds, "@Url.Action("DeleteSelectedAddresses", "Company")", "addresses-grid", "", true);
+        });
+    });
+</script>

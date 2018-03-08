@@ -1,0 +1,83 @@
+﻿@using BaseEAM.Services.Security
+@model ContactModel
+@{
+    var permissionService = EngineContext.Current.Resolve<BaseEAM.Services.IPermissionService>();
+    var allowCreate = permissionService.Authorize(StandardPermissionName.Purchasing_Company_Create);
+    var allowRead = permissionService.Authorize(StandardPermissionName.Purchasing_Company_Read);
+    var allowUpdate = permissionService.Authorize(StandardPermissionName.Purchasing_Company_Update);
+    var allowDelete = permissionService.Authorize(StandardPermissionName.Purchasing_Company_Delete);
+}
+
+<div id="panel-contact" class="panel panel-default eam-panel">
+    <div class="panel-heading">
+        <button type="button" id="saveContact" class="btn btn-primary@(allowCreate || allowUpdate ? "" : " none-display")" title="@T("Common.Save")">
+            <i class="fa fa-floppy-o"></i>
+        </button>
+        <button type="button" id="cancelContact" class="btn btn-primary" title="@T("Common.Cancel")">
+            <i class="fa fa-ban"></i>
+        </button>
+    </div>
+    <div class="panel-body">
+        @Html.Hidden("CompanyId", Model.CompanyId)
+        @Html.Hidden("ContactId", Model.Id)
+        <div id="contact-error" class="validation-summary-errors none-display">
+        </div>
+        @Html.EditorFor(model => model, "Contact")
+    </div>
+    <script type="text/javascript">
+        $("#saveContact").click(function (e) {
+            e.preventDefault();
+            var $group = $("#panel-contact :input");
+            var postData = $group.serializeJSON({ checkboxUncheckedValue: "false" });
+            //change Id property name so it can map to MVC model
+            postData.Id = postData.ContactId;
+            addAntiForgeryToken(postData);
+
+            $.ajax({
+                cache: false,
+                type: "POST",
+                url: "@(Url.Action("SaveContact", "Company"))",
+                data: postData,
+                success: function (data) {
+                    if (data && data.Errors) {
+                        showErrors(data.Errors, '#contact-error');
+                    } else {
+                        //then toggle the panel
+                        togglePanelContact(false);
+
+                        //refresh grid
+                        var grid = $('#contacts-grid').data('kendoGrid');
+                        grid.dataSource.page(1);
+                    }
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    showBSModal({ title: 'ERROR', body: thrownError });
+                },
+                traditional: true
+            });
+        });
+
+        $("#cancelContact").click(function (e) {
+            e.preventDefault();
+            var postData = {
+                id: $("#ContactId").val()
+            };
+            addAntiForgeryToken(postData);
+
+            $.ajax({
+                cache: false,
+                type: "POST",
+                url: "@(Url.Action("CancelContact", "Company"))",
+                data: postData,
+                success: function (data) {
+                    //toggle the panel
+                    togglePanelContact(false);
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    showBSModal({ title: 'ERROR', body: thrownError });
+                },
+                traditional: true
+            });
+        });
+    </script>
+</div>

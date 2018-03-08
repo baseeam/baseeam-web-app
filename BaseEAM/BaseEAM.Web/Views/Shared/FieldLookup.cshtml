@@ -1,0 +1,40 @@
+﻿@using BaseEAM.Web.Framework.CustomField
+@using BaseEAM.Web.Framework.Mvc
+@model FieldModel
+
+<div class="input-group">
+    @Html.Hidden(Model.LookupValueField, Model.Value == null ? "" : Model.Value)
+    @Html.TextBox(Model.LookupTextField, string.IsNullOrEmpty(Model.Text) ? "" : Model.Text, new { @class = "form-control" })
+    <span class="input-group-btn">
+        <button type="button" id="@(Model.LookupType + "-" + Model.LookupTextField + "-Lookup")" class="btn btn-primary btn-master" title="Lookup">
+            <i class="fa fa-search"></i>
+        </button>
+    </span>
+    @if (Model.LookupType == "Asset")
+    {
+        @Html.Partial("Lookup", new Lookup {
+           TextFieldId = Model.LookupTextField,
+           ValueFieldId = Model.LookupValueField,
+           ParentFieldName = Model.ParentFieldName,
+           Controller = "Common",
+           Action = "AssetList",
+           LookupType = "Asset",
+           ViewType = "SLAssetView",
+           SelectedEvent = "SLAssetSelected"
+       })
+    }
+    else if (Model.LookupType == "Location")
+    {
+        @Html.Partial("Lookup", new Lookup
+       {
+           TextFieldId = Model.LookupTextField,
+           ValueFieldId = Model.LookupValueField,
+           ParentFieldName = Model.ParentFieldName,
+           Controller = "Common",
+           Action = "LocationList",
+           LookupType = "Location",
+           ViewType = "SLLocationView",
+           SelectedEvent = "SLLocationSelected"
+       })
+    }
+</div>

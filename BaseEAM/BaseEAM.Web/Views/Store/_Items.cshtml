@@ -1,0 +1,237 @@
+﻿@using BaseEAM.Services.Security
+@using BaseEAM.Web.Framework.CustomField
+@model SearchModel
+@{
+    var defaultGridPageSize = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().DefaultGridPageSize;
+    var gridPageSizes = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().GridPageSizes;
+    var primarySystemCurrencySymbol = EngineContext.Current.Resolve<BaseEAM.Core.IWorkContext>().WorkingCurrency.CurrencySymbol;
+
+    var permissionService = EngineContext.Current.Resolve<BaseEAM.Services.IPermissionService>();
+    var allowCreate = permissionService.Authorize(StandardPermissionName.Inventory_Store_Create);
+    var allowRead = permissionService.Authorize(StandardPermissionName.Inventory_Store_Read);
+    var allowUpdate = permissionService.Authorize(StandardPermissionName.Inventory_Store_Update);
+    var allowDelete = permissionService.Authorize(StandardPermissionName.Inventory_Store_Delete);
+
+    var searchModel = new SearchModel();
+    var itemNameFilter = new FieldModel
+    {
+        DisplayOrder = 1,
+        Name = "ItemName",
+        ResourceKey = "Item",
+        DbColumn = "ItemId",
+        Value = null,
+        ControlType = FieldControlType.DropDownList,
+        DataType = FieldDataType.Int64,
+        DataSource = FieldDataSource.DB,
+        DbTable = "Item",
+        DbTextColumn = "Name",
+        DbValueColumn = "Id",
+        IsRequiredField = false
+    };
+    searchModel.Filters.Add(itemNameFilter);
+}
+<div id="group-items" class="panel-group">
+    @Html.Partial("Filter", searchModel)
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <button type="button" id="selectItems" class="btn btn-primary@(allowCreate ? "" : " none-display")" title="@T("Store.SelectItems")">
+                <i class="fa fa-plus-square"></i>
+            </button>
+            <button type="button" id="deleteSelectedItems" class="btn btn-primary@(allowCreate || allowUpdate ? "" : " none-display")" title="@T("Common.Delete.Selected")">
+                <i class="fa fa-trash-o"></i>
+            </button>
+        </div>
+        <div class="panel-body">
+            <div id="items-grid"></div>
+            <script>
+                var gridCheckboxHandler2 = new BaseEam.CheckBoxHandler('items-grid');
+                gridCheckboxHandler2.init();
+
+                $(document).ready(function () {
+                    $("#items-grid").kendoGrid({
+                        dataSource: {
+                            type: "json",
+                            transport: {
+                                read: {
+                                    url: "@Html.Raw(Url.Action("ItemList", "Store"))",
+                                    type: "POST",
+                                    dataType: "json",
+                                    data: additionalData2
+                                },
+                                parameterMap: function(data, operation) {
+                                    sortMapping = [
+                                        {from: "ItemName", to: "Item.Name"},
+                                        {from: "ItemUnitOfMeasureName", to: "UnitOfMeasure.Name"},
+                                        {from: "StoreItemStockTypeText", to: "StoreItem.StockType"}
+                                    ];
+                                    BaseEam.Grid.mapSortColumns(data.sort, sortMapping);
+                                    return data;
+                                }
+                            },
+                            schema: {
+                                data: "Data",
+                                total: "Total",
+                                errors: "Errors",
+                                model: {
+                                    id: "StoreItemId"
+                                }
+                            },
+                            aggregate: [
+                                        { field: "TotalCost", aggregate: "sum" }
+                            ],
+                            error: function(e) {
+                                display_kendoui_grid_error(e);
+                                // Cancel the changes
+                                this.cancelChanges();
+                            },
+                            pageSize: @(defaultGridPageSize),
+                            serverPaging: true,
+                            serverFiltering: true,
+                            serverSorting: true
+                        },
+                        pageable: {
+                            refresh: true,
+                            pageSizes: [@(gridPageSizes)],
+                            @Html.Partial("_GridPagerMessages")
+                        },
+                        sortable: true,
+                        editable: false,
+                        scrollable: false,
+                        dataBound: gridCheckboxHandler2.onDataBound,
+                        columns: [{
+                            field: "StoreItemId",
+                            headerTemplate: "<input id='items-grid-mastercheckbox' type='checkbox'/>",
+                            headerAttributes: { style: "text-align:center" },
+                            attributes: { style: "text-align:center" },
+                            template: "<input type='checkbox' value='#=StoreItemId#' class='checkboxGroups'/>",
+                            width: 50,
+                            sortable: false
+                        },{
+                            field: "ItemName",
+                            title: "@T("Item")"
+                        },{
+                            field: "ItemUnitOfMeasureName",
+                            title: "@T("Item.UnitOfMeasure")"
+                        },{
+                            field: "StoreItemStockTypeText",
+                            title: "@T("StoreItem.StockType")"
+                        },{
+                            field: "TotalQuantity",
+                            title: "@T("StoreItem.TotalQuantity")",
+                            template: '#= TotalQuantity != null ? kendo.toString(TotalQuantity, "n") : "" #'
+                        },{
+                            field: "TotalCost",
+                            title: "@T("StoreItem.TotalCost") [@(primarySystemCurrencySymbol)]",
+                            template: '#= TotalCost != null ? kendo.toString(TotalCost, "n") : "" #',
+                            footerTemplate: '#= sum != null ? kendo.toString(sum, "n") : "0.00" #'
+                        },{
+                            field: "StoreItemId",
+                            headerTemplate: "",
+                            width: 50,
+                            template: '<button type="button" class="btn btn-primary@(allowDelete ? "" : " none-display")" href="" onclick="deleteItem(event, #=StoreItemId#);"></span><i class="fa fa-trash aria-hidden="true""></i></a>',
+                            sortable: false
+                        }]
+                    });
+                });
+            </script>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+
+    function deleteItem(e, id){
+        e.preventDefault();
+        //check if panel-item is open => close it before delete
+        if($('#panel-item').is(":visible")){
+            togglePanelItem(false);
+        }
+
+        BaseEam.Grid.deleteRow($("#Id").val(), id, "@Url.Action("DeleteItem", "Store")", "items-grid", "", true);
+    };
+
+    function additionalData2() {
+        var data = {
+            storeId: $("#Id").val(),
+            searchValues: $("#group-items div.panel-search").find(':input').serialize()
+        };
+        addAntiForgeryToken(data);
+        return data;
+    }
+
+    function selectItems(e) {
+        e.preventDefault();
+        var postData = {
+            storeId: $("#Id").val(),
+            selectedIds: itemsCheckboxHandler.selectedIds
+        };
+        addAntiForgeryToken(postData);
+        $.ajax({
+            cache: false,
+            type: "POST",
+            url: '@Url.Action("AddItems", "Store")',
+            data: postData,
+            success: function (data) {
+                if (data && data.Errors) {
+                    showErrors(data.Errors, '#ml-items-error');
+                } else {
+                    //hide modal popup
+                    $(e.target).parents('.modal').modal('hide');
+
+                    //refresh grid
+                    var grid = $('#items-grid').data('kendoGrid');
+                    grid.dataSource.page(1);
+                }
+            },
+            error: function (xhr, ajaxOptions, thrownError) {
+                showBSModal({ title: "Error", body: thrownError });
+            },
+            traditional: true
+        });
+    }
+
+    $(document).ready(function () {
+        $("#selectItems").click(function(e){
+            e.preventDefault();
+            $.get('@Url.Action("MLItemView", "Lookup")', function(data) {
+                showBSModal({
+                    title: "@T("Store.SelectItems")",
+                    size: "large",
+                    body: data,
+                    actions: [{
+                        label: '@T("Common.Save")',
+                        cssClass: 'btn-success',
+                        onClick: selectItems
+                    },{
+                        label: '@T("Common.Cancel")',
+                        cssClass: 'btn-danger',
+                        onClick: function(e){
+                            $(e.target).parents('.modal').modal('hide');
+                        }
+                    }]
+                });
+            });
+        });
+
+        $("#deleteSelectedItems").click(function(e){
+            e.preventDefault();
+            BaseEam.Grid.deleteSelectedRows($("#Id").val(), gridCheckboxHandler1.selectedIds, "@Url.Action("DeleteSelectedItems", "Store")", "items-grid", "", true);
+        });
+
+        //search button
+        $('#group-items').find('#search').click(function () {
+            //search
+            var grid = $('#items-grid').data('kendoGrid');
+            grid.dataSource.page(1); //new search. Set page size to 1
+            //grid.dataSource.read(); we already loaded the grid above using "page" function
+            return false;
+        });
+
+        $("#group-items div.panel-search").find(':input').keydown(function (event) {
+            if (event.keyCode == 13) {
+                $('#group-items').find('#search').click();
+                return false;
+            }
+        });
+    });
+</script>

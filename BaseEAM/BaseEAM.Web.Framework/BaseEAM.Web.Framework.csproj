@@ -1,0 +1,208 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{E762CA9A-FE81-4EFA-B02F-AA451F06A303}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>BaseEAM.Web.Framework</RootNamespace>
+    <AssemblyName>BaseEAM.Web.Framework</AssemblyName>
+    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Antlr3.Runtime, Version=3.5.0.2, Culture=neutral, PublicKeyToken=eb42632606e9261f, processorArchitecture=MSIL">
+      <HintPath>..\packages\Antlr.3.5.0.2\lib\Antlr3.Runtime.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Autofac, Version=4.6.1.0, Culture=neutral, PublicKeyToken=17863af14b0044da, processorArchitecture=MSIL">
+      <HintPath>..\packages\Autofac.4.6.1\lib\net45\Autofac.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Autofac.Integration.Mvc, Version=4.0.0.0, Culture=neutral, PublicKeyToken=17863af14b0044da, processorArchitecture=MSIL">
+      <HintPath>..\packages\Autofac.Mvc5.4.0.2\lib\net45\Autofac.Integration.Mvc.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="EntityFramework, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
+      <HintPath>..\packages\EntityFramework.6.1.3\lib\net45\EntityFramework.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="EntityFramework.SqlServer, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
+      <HintPath>..\packages\EntityFramework.6.1.3\lib\net45\EntityFramework.SqlServer.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="FluentValidation, Version=7.0.0.0, Culture=neutral, PublicKeyToken=7de548da2fbae0f0, processorArchitecture=MSIL">
+      <HintPath>..\packages\FluentValidation.7.1.1\lib\net45\FluentValidation.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Microsoft.Web.Infrastructure, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Web.Infrastructure.1.0.0.0\lib\net40\Microsoft.Web.Infrastructure.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="MySql.Data, Version=6.9.9.0, Culture=neutral, PublicKeyToken=c5687fc88969c44d, processorArchitecture=MSIL">
+      <HintPath>..\packages\MySql.Data.6.9.9\lib\net45\MySql.Data.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="MySql.Data.Entity.EF6, Version=6.9.9.0, Culture=neutral, PublicKeyToken=c5687fc88969c44d, processorArchitecture=MSIL">
+      <HintPath>..\packages\MySql.Data.Entity.6.9.9\lib\net45\MySql.Data.Entity.EF6.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Newtonsoft.Json, Version=10.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\packages\Newtonsoft.Json.10.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.ComponentModel.DataAnnotations" />
+    <Reference Include="System.Configuration" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Web" />
+    <Reference Include="System.Web.Helpers, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.AspNet.WebPages.3.2.3\lib\net45\System.Web.Helpers.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System.Web.Mvc, Version=5.2.3.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.AspNet.Mvc.5.2.3\lib\net45\System.Web.Mvc.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System.Web.Optimization, Version=1.1.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.AspNet.Web.Optimization.1.1.3\lib\net40\System.Web.Optimization.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System.Web.Razor, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.AspNet.Razor.3.2.3\lib\net45\System.Web.Razor.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System.Web.WebPages, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.AspNet.WebPages.3.2.3\lib\net45\System.Web.WebPages.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System.Web.WebPages.Deployment, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.AspNet.WebPages.3.2.3\lib\net45\System.Web.WebPages.Deployment.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System.Web.WebPages.Razor, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.AspNet.WebPages.3.2.3\lib\net45\System.Web.WebPages.Razor.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Xml" />
+    <Reference Include="WebGrease, Version=1.6.5135.21930, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\WebGrease.1.6.0\lib\WebGrease.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="BaseEamResourceDisplayName.cs" />
+    <Compile Include="BaseEamValidatorFactory.cs" />
+    <Compile Include="Controllers\AccessibleAttribute.cs" />
+    <Compile Include="Controllers\BaseController.cs" />
+    <Compile Include="Controllers\ControllerExtensions.cs" />
+    <Compile Include="Controllers\FormValueRequiredAttribute.cs" />
+    <Compile Include="Controllers\ParameterBasedOnFormNameAndValueAttribute.cs" />
+    <Compile Include="Controllers\ParameterBasedOnFormNameAttribute.cs" />
+    <Compile Include="DependencyRegistrar.cs" />
+    <Compile Include="Events\AdminTabStripCreated.cs" />
+    <Compile Include="Extensions.cs" />
+    <Compile Include="Filters\BaseEamAuthorizeAttribute.cs" />
+    <Compile Include="Filters\NotifyAttribute.cs" />
+    <Compile Include="Filters\UrlAccessedAttribute.cs" />
+    <Compile Include="HtmlExtensions.cs" />
+    <Compile Include="Localization\LocalizedString.cs" />
+    <Compile Include="Localization\Localizer.cs" />
+    <Compile Include="Menu\Extensions.cs" />
+    <Compile Include="Menu\SiteMapNode.cs" />
+    <Compile Include="Menu\XmlSiteMap.cs" />
+    <Compile Include="Mvc\ActionConfirmationModel.cs" />
+    <Compile Include="Mvc\BaseEamComboBox.cs" />
+    <Compile Include="Mvc\BaseEamMetadataProvider.cs" />
+    <Compile Include="Mvc\BaseEamModel.cs" />
+    <Compile Include="Mvc\BaseEamModelBinder.cs" />
+    <Compile Include="Mvc\DeleteConfirmationModel.cs" />
+    <Compile Include="Mvc\IModelAttribute.cs" />
+    <Compile Include="Mvc\BaseEamListItem.cs" />
+    <Compile Include="Mvc\JsonNetResult.cs" />
+    <Compile Include="Mvc\Lookup.cs" />
+    <Compile Include="Mvc\NoTrimAttribute.cs" />
+    <Compile Include="Mvc\NullJsonResult.cs" />
+    <Compile Include="Mvc\TreeViewLookup.cs" />
+    <Compile Include="Mvc\XmlDownloadResult.cs" />
+    <Compile Include="Pdf\Content\PdfPartialViewContent.cs" />
+    <Compile Include="Pdf\Content\PdfRouteContent.cs" />
+    <Compile Include="Pdf\Content\PdfViewContent.cs" />
+    <Compile Include="Pdf\PdfHeaderFooterVariables.cs" />
+    <Compile Include="Pdf\PdfResult.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="CustomField\FieldHelper.cs" />
+    <Compile Include="CustomField\FieldModel.cs" />
+    <Compile Include="CustomField\FilterOperator.cs" />
+    <Compile Include="Security\BaseEamAntiForgeryAttribute.cs" />
+    <Compile Include="Security\BaseEamHttpsRequirementAttribute.cs" />
+    <Compile Include="Security\FilePermissionHelper.cs" />
+    <Compile Include="Security\SslRequirement.cs" />
+    <Compile Include="Session\SessionKey.cs" />
+    <Compile Include="UI\AsIsBundleOrderer.cs" />
+    <Compile Include="UI\DataListExtensions.cs" />
+    <Compile Include="UI\IPageHeadBuilder.cs" />
+    <Compile Include="UI\LayoutExtensions.cs" />
+    <Compile Include="UI\NotifyType.cs" />
+    <Compile Include="UI\PageHeadBuilder.cs" />
+    <Compile Include="UI\Paging\BasePageableModel.cs" />
+    <Compile Include="UI\Paging\IPageableModel.cs" />
+    <Compile Include="UI\Paging\Pager.cs" />
+    <Compile Include="UI\ResourceLocation.cs" />
+    <Compile Include="Validators\BaseEamValidator.cs" />
+    <Compile Include="ViewEngines\Razor\WebViewPage.cs" />
+    <Compile Include="WebWorkContext.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="app.config" />
+    <None Include="BaseEAM.Web.Framework.licenseheader" />
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\BaseEAM.Core\BaseEAM.Core.csproj">
+      <Project>{dbc07eb8-38a4-41b5-bc1c-d88e98be8a49}</Project>
+      <Name>BaseEAM.Core</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\BaseEAM.Data\BaseEAM.Data.csproj">
+      <Project>{d9c12b1f-fbae-4cf4-bc42-b0c2356cdcb3}</Project>
+      <Name>BaseEAM.Data</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\BaseEAM.Services\BaseEAM.Services.csproj">
+      <Project>{d05821a9-51c0-4d23-b97f-6630f2291d97}</Project>
+      <Name>BaseEAM.Services</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup />
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

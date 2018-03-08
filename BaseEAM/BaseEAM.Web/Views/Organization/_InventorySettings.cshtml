@@ -1,0 +1,16 @@
+﻿@model InventorySettingsModel
+
+<div class="panel-group">
+    <div class="panel panel-default">
+        <div class="panel-body">
+            <div class="form-group">
+                <div class="col-md-3">
+                    @Html.BaseEamLabelFor(model => model.CostingType)
+                </div>
+                <div class="col-md-9">
+                    @Html.BaseEamEditorFor(model => model.CostingType)
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

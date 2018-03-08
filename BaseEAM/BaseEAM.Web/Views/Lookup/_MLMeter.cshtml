@@ -1,0 +1,105 @@
+﻿@model SearchModel
+@{
+    var defaultGridPageSize = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().DefaultGridPageSize;
+    var gridPageSizes = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().GridPageSizes;
+}
+<div class="content" id="ml-meters-popup">
+    <div class="validation-summary-errors none-display" id="ml-meters-error">
+    </div>
+    <div class="form-horizontal">
+        <div class="panel-group">
+            @Html.Partial("Filter", Model)
+            <div class="panel panel-default">
+                <div class="panel-body">
+                    <div id="ml-meters-grid"></div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        var metersCheckboxHandler = new BaseEam.CheckBoxHandler('ml-meters-grid');
+        metersCheckboxHandler.init();
+
+        function additionalData() {
+            var data = {
+                searchValues: $("#ml-meters-popup div.panel-search").find(':input').serialize()
+            };
+            addAntiForgeryToken(data);
+            return data;
+        }
+
+        $("#ml-meters-grid").kendoGrid({
+            dataSource: {
+                type: "json",
+                transport: {
+                    read: {
+                        url: "@Html.Raw(Url.Action("MeterList", "Lookup"))",
+                        type: "POST",
+                        dataType: "json",
+                        data: additionalData
+                    }
+                },
+                schema: {
+                    data: "Data",
+                    total: "Total",
+                    errors: "Errors",
+                    model: {
+                        fields: {
+                        }
+                    }
+                },
+                error: function (e) {
+                    display_kendoui_grid_error(e);
+                    // Cancel the changes
+                    this.cancelChanges();
+                },
+                pageSize: @(defaultGridPageSize),
+                serverPaging: true,
+                serverFiltering: true,
+                serverSorting: true
+            },
+            pageable: {
+                refresh: true,
+                pageSizes: [@(gridPageSizes)],
+                @Html.Partial("_GridPagerMessages")
+            },
+            sortable: true,
+            editable: false,
+            scrollable: false,
+            dataBound: metersCheckboxHandler.onDataBound,
+            columns: [{
+                field: "Id",
+                headerTemplate: "<input id='ml-meters-grid-mastercheckbox' type='checkbox'/>",
+                headerAttributes: { style: "text-align:center" },
+                attributes: { style: "text-align:center" },
+                template: "<input type='checkbox' value='#=Id#' class='checkboxGroups'/>",
+                width: 50,
+                sortable: false
+            },{
+                field: "Name",
+                title: "@T("Meter.Name")"
+            }, {
+                field: "Description",
+                title: "@T("Meter.Description")"
+            }
+            ]
+        });
+
+        //search button
+        $('#ml-meters-popup').find('#search').click(function () {
+            //search
+            var grid = $('#ml-meters-grid').data('kendoGrid');
+            grid.dataSource.page(1); //new search. Set page size to 1
+            //grid.dataSource.read(); we already loaded the grid above using "page" function
+            return false;
+        });
+
+        $("#ml-meters-popup div.panel-search").find(':input').keydown(function (event) {
+            if (event.keyCode == 13) {
+                $('#ml-meters-popup').find('#search').click();
+                return false;
+            }
+        });
+    </script>
+</div>

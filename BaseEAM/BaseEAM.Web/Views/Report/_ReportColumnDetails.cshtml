@@ -1,0 +1,136 @@
+﻿@using BaseEAM.Services.Security
+@model ReportColumnModel
+@{
+    var permissionService = EngineContext.Current.Resolve<BaseEAM.Services.IPermissionService>();
+    var allowCreate = permissionService.Authorize(StandardPermissionName.Report_Report_Create);
+    var allowRead = permissionService.Authorize(StandardPermissionName.Report_Report_Read);
+    var allowUpdate = permissionService.Authorize(StandardPermissionName.Report_Report_Update);
+    var allowDelete = permissionService.Authorize(StandardPermissionName.Report_Report_Delete);
+}
+
+<div id="panel-reportColumn" class="panel panel-default eam-panel">
+    <div class="panel-heading">
+        <button type="button" id="saveReportColumn" class="btn btn-primary@(allowCreate || allowUpdate ? "" : " none-display")" title="@T("Common.Save")">
+            <i class="fa fa-floppy-o"></i>
+        </button>
+        <button type="button" id="cancelReportColumn" class="btn btn-primary" title="@T("Common.Cancel")">
+            <i class="fa fa-ban"></i>
+        </button>
+    </div>
+    <div class="panel-body">
+        @Html.Hidden("ReportId", Model.ReportId)
+        @Html.Hidden("ReportColumnId", Model.Id)
+        <div id="reportColumn-error" class="validation-summary-errors none-display">
+        </div>
+        <div class="col-md-6">
+            <div class="form-group">
+                <div class="col-md-3">
+                    @Html.BaseEamLabelFor(model => model.DisplayOrder, required: true)
+                </div>
+                <div class="col-md-9">
+                    @Html.BaseEamEditorFor(model => model.DisplayOrder)
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-md-3">
+                    @Html.BaseEamLabelFor(model => model.ColumnName, required: true)
+                </div>
+                <div class="col-md-9">
+                    @Html.BaseEamEditorFor(model => model.ColumnName)
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-md-3">
+                    @Html.BaseEamLabelFor(model => model.ResourceKey, required: true)
+                </div>
+                <div class="col-md-9">
+                    @Html.BaseEamEditorFor(model => model.ResourceKey)
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="form-group">
+                <div class="col-md-3">
+                    @Html.BaseEamLabelFor(model => model.DataType, required: true)
+                </div>
+                <div class="col-md-9">
+                    @{
+                        var dataTypes = new List<SelectListItem>
+                                    {
+                                        new SelectListItem { Text = "", Value = "" },
+                                        new SelectListItem { Text = "string", Value = "string" },
+                                        new SelectListItem { Text = "number", Value = "number" },
+                                        new SelectListItem { Text = "date", Value = "date" },
+                                        new SelectListItem { Text = "boolean", Value = "boolean" },
+                                    };
+                    }
+                    @Html.BaseEamDropDownListFor(model => model.DataType, dataTypes)
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-md-3">
+                    @Html.BaseEamLabelFor(model => model.FormatString)
+                </div>
+                <div class="col-md-9">
+                    @Html.BaseEamEditorFor(model => model.FormatString)
+                </div>
+            </div>
+        </div>
+    </div>
+    <script type="text/javascript">
+        $("#saveReportColumn").click(function (e) {
+            e.preventDefault();
+            var $group = $("#panel-reportColumn :input");
+            var postData = $group.serializeJSON({ checkboxUncheckedValue: "false" });
+            //change Id property name so it can map to MVC model
+            postData.Id = postData.ReportColumnId;
+            addAntiForgeryToken(postData);
+
+            $.ajax({
+                cache: false,
+                type: "POST",
+                url: "@(Url.Action("SaveReportColumn", "Report"))",
+                data: postData,
+                success: function (data) {
+                    if (data && data.Errors) {
+                        showErrors(data.Errors, '#reportColumn-error');
+                    } else {
+                        //then toggle the panel
+                        togglePanelReportColumn(false);
+
+                        //refresh grid
+                        var grid = $('#reportColumns-grid').data('kendoGrid');
+                        grid.dataSource.page(1);
+                    }
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    showBSModal({ title: 'ERROR', body: thrownError });
+                },
+                traditional: true
+            });
+        });
+
+        $("#cancelReportColumn").click(function (e) {
+            e.preventDefault();
+            var postData = {
+                id: $("#ReportColumnId").val()
+            };
+            addAntiForgeryToken(postData);
+
+            $.ajax({
+                cache: false,
+                type: "POST",
+                url: "@(Url.Action("CancelReportColumn", "Report"))",
+                data: postData,
+                success: function (data) {
+                    //toggle the panel
+                    togglePanelReportColumn(false);
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    showBSModal({ title: 'ERROR', body: thrownError });
+                },
+                traditional: true
+            });
+        });
+    </script>
+</div>

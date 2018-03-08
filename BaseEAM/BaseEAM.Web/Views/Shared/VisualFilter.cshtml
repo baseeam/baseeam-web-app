@@ -1,0 +1,29 @@
+﻿@using System.Collections.Generic;
+@using BaseEAM.Web.Models
+@model SearchModel
+
+<div class="row">
+    @foreach (var filter in Model.Filters)
+    {
+        <div class="form-group">
+            @*Label*@
+            <div class="col-sm-4">
+                @Html.BaseEamFieldLabel(filter)
+            </div>
+            @Html.BaseEamHiddenFieldOperator(filter)
+            @*Value*@
+            <div class="col-sm-8">
+                @Html.BaseEamFieldValue(filter)
+            </div>
+        </div>
+    }
+    <div class="form-group">
+        <div class="col-sm-4">
+        </div>
+        <div class="col-sm-8">
+            <button type="button" id="refresh" class="btn btn-primary" title="@T("Common.Refresh")">
+                @T("Common.Refresh")
+            </button>
+        </div>
+    </div>
+</div>

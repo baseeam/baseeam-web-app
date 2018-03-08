@@ -1,0 +1,73 @@
+﻿@model WorkOrderModel
+
+<div class="panel-group">
+    <div class="panel panel-default">
+        <div class="panel-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <div class="col-md-3">
+                            @Html.BaseEamLabelFor(model => model.ActualStartDateTime)
+                        </div>
+                        <div class="col-md-9">
+                            @Html.BaseEamEditorFor(model => model.ActualStartDateTime)
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="col-md-3">
+                            @Html.BaseEamLabelFor(model => model.ActualEndDateTime)
+                        </div>
+                        <div class="col-md-9">
+                            @Html.BaseEamEditorFor(model => model.ActualEndDateTime)
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <div class="col-md-3">
+                            @Html.BaseEamLabelFor(model => model.ActualFailureGroupId)
+                        </div>
+                        <div class="col-md-9">
+                            @Html.BaseEamComboBoxFor(model => model.ActualFailureGroupId, "FailureGroupList", "Code", null, true)
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="col-md-3">
+                            @Html.BaseEamLabelFor(model => model.ActualProblemId)
+                        </div>
+                        <div class="col-md-9">
+                            @Html.BaseEamComboBoxFor(model => model.ActualProblemId, "ProblemList", "Code",
+                                            new RouteValueDictionary { { "parentFieldName", "ActualFailureGroupId" } }, true)
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="col-md-3">
+                            @Html.BaseEamLabelFor(model => model.ActualCauseId)
+                        </div>
+                        <div class="col-md-9">
+                            @Html.BaseEamComboBoxFor(model => model.ActualCauseId, "CauseList", "Code",
+                                            new RouteValueDictionary { { "parentFieldName", "ActualProblemId" } }, true)
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="col-md-3">
+                            @Html.BaseEamLabelFor(model => model.ResolutionId)
+                        </div>
+                        <div class="col-md-9">
+                            @Html.BaseEamComboBoxFor(model => model.ResolutionId, "ResolutionList", "Code",
+                                            new RouteValueDictionary { { "parentFieldName", "ActualCauseId" } }, true)
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="col-md-3">
+                            @Html.BaseEamLabelFor(model => model.ResolutionNotes)
+                        </div>
+                        <div class="col-md-9">
+                            @Html.BaseEamTextAreaFor(model => model.ResolutionNotes)
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

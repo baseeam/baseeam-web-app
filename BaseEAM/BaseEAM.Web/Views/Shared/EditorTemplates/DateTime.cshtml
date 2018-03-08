@@ -1,0 +1,24 @@
+@model DateTime
+@using System.Globalization
+
+@{
+    var dataBind = "";
+    if (ViewData.ContainsKey("dataBind") && ViewData["dataBind"] != null)
+    {
+        dataBind = ViewData["dataBind"].ToString();
+    }
+}
+
+<input id="@ViewData.TemplateInfo.GetFullHtmlFieldId(string.Empty)" name="@ViewData.TemplateInfo.GetFullHtmlFieldName(string.Empty)" 
+       value="@((Model > DateTime.MinValue ? Model : DateTime.Today).ToString(CultureInfo.CurrentCulture.DateTimeFormat))" 
+       data-bind="@dataBind" />
+<script>
+    $(document).ready(function () {
+        $("#@ViewData.TemplateInfo.GetFullHtmlFieldId(string.Empty)").kendoDateTimePicker({
+            popup: {
+                position: "bottom right",
+                origin: "top right"
+            }
+        });
+    });
+</script>

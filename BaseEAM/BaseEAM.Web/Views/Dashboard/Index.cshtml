@@ -1,0 +1,135 @@
+﻿@model UserDashboardModel
+@Html.AntiForgeryToken()
+
+<script>
+    $(document).ready(function() {
+        bindBootstrapTabSelectEvent('dashboard-edit');
+    });
+</script>
+
+<div class="content-header clearfix">
+    <h1 class="pull-left">
+        @T("Dashboard")
+    </h1>
+    <div class="pull-right">
+        <div class="btn-group">
+            <button type="button" class="btn btn-primary" title="@T("Common.Settings")">
+                <i class="fa fa-cog"></i>
+            </button>
+            <button type="button" class="btn btn-success dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
+                <span class="caret"></span>
+                <span class="sr-only">&nbsp;</span>
+            </button>
+            <ul class="dropdown-menu" role="menu">
+                <li>
+                    <button type="button" id="dashboard-setting" name="dashboard-setting">
+                        @T("Common.Settings")
+                    </button>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
+<div class="content">
+    <div class="form-horizontal">
+        <div id="dashboard-edit" class="nav-tabs-custom">
+            <ul class="nav nav-tabs">
+                @Html.RenderBootstrapTabHeader("tab-inbox", @T("Dashboard.Inbox"), false)
+                @Html.RenderBootstrapTabHeader("tab-info", @T("Dashboard.Info"), true)
+            </ul>
+            <div class="tab-content">
+                @Html.RenderBootstrapTabContent("tab-inbox", @TabInbox(), false)
+                @Html.RenderBootstrapTabContent("tab-info", @TabInfo(), true)
+            </div>
+        </div>
+    </div>
+</div>
+
+@{
+    //custom tabs
+    var eventMessage = new AdminTabStripCreated(this.Html, "dashboard-edit");
+    EngineContext.Current.Resolve<IEventPublisher>().Publish(eventMessage);
+    foreach (var eventBlock in eventMessage.BlocksToRender)
+    {
+        @eventBlock
+    }
+}
+
+@helper TabInfo()
+{
+    <div id="dashboard">
+        @Html.Partial("_Dashboard", Model)
+    </div>
+}
+
+@helper TabInbox()
+{
+    @Html.Partial("_MyAssignments", new SearchModel())
+}
+
+<script type="text/javascript">
+    //update layout
+    function updateLayout(e) {
+        e.preventDefault();
+        var postData = {
+            dashboardLayoutType: $('#DashboardLayoutType').val(),
+            regionCount: $("#RegionCount").val()
+        };
+        addAntiForgeryToken(postData);
+        $.ajax({
+            cache: false,
+            type: "POST",
+            url: "@(Url.Action("UpdateLayout", "Dashboard"))",
+            data: postData,
+            success: function (data) {
+                if (data && data.Errors) {
+                    showErrors(data.Errors);
+                } else {
+                    //hide modal popup
+                    $(e.target).parents('.modal').modal('hide');
+
+                    //replace html
+                    $("#dashboard").html(data.Html);
+
+                    //render visual
+                    $('.chart-wrapper').visual();
+                }
+            },
+            error: function (xhr, ajaxOptions, thrownError) {
+                showBSModal({ title: 'ERROR', body: thrownError });
+            },
+            traditional: true
+        });
+    };
+
+    $(document).ready(function () {
+        //render visual
+        $('.chart-wrapper').visual();
+
+        window.EventBroker.subscribe(BaseEam.Events.SLVisualSelected, function (message, data) {
+            $('#' + data.cellId + '.chart-wrapper').data('baseeam-visual').refreshVisual(true);
+        });
+
+        //dashboard-setting
+        $('#dashboard-setting').click(function (e) {
+            e.preventDefault();
+            $.get('@Url.Action("DashboardSettingView", "Dashboard")', function (data) {
+                showBSModal({
+                    title: "@T("Common.Settings")",
+                    body: data,
+                    actions: [{
+                        label: '@T("Common.Save")',
+                        cssClass: 'btn-success',
+                        onClick: updateLayout
+                    }, {
+                        label: '@T("Common.Cancel")',
+                        cssClass: 'btn-danger',
+                        onClick: function (e) {
+                            $(e.target).parents('.modal').modal('hide');
+                        }
+                    }]
+                });
+            });
+        });
+    });
+</script>

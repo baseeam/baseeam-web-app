@@ -1,0 +1,136 @@
+﻿@using BaseEAM.Services.Security
+@model ShiftPatternModel
+@{
+    var defaultGridPageSize = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().DefaultGridPageSize;
+    var gridPageSizes = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().GridPageSizes;
+
+    var permissionService = EngineContext.Current.Resolve<BaseEAM.Services.IPermissionService>();
+    var allowCreate = permissionService.Authorize(StandardPermissionName.Resource_Shift_Create);
+    var allowRead = permissionService.Authorize(StandardPermissionName.Resource_Shift_Read);
+    var allowUpdate = permissionService.Authorize(StandardPermissionName.Resource_Shift_Update);
+    var allowDelete = permissionService.Authorize(StandardPermissionName.Resource_Shift_Delete);
+}
+<div class="validation-summary-errors none-display" id="shiftPattern-error">
+</div>
+<div id="group-shiftPatterns" class="panel-group">
+    <div class="panel panel-default">
+        <div class="panel-body">
+            <div id="shiftPatterns-grid"></div>
+            <script>
+                $(document).ready(function () {
+                    $("#shiftPatterns-grid").kendoGrid({
+                        dataSource: {
+                            type: "json",
+                            transport: {
+                                read: {
+                                    url: "@Html.Raw(Url.Action("ShiftPatternList", "Shift"))",
+                                    type: "POST",
+                                    dataType: "json",
+                                    data: additionalData
+                                },
+                                //This is used to map field to format that the server can understand
+                                //it runs after the data (additionalData) populated
+                                parameterMap: function (data, operation) {
+                                    //Update the format date time when edit 
+                                    for (var model in data.updated) {
+                                        var startTime = kendo.parseDate(data.updated[model].StartTime);
+                                        data.updated[model].StartTime = kendo.toString(startTime, "MM/dd/yyyy HH:mm");
+                                        var endTime = kendo.parseDate(data.updated[model].EndTime);
+                                        data.updated[model].EndTime = kendo.toString(endTime, "MM/dd/yyyy HH:mm");
+                                    }
+                                    //Update the format date time when delete 
+                                    for (var model in data.deleted) {
+                                        var startTime = kendo.parseDate(data.deleted[model].StartTime);
+                                        data.deleted[model].StartTime = kendo.toString(startTime, "MM/dd/yyyy HH:mm");
+                                        var endTime = kendo.parseDate(data.deleted[model].EndTime);
+                                        data.deleted[model].EndTime = kendo.toString(endTime, "MM/dd/yyyy HH:mm");
+                                    }
+
+                                    sortMapping = [{from: "Name", to: "ShiftPattern.Name"}];
+                                    BaseEam.Grid.mapSortColumns(data.sort, sortMapping);
+                                    
+                                    return data;
+                                }
+                            },
+                            schema: {
+                                data: "Data",
+                                total: "Total",
+                                errors: "Errors",
+                                model: {
+                                    id: "Id",
+                                    fields: {
+                                        Id: { hidden: true, editable: false, defaultValue: 0 },
+                                        Sequence: { editable: false },
+                                        StartTime: { editable: true },
+                                        EndTime: { editable: true }
+                                    }
+                                }
+                            },
+                            batch: true,
+                            error: function (e) {
+                                display_kendoui_grid_error(e);
+                                // Cancel the changes
+                                this.cancelChanges();
+                            },
+                            change: function (e) {
+                                if (e.action == "itemchange") {
+                                    e.items[0].dirtyFields = e.items[0].dirtyFields || {};
+                                    e.items[0].dirtyFields[e.field] = true;
+                                }
+                            },
+                            pageSize: @(defaultGridPageSize),
+                            serverPaging: true,
+                            serverFiltering: true,
+                            serverSorting: true
+                        },
+                        pageable: {
+                            refresh: true,
+                            pageSizes: [@(gridPageSizes)],
+                            @Html.Partial("_GridPagerMessages")
+                        },
+                        toolbar: ["save", "cancel"],
+                        saveChanges: function(e) {
+                            e.preventDefault();
+                            BaseEam.Grid.saveChanges('@Url.Action("SaveChanges","Shift")', '#shiftPatterns-grid', '#shiftPattern-error');
+                        },
+                        navigatable: true,
+                        sortable: true,
+                        editable: true,
+                        scrollable: false,
+                        columns: [{
+                            field: "Sequence",
+                            title: "@T("ShiftPattern.Sequence")",
+                            template: "#=BaseEam.Grid.dirtyHtml(data,'Sequence')# #:Sequence ? Sequence: '' #"
+                        },{
+                            field: "StartTime",
+                            title: "@T("ShiftPattern.StartTime")",
+                            template: '#= StartTime != null ? kendo.toString(kendo.parseDate(StartTime, "HH:mm:tt"), "HH:mm:tt") : "" #',
+                            format: "{0:HH:mm:tt}",
+                            editor: BaseEam.Grid.timeEditor
+                        },{
+                            field: "EndTime",
+                            title: "@T("ShiftPattern.EndTime")",
+                            template: '#= EndTime != null ? kendo.toString(kendo.parseDate(EndTime, "HH:mm:tt"), "HH:mm:tt") : "" #',
+                            format: "{0:HH:mm:tt}",
+                            editor: BaseEam.Grid.timeEditor
+                        },{
+                            command: { name: "destroy", text: "@T("Common.Delete")" },
+                            width: 100
+                        }]
+                    });
+                });
+            </script>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+
+    function additionalData() {
+        var data = {
+            shiftId: $("#Id").val()
+        };
+        addAntiForgeryToken(data);
+        return data;
+    }
+</script>

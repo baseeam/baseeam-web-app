@@ -1,0 +1,175 @@
+﻿@using BaseEAM.Services.Security
+@model SearchModel
+@{
+    //page title
+    ViewBag.Title = T("Inventory.Adjust").Text;
+
+    var defaultGridPageSize = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().DefaultGridPageSize;
+    var gridPageSizes = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().GridPageSizes;
+
+    var permissionService = EngineContext.Current.Resolve<BaseEAM.Services.IPermissionService>();
+    var allowCreate = permissionService.Authorize(StandardPermissionName.Inventory_Adjust_Create);
+    var allowRead = permissionService.Authorize(StandardPermissionName.Inventory_Adjust_Read);
+    var allowUpdate = permissionService.Authorize(StandardPermissionName.Inventory_Adjust_Update);
+    var allowDelete = permissionService.Authorize(StandardPermissionName.Inventory_Adjust_Delete);
+}
+
+@Html.AntiForgeryToken()
+<div class="content-header clearfix">
+    <h1 class="pull-left">
+        @T("Inventory.Adjust")
+    </h1>
+    <div class="pull-right">
+        <button type="button" id="create" class="btn btn-primary btn-master@(allowCreate ? "" : " none-display")" title="@T("Common.AddNew")">
+            <i class="fa fa-plus-square"></i>
+        </button>
+        <button type="button" id="delete-selected" class="btn btn-primary btn-master@(allowDelete ? "" : " none-display")" title="@T("Common.Delete.Selected")">
+            <i class="fa fa-trash-o"></i>
+        </button>
+    </div>
+</div>
+<div class="validation-summary-errors none-display">
+</div>
+<div class="content">
+    <div class="form-horizontal">
+        <div class="panel-group">
+            @Html.Partial("Filter", Model)
+            <div class="panel panel-default">
+                <div class="panel-body">
+                    <div id="adjusts-grid"></div>
+
+                    <script>
+                        $(document).ready(function () {
+                            $("#adjusts-grid").kendoGrid({
+                                dataSource: {
+                                    type: "json",
+                                    transport: {
+                                        read: {
+                                            url: "@Html.Raw(Url.Action("List", "Adjust"))",
+                                            type: "POST",
+                                            dataType: "json",
+                                            data: additionalData
+                                        },
+                                        parameterMap: function(data, operation) {
+                                            sortMapping = [{from: "Name", to: "Adjust.Name"}];
+                                            BaseEam.Grid.mapSortColumns(data.sort, sortMapping);
+                                            return data;
+                                        }
+                                    },
+                                    schema: {
+                                        data: "Data",
+                                        total: "Total",
+                                        errors: "Errors",
+                                        model: {
+                                            fields: {
+                                            }
+                                        }
+                                    },
+                                    error: function (e) {
+                                        display_kendoui_grid_error(e);
+                                        // Cancel the changes
+                                        this.cancelChanges();
+                                    },
+                                    pageSize: @(defaultGridPageSize),
+                                    serverPaging: true,
+                                    serverFiltering: true,
+                                    serverSorting: true
+                                },
+                                pageable: {
+                                    refresh: true,
+                                    pageSizes: [@(gridPageSizes)],
+                                    @Html.Partial("_GridPagerMessages")
+                                },
+                                sortable: true,
+                                editable: false,
+                                scrollable: false,
+                                dataBound: gridCheckboxHandler.onDataBound,
+                                columns: [{
+                                    field: "Id",
+                                    headerTemplate: "<input id='adjusts-grid-mastercheckbox' type='checkbox'/>",
+                                    headerAttributes: { style: "text-align:center" },
+                                    attributes: { style: "text-align:center" },
+                                    template: "<input type='checkbox' value='#=Id#' class='checkboxGroups'/>",
+                                    width: 50,
+                                    sortable: false
+                                }, {
+                                    field: "Number",
+                                    title: "@T("Adjust.Number")"
+                                }, {
+                                    field: "AdjustDate",
+                                    title: "@T("Adjust.AdjustDate")",
+                                    template: '#= AdjustDate != null ? kendo.toString(kendo.parseDate(AdjustDate, "MM/dd/yyyy HH:mm:ss"), "MM/dd/yyyy HH:mm:ss") : "" #'
+                                }, {
+                                    field: "Site.Name",
+                                    title: "@T("Adjust.Site")"
+                                }, {
+                                    field: "Store.Name",
+                                    title: "@T("Adjust.Store")"
+                                }, {
+                                    field: "IsApproved",
+                                    title: "@T("Adjust.IsApproved")"
+                                }, {
+                                    field: "Id",
+                                    headerTemplate: "",
+                                    width: 100,
+                                    template: '<a class="btn btn-primary@(allowRead || allowUpdate ? "" : " none-display")" title="@T("Common.Details")" href="Edit/#=Id#"></span><i class="fa fa-pencil aria-hidden="true""></i></a>' +
+                                        '<button type="button" class="btn btn-primary@(allowDelete ? "" : " none-display")" title="@T("Common.Delete")" onclick="deleteAdjust(event, #=Id#);"></span><i class="fa fa-trash aria-hidden="true""></i></a>',
+                                    sortable: false
+                                }
+                                ]
+                            });
+                        });
+                    </script>
+                    <script type="text/javascript">
+                        var gridCheckboxHandler = new BaseEam.CheckBoxHandler('adjusts-grid');
+                        gridCheckboxHandler.init();
+
+                        function deleteAdjust(e, id){
+                            e.preventDefault();
+                            BaseEam.Grid.deleteRow(null, id, "@Url.Action("Delete", "Adjust")", "adjusts-grid", "", true);
+                        }
+
+                        $(document).ready(function () {
+                            //search button
+                            $('#search').click(function () {
+                                //search
+                                var grid = $('#adjusts-grid').data('kendoGrid');
+                                grid.dataSource.page(1); //new search. Set page size to 1
+                                //grid.dataSource.read(); we already loaded the grid above using "page" function
+                                return false;
+                            });
+
+                            $("div.panel-search").find(':input').keydown(function (event) {
+                                if (event.keyCode == 13) {
+                                    $("#search").click();
+                                    return false;
+                                }
+                            });
+
+                            //create
+                            $('#create').click(function(e) {
+                                e.preventDefault();
+                                addNewRecord('@(Url.Action("Create", "Adjust"))', '@Url.Action("Edit", "Adjust")');
+                            });
+
+                            //delete selected
+                            $('#delete-selected').click(function (e) {
+                                e.preventDefault();
+                                BaseEam.Grid.deleteSelectedRows(null, gridCheckboxHandler.selectedIds, "@Url.Action("DeleteSelected", "Adjust")", "adjusts-grid", "", true);
+                                return false;
+                            });
+                        });
+
+                        function additionalData() {
+                            var data = {
+                                searchValues: $("div.panel-search").find(':input').serialize()
+                            };
+                            addAntiForgeryToken(data);
+                            return data;
+                        }
+                    </script>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

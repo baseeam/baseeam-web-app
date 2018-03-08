@@ -1,0 +1,241 @@
+﻿@using BaseEAM.Services.Security
+@model AuditEntityConfigurationModel
+@Html.HiddenFor(model => model.Id)
+@Html.HiddenFor(model => model.IsNew)
+<script>
+    $(document).ready(function () {
+        bindBootstrapTabSelectEvent('auditEntityConfiguration-edit');
+    });
+</script>
+
+<div class="content">
+    <div class="form-horizontal">
+        <div id="auditEntityConfiguration-edit" class="nav-tabs-custom">
+            <ul class="nav nav-tabs">
+                @Html.RenderBootstrapTabHeader("tab-info", @T("AuditEntityConfiguration.Info"), true)
+            </ul>
+            <div class="tab-content">
+                @Html.RenderBootstrapTabContent("tab-info", @TabInfo(), true)
+            </div>
+        </div>
+    </div>
+</div>
+
+@{
+    //custom tabs
+    var eventMessage = new AdminTabStripCreated(this.Html, "auditEntityConfiguration-edit");
+    EngineContext.Current.Resolve<IEventPublisher>().Publish(eventMessage);
+    foreach (var eventBlock in eventMessage.BlocksToRender)
+    {
+        @eventBlock
+    }
+}
+
+@helper TabInfo()
+{
+    var defaultGridPageSize = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().DefaultGridPageSize;
+    var gridPageSizes = EngineContext.Current.Resolve<BaseEAM.Core.Domain.GeneralSettings>().GridPageSizes;
+
+    var permissionService = EngineContext.Current.Resolve<BaseEAM.Services.IPermissionService>();
+    var allowCreate = permissionService.Authorize(StandardPermissionName.System_AuditEntityConfiguration_Create);
+    var allowRead = permissionService.Authorize(StandardPermissionName.System_AuditEntityConfiguration_Read);
+    var allowUpdate = permissionService.Authorize(StandardPermissionName.System_AuditEntityConfiguration_Update);
+    var allowDelete = permissionService.Authorize(StandardPermissionName.System_AuditEntityConfiguration_Delete);
+
+    <div class="panel-group">
+        <div class="panel panel-default">
+            <div class="panel-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.EntityType, required: true)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamComboBoxFor(model => model.EntityType, "Entities", "Common", null, true, null, aysIgnore: true)
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                @Html.BaseEamLabelFor(model => model.ExcludedColumn)
+                            </div>
+                            <div class="col-md-9">
+                                @Html.BaseEamComboBoxFor(model => model.ExcludedColumn, "GetColumnNamesFromEntityType", "Common",
+                                            new RouteValueDictionary { { "parentFieldName", "EntityType" } }, true, aysIgnore: true)
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <hr/>
+                <div class="row">
+                    <div class="col-md-12">
+                        <div id="excludedColumns-grid"></div>
+                        <script>
+                            $(document).ready(function () {
+                                $("#excludedColumns-grid").kendoGrid({
+                                    dataSource: {
+                                        type: "json",
+                                        transport: {
+                                            read: {
+                                                url: "@Html.Raw(Url.Action("ExcludedColumnList", "AuditEntityConfiguration"))",
+                                                type: "POST",
+                                                dataType: "json",
+                                                data: additionalData1
+                                            }
+                                        },
+                                        schema: {
+                                            data: "Data",
+                                            total: "Total",
+                                            errors: "Errors",
+                                            model: {
+                                                ExcludedColumn: "ExcludedColumn",
+                                                fields: {
+                                                    ExcludedColumn: { editable: false },
+                                                }
+                                            }
+                                        },
+                                        error: function (e) {
+                                            display_kendoui_grid_error(e);
+                                            // Cancel the changes
+                                            this.cancelChanges();
+                                        },
+                                        pageSize: (@defaultGridPageSize),
+                                        serverPaging: true,
+                                        serverFiltering: true,
+                                        serverSorting: true
+                                    },
+                                    pageable: {
+                                        refresh: true,
+                                        pageSizes: [(@gridPageSizes)],
+                                    @Html.Partial("_GridPagerMessages")
+                                    },
+                                    sortable: false,
+                                    editable: false,
+                                    scrollable: false,
+                                    columns: [{
+                                        field: "ExcludedColumn",
+                                        title: "@T("AuditEntityConfiguration.ExcludedColumns")"
+                                    }, {
+                                        field: "ExcludedColumn",
+                                        headerTemplate: "",
+                                        width: 70,
+                                        template: '<button type="button" class="deleteRow btn btn-primary@(allowDelete ? "" : " none-display")"  onclick="deleteExcludedColumn(event, \'#: ExcludedColumn #\')"></span><i class="fa fa-trash aria-hidden="true""></i></button>',
+                                        sortable: false
+                                    }]
+                                });
+                            });
+                        </script>
+                    </div>
+                </div>
+                <hr />
+                @if (Model.Id > 0 && Model.IsNew == false)
+                {
+                    <div class="form-group">
+                        <div class="col-md-3">
+                            @Html.BaseEamLabelFor(model => model.FirstCreatedBy)
+                        </div>
+                        <div class="col-md-9">
+                            @Html.BaseEamDisplayFor(model => model.FirstCreatedBy)
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="col-md-3">
+                            @Html.BaseEamLabelFor(model => model.LastUpdatedBy)
+                        </div>
+                        <div class="col-md-9">
+                            @Html.BaseEamDisplayFor(model => model.LastUpdatedBy)
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+    <script type="text/javascript">
+            $(document).ready(function () {
+                $("#ExcludedColumn").change(function (e) {
+                    e.preventDefault();
+
+                    if ($("#ExcludedColumn").val() == '') {
+                        return false;
+                    }
+                    var postData = {
+                        auditEntityConfigurationId: '@Model.Id',
+                        excludedColumn: $("#ExcludedColumn").val()
+                    };
+                    addAntiForgeryToken(postData);
+                    $.ajax({
+                        cache: false,
+                        type: "POST",
+                        url: "@(Url.Action("SaveExcludedColumn", "AuditEntityConfiguration"))",
+                        data: postData,
+                        success: function (data) {
+                            if (data && data.Errors) {
+                                showErrors(data.Errors, '#validation-summary');
+                            } else {
+                                //refresh grid
+                                var grid = $('#excludedColumns-grid').data('kendoGrid');
+                                grid.dataSource.page(1);
+                            }
+                        },
+                        error: function (xhr, ajaxOptions, thrownError) {
+                            showBSModal({ title: 'ERROR', body: thrownError });
+                        },
+                        traditional: true
+                    });
+                });
+
+                $("#@Html.FieldIdFor(model => model.EntityType)").change(function () {
+                    $.when(kendo.ui.ExtOkCancelDialog.show({
+                        title: "WARNING!",
+                        message: '@T("Common.WouldYouLikeToClearAllExcludeColumns")',
+                        icon: 'k-ext-warning'
+                    }))
+                        .done(function (response) {
+                            if (response.button == "OK") {
+                                var postData = {
+                                    Id: '@Model.Id',
+                                    EntityType: $("#EntityType").val(),
+                                };
+                                addAntiForgeryToken(postData);
+                                $.ajax({
+                                    cache: false,
+                                    type: "POST",
+                                    url: "@(Url.Action("ClearAllExcludedColumns", "AuditEntityConfiguration"))",
+                                    data: postData,
+                                    success: function (data) {
+                                        if (data && data.Errors) {
+                                            showErrors(data.Errors, '#validation-summary');
+                                        } else {
+                                            //refresh grid
+                                            var grid = $('#excludedColumns-grid').data('kendoGrid');
+                                            grid.dataSource.page(1);
+                                        }
+                                    },
+                                    error: function (xhr, ajaxOptions, thrownError) {
+                                        showBSModal({ title: 'ERROR', body: thrownError });
+                                    },
+                                    traditional: true
+                                });
+                            }
+                        });
+                });
+
+            });
+
+            function deleteExcludedColumn(e, excludedColumn) {
+                e.preventDefault();
+
+                BaseEam.Grid.deleteRow($("#Id").val(), excludedColumn, "@Url.Action("DeleteExcludedColumn", "AuditEntityConfiguration")", "excludedColumns-grid", "", true);
+            };
+
+            function additionalData1() {
+                var data = {
+                    auditEntityConfigurationId: @Model.Id,
+                };
+                addAntiForgeryToken(data);
+                return data;
+            }
+    </script>
+}
