@@ -8,3 +8,11 @@
 
 * **Website:** [http://www.baseeam.com](http://www.baseeam.com)
 * **Blog:** [http://www.baseeam.com/blog](http://www.baseeam.com/blog)
+
+## Features
+
+## Try it online
+
+We have set up a live online demo for you so you are able to test BaseEAM without local installation. Get a first impression and test all available features. Please keep in mind that the demo is shared and other testers can modify data at the same time.
+
+* [**Demo**](http://app.baseeam.com)
