@@ -11,6 +11,32 @@
 
 ## Features
 
+* **Multi-Site architecture**
+    * Allow data security between different sites in the organization.
+* [**Asset Management module**](http://baseeam.com/Home/AssetManagement)
+* [**Maintenance Management module**](http://baseeam.com/Home/MaintenanceManagement)
+* [**Inventory Management module**](http://baseeam.com/Home/InventoryManagement)
+* **Resource Management module**
+    * Manage Calendar, Shift, Craft, Technician and Team.
+* **Workflow customizable**
+    * Fully customizable workflow (flowchart in VS) for important processes such as: Work Order, Preventive Maintenance, Receipt, Issue, etc.
+* **Reporting and Dashboard tools**
+    * Powerful, flexible and highly customizable for Reporting and Dashboard.
+    * Pre-built important reports and KPIs for analytics.
+* **Security module**
+    * Data security
+    * Application security
+* **General features**
+    * Multi languages.
+    * Multi currencies.
+    * Auto generated number for documents based on pre-defined formats.
+    * Define message templates for notifications via mail, SMS, push.
+    * Define asset failure codes.
+    * Importing tools.
+    * Audit trails.   
+    * Scheduled job administration.
+    * Log all exceptions, messages.
+
 ## Try it online
 
 We have set up a live online demo for you so you are able to test **BaseEAM** without local installation. Get a first impression and test all available features. Please keep in mind that the demo is shared and other testers can modify data at the same time.
