@@ -42,3 +42,7 @@
 We have set up a live online demo for you so you are able to test **BaseEAM** without local installation. Get a first impression and test all available features. Please keep in mind that the demo is shared and other testers can modify data at the same time.
 
 * [**Demo**](http://app.baseeam.com)
+
+## Documentation
+
+We are about to release the first version at the end of April, 2018
