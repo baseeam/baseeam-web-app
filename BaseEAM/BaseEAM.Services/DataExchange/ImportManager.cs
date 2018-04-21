@@ -159,8 +159,6 @@ namespace BaseEAM.Services
             }
         }
 
-        #region UnitOfMeasure
-
         public virtual void ImportUnitOfMeasureFromXlsx(ImportProfile importProfile)
         {
             var rootPath = ConfigurationManager.AppSettings["ImportFolder"];
@@ -279,77 +277,6 @@ namespace BaseEAM.Services
             }
             importResult.LastRunEndDateTime = DateTime.UtcNow;
             WriteLogFile(importProfile, importResult);
-        }
-
-        private string GenerateLogHead(ImportProfile importProfile)
-        {
-            var logHead = new StringBuilder();
-            logHead.AppendLine();
-            logHead.AppendLine(new string('-', 40));
-            logHead.AppendLine("BaseEam:\t\tv." + BaseEamVersion.CurrentVersion);
-            logHead.AppendLine(string.Format("Import profile:\t\t" + "Profile{0}", importProfile.Id));
-            logHead.AppendLine("Entity:\t\t\t" + importProfile.EntityType);
-            logHead.AppendLine("File:\t\t\t" + Path.GetFileName(importProfile.ImportFileName));
-
-            var user = _workContext.CurrentUser;
-            logHead.Append("Executed by:\t\t" + (!string.IsNullOrEmpty(user.Email) ? user.Email : "BackgroundTask"));
-            return logHead.ToString();
-        }
-
-        private void WriteLogFile(ImportProfile importProfile, ImportResult importResult)
-        {
-            var rootPath = ConfigurationManager.AppSettings["ImportFolder"];
-            var importProfileFolderPath = Path.Combine(rootPath, string.Format("Profile{0}", importProfile.Id));
-            var logFilePath = Path.Combine(importProfileFolderPath, "log.txt");
-
-            File.Delete(logFilePath);
-
-            var append = File.Exists(logFilePath);
-
-            var infoMessage = new StringBuilder();
-            var errorMessage = new StringBuilder();
-            var warningMessage = new StringBuilder();
-            var result = importResult;
-            foreach (var message in result.Messages)
-            {
-                if (message.MessageType == ImportMessageType.Error)
-                {
-                    errorMessage.AppendLine(message.Message);
-                }
-                else if (message.MessageType == ImportMessageType.Warning)
-                {
-                    warningMessage.AppendLine(message.Message);
-                }
-                else
-                {
-                    infoMessage.AppendLine(message.Message);
-                }
-            }
-            using (var streamWriter = new StreamWriter(logFilePath, append, Encoding.UTF8))
-            {
-
-                var sb = new StringBuilder();
-                sb.Append(GenerateLogHead(importProfile));
-                sb.AppendLine();
-                sb.AppendFormat("Started:\t\t{0}\r\n", result.LastRunStartDateTime.Value);
-                sb.AppendFormat("Finished:\t\t{0}\r\n", result.LastRunEndDateTime.Value);
-                sb.AppendFormat("Duration:\t\t{0}\r\n", (result.LastRunEndDateTime.Value - result.LastRunStartDateTime.Value).ToString("g"));
-                sb.AppendLine();
-                sb.AppendFormat("Total rows:\t\t{0}\r\n", result.TotalRecords);
-                sb.AppendFormat("SkippedRecords:\t\t{0}\r\n", result.SkippedRecords);
-                sb.AppendLine();
-                sb.AppendFormat("Warnings:\t\t{0}\r\n", result.Warnings);
-                sb.AppendLine(warningMessage.ToString());
-                sb.AppendFormat("Errors:\t\t\t{0}\r\n", result.Errors);
-                sb.AppendLine(errorMessage.ToString());
-                streamWriter.WriteLine(sb.ToString());
-                streamWriter.Flush();
-                streamWriter.Close();
-            }
-            importProfile.LogFileName = "log.txt";
-            importProfile.LastRunStartDateTime = importResult.LastRunStartDateTime;
-            importProfile.LastRunEndDateTime = importResult.LastRunEndDateTime;
-            _importProfileRepository.UpdateAndCommit(importProfile);
         }
 
         public virtual void ImportValueItemFromXlsx(ImportProfile importProfile)
@@ -2180,6 +2107,76 @@ namespace BaseEAM.Services
             importResult.LastRunEndDateTime = DateTime.UtcNow;
             WriteLogFile(importProfile, importResult);
         }
-        #endregion
+
+        private string GenerateLogHead(ImportProfile importProfile)
+        {
+            var logHead = new StringBuilder();
+            logHead.AppendLine();
+            logHead.AppendLine(new string('-', 40));
+            logHead.AppendLine("BaseEam:\t\tv." + BaseEamVersion.CurrentVersion);
+            logHead.AppendLine(string.Format("Import profile:\t\t" + "Profile{0}", importProfile.Id));
+            logHead.AppendLine("Entity:\t\t\t" + importProfile.EntityType);
+            logHead.AppendLine("File:\t\t\t" + Path.GetFileName(importProfile.ImportFileName));
+
+            var user = _workContext.CurrentUser;
+            logHead.Append("Executed by:\t\t" + (!string.IsNullOrEmpty(user.Email) ? user.Email : "BackgroundTask"));
+            return logHead.ToString();
+        }
+
+        private void WriteLogFile(ImportProfile importProfile, ImportResult importResult)
+        {
+            var rootPath = ConfigurationManager.AppSettings["ImportFolder"];
+            var importProfileFolderPath = Path.Combine(rootPath, string.Format("Profile{0}", importProfile.Id));
+            var logFilePath = Path.Combine(importProfileFolderPath, "log.txt");
+
+            File.Delete(logFilePath);
+
+            var append = File.Exists(logFilePath);
+
+            var infoMessage = new StringBuilder();
+            var errorMessage = new StringBuilder();
+            var warningMessage = new StringBuilder();
+            var result = importResult;
+            foreach (var message in result.Messages)
+            {
+                if (message.MessageType == ImportMessageType.Error)
+                {
+                    errorMessage.AppendLine(message.Message);
+                }
+                else if (message.MessageType == ImportMessageType.Warning)
+                {
+                    warningMessage.AppendLine(message.Message);
+                }
+                else
+                {
+                    infoMessage.AppendLine(message.Message);
+                }
+            }
+            using (var streamWriter = new StreamWriter(logFilePath, append, Encoding.UTF8))
+            {
+
+                var sb = new StringBuilder();
+                sb.Append(GenerateLogHead(importProfile));
+                sb.AppendLine();
+                sb.AppendFormat("Started:\t\t{0}\r\n", result.LastRunStartDateTime.Value);
+                sb.AppendFormat("Finished:\t\t{0}\r\n", result.LastRunEndDateTime.Value);
+                sb.AppendFormat("Duration:\t\t{0}\r\n", (result.LastRunEndDateTime.Value - result.LastRunStartDateTime.Value).ToString("g"));
+                sb.AppendLine();
+                sb.AppendFormat("Total rows:\t\t{0}\r\n", result.TotalRecords);
+                sb.AppendFormat("SkippedRecords:\t\t{0}\r\n", result.SkippedRecords);
+                sb.AppendLine();
+                sb.AppendFormat("Warnings:\t\t{0}\r\n", result.Warnings);
+                sb.AppendLine(warningMessage.ToString());
+                sb.AppendFormat("Errors:\t\t\t{0}\r\n", result.Errors);
+                sb.AppendLine(errorMessage.ToString());
+                streamWriter.WriteLine(sb.ToString());
+                streamWriter.Flush();
+                streamWriter.Close();
+            }
+            importProfile.LogFileName = "log.txt";
+            importProfile.LastRunStartDateTime = importResult.LastRunStartDateTime;
+            importProfile.LastRunEndDateTime = importResult.LastRunEndDateTime;
+            _importProfileRepository.UpdateAndCommit(importProfile);
+        }
     }
 }

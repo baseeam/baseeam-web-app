@@ -313,7 +313,6 @@
     <Compile Include="ScheduledJob\Jobs\HeartbeatJob.cs" />
     <Compile Include="ScheduledJob\Jobs\PMJob.cs" />
     <Compile Include="ScheduledJob\Jobs\ImportJob.cs" />
-    <Compile Include="ScheduledJob\Jobs\ReorderItemsJob.cs" />
     <Compile Include="ScheduledJob\Jobs\SendMessageJob.cs" />
     <Compile Include="Report\FilterService.cs" />
     <Compile Include="Report\IFilterService.cs" />
