@@ -2086,7 +2086,7 @@ namespace BaseEAM.Services
                                     asset.HierarchyIdPath = parent != null ? parent.HierarchyIdPath + " > " + asset.Id.ToString() : asset.Id.ToString();
                                     _assetDapperRepository.Update(asset);
                                     ++importResult.TotalRecords;
-                                    // Add new asset into asset cache
+                                    // Add new asset into assets cache
                                     assets.Add(asset);
                                 }
                                 catch (Exception ex)
