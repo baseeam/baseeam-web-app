@@ -203,7 +203,7 @@ namespace BaseEAM.Services
                         var manager = new PropertyManager<UnitOfMeasure>(properties.ToArray());
                         var row = 2;
 
-                        // get all umos
+                        // get all uoms
                         var uoms = _unitOfMeasureRepository.GetAll().ToList();
                         while (true)
                         {
@@ -248,6 +248,8 @@ namespace BaseEAM.Services
                                 try
                                 {
                                     _unitOfMeasureDapperRepository.Insert(uom);
+                                    // add new uom into uoms cache
+                                    uoms.Add(uom);
                                     ++importResult.TotalRecords;
                                 }
                                 catch (Exception ex)
@@ -507,6 +509,8 @@ namespace BaseEAM.Services
                                     itemGroup.ModifiedUser = this._workContext.CurrentUser.Name;
                                     itemGroup.ModifiedDateTime = DateTime.UtcNow;
                                     _itemGroupDapperRepository.Insert(itemGroup);
+                                    // add new item Group into itemGroups cache
+                                    itemGroups.Add(itemGroup);
                                     ++importResult.TotalRecords;
                                 }
                                 catch (Exception ex)
@@ -736,6 +740,8 @@ namespace BaseEAM.Services
                                     item.ModifiedUser = this._workContext.CurrentUser.Name;
                                     item.ModifiedDateTime = DateTime.UtcNow;
                                     _itemDapperRepository.Insert(item);
+                                    // Add new item into items cache
+                                    items.Add(item);
                                     ++importResult.TotalRecords;
                                 }
                                 catch (Exception ex)
@@ -1239,6 +1245,8 @@ namespace BaseEAM.Services
                                     meter.ModifiedUser = this._workContext.CurrentUser.Name;
                                     meter.ModifiedDateTime = DateTime.UtcNow;
                                     _meterDapperRepository.Insert(meter);
+                                    // add new meter into meters cache
+                                    meters.Add(meter);
                                     ++importResult.TotalRecords;
                                 }
                                 catch (Exception ex)
@@ -1519,6 +1527,8 @@ namespace BaseEAM.Services
                                     company.ModifiedDateTime = DateTime.UtcNow;
 
                                     _companyDapperRepository.Insert(company);
+                                    // add new company into companies cache
+                                    companies.Add(company);
                                     ++importResult.TotalRecords;
                                     if (address != null)
                                     {
@@ -1760,6 +1770,9 @@ namespace BaseEAM.Services
                                     store.ModifiedUser = this._workContext.CurrentUser.Name;
                                     store.ModifiedDateTime = DateTime.UtcNow;
                                     _storeDapperRepository.Insert(store);
+
+                                    // Add new store into stores cache
+                                    stores.Add(store);
 
                                     //Create a default store locator
                                     var defStoreLocator = new StoreLocator();
@@ -2073,7 +2086,8 @@ namespace BaseEAM.Services
                                     asset.HierarchyIdPath = parent != null ? parent.HierarchyIdPath + " > " + asset.Id.ToString() : asset.Id.ToString();
                                     _assetDapperRepository.Update(asset);
                                     ++importResult.TotalRecords;
-
+                                    // Add new asset into asset cache
+                                    assets.Add(asset);
                                 }
                                 catch (Exception ex)
                                 {
