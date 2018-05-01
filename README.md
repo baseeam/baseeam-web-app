@@ -52,3 +52,18 @@ Here are some useful links to get you started:
 * [**Introducing BaseEAM**](https://baseeam.atlassian.net/wiki/spaces/Baseeamv1/pages/39714817/Introducing+BaseEAM)
 * [**Installing BaseEAM**](https://baseeam.atlassian.net/wiki/spaces/Baseeamv1/pages/22904902/Installing+BaseEAM)
 * [**Step by step guide to setup master data for BaseEAM: a use case for Facilities Management**](https://baseeam.atlassian.net/wiki/spaces/Baseeamv1/pages/81723413/Step+by+step+guide+to+setup+master+data+for+BaseEAM+a+use+case+for+Facilities+Management)
+
+## Roadmap (In 2018)
+
+    * Offline Work Order Execution mobile application.
+    * Purchasing (procurement) module.
+    * Tenant management module (for commercial building management).
+    * Budget control module.
+    * Support automated action.
+    * Service level agreement module.
+    * Web based workflow designer.
+    * OPC integration for Predictive Maintenance.
+    * Power BI integration.
+    * Open BIM integration.
+	
+You can view the details and updated roadmap on our website [**Roadmap**](http://baseeam.com/Home/Roadmap)
