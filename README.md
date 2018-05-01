@@ -45,4 +45,9 @@ We have set up a live online demo for you so you are able to test **BaseEAM** wi
 
 ## Documentation
 
-We are about to release the first version at the end of April, 2018
+The documentation is hosted in: [**Documentation**](https://baseeam.atlassian.net/wiki/spaces/Baseeamv1/pages)
+Here are some useful links to get you started:
+
+* [**Introducing BaseEAM**](https://baseeam.atlassian.net/wiki/spaces/Baseeamv1/pages/39714817/Introducing+BaseEAM)
+* [**Installing BaseEAM**](https://baseeam.atlassian.net/wiki/spaces/Baseeamv1/pages/22904902/Installing+BaseEAM)
+* [**Step by step guide to setup master data for BaseEAM: a use case for Facilities Management**](https://baseeam.atlassian.net/wiki/spaces/Baseeamv1/pages/81723413/Step+by+step+guide+to+setup+master+data+for+BaseEAM+a+use+case+for+Facilities+Management)
