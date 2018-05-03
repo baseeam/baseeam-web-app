@@ -6,8 +6,8 @@
 
 **BaseEAM** is updated almost daily with a very broad roadmap.
 
-* **Website:** [http://www.baseeam.com](http://www.baseeam.com)
-* **Blog:** [http://www.baseeam.com/blog](http://www.baseeam.com/blog)
+* **Website:** [http://www.baseeam.com](http://baseeam.com)
+* **Blog:** [http://www.baseeam.com/blog](http://baseeam.com/blog)
 
 ## Features
 
