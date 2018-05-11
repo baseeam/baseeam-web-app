@@ -713,6 +713,8 @@ namespace BaseEAM.Web.Controllers
                         preventiveMaintenance.PMTasks.ToList()[i].Id, EntityType.PMTask);
                 }
 
+                this._dbContext.SaveChanges();
+
                 return new NullJsonResult();
             }
             else
